@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cla.edu/contracts/agent-run.schema.json",
+  "title": "AgentRun",
+  "type": "object",
+  "required": ["id", "tenantId", "purpose", "promptVersion", "modelPolicy", "status"],
+  "properties": {
+    "id": {"type": "string"},
+    "tenantId": {"type": "string"},
+    "purpose": {"type": "string", "enum": ["BRIEF_PARSE", "CANDIDATE_RERANK", "TUTOR_HINT", "OPEN_ANSWER_EVAL"]},
+    "promptVersion": {"type": "string"},
+    "modelPolicy": {"type": "string"},
+    "inputRef": {"type": "string"},
+    "output": {"type": "object"},
+    "status": {"type": "string", "enum": ["CREATED", "RUNNING", "SUCCEEDED", "FAILED", "REJECTED"]},
+    "usage": {"type": "object"},
+    "traceId": {"type": "string"}
+  },
+  "additionalProperties": false
+}
+

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cla.edu/contracts/terminal-ticket.schema.json",
+  "title": "TerminalTicketClaims",
+  "type": "object",
+  "required": [
+    "iss",
+    "aud",
+    "sub",
+    "tenant_id",
+    "attempt_id",
+    "session_id",
+    "session_epoch",
+    "route_ref",
+    "permissions",
+    "nonce",
+    "iat",
+    "exp"
+  ],
+  "properties": {
+    "iss": {"const": "cla-api"},
+    "aud": {"const": "cla-terminal-gateway"},
+    "sub": {"type": "string"},
+    "tenant_id": {"type": "string"},
+    "attempt_id": {"type": "string"},
+    "session_id": {"type": "string"},
+    "session_epoch": {"type": "integer", "minimum": 1},
+    "route_ref": {"type": "string"},
+    "permissions": {
+      "type": "array",
+      "items": {"type": "string", "enum": ["terminal.connect", "terminal.resize"]},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "nonce": {"type": "string", "minLength": 16},
+    "iat": {"type": "integer"},
+    "exp": {"type": "integer"}
+  },
+  "additionalProperties": false
+}
+

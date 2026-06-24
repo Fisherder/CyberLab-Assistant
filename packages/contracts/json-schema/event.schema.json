@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cla.edu/contracts/event.schema.json",
+  "title": "EventEnvelope",
+  "type": "object",
+  "required": [
+    "event_id",
+    "schema_version",
+    "tenant_id",
+    "attempt_id",
+    "session_epoch",
+    "sequence",
+    "occurred_at",
+    "type",
+    "source",
+    "payload",
+    "privacy",
+    "integrity"
+  ],
+  "properties": {
+    "event_id": {"type": "string"},
+    "schema_version": {"type": "string", "pattern": "^event/[0-9]+\\.[0-9]+$"},
+    "tenant_id": {"type": "string"},
+    "course_id": {"type": "string"},
+    "assignment_id": {"type": "string"},
+    "attempt_id": {"type": "string"},
+    "session_epoch": {"type": "integer", "minimum": 1},
+    "stream_id": {"type": "string"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "type": {"type": "string"},
+    "actor": {"type": "object"},
+    "source": {"type": "object", "required": ["service", "version"]},
+    "trace_id": {"type": "string"},
+    "payload": {"type": "object"},
+    "privacy": {
+      "type": "object",
+      "required": ["classification", "contains_raw_text"],
+      "properties": {
+        "classification": {"type": "string"},
+        "redactions": {"type": "array", "items": {"type": "string"}},
+        "contains_raw_text": {"type": "boolean"}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["hash"],
+      "properties": {
+        "previous_hash": {"type": ["string", "null"]},
+        "hash": {"type": "string"}
+      }
+    }
+  },
+  "additionalProperties": false
+}
+

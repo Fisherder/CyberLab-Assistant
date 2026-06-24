@@ -1,0 +1,9 @@
+.git
+.venv
+.pnpm-store
+node_modules
+**/node_modules
+apps/web/.next
+**/__pycache__
+*.pyc
+cla-dev.db

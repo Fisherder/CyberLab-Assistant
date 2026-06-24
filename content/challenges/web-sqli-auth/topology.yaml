@@ -1,0 +1,21 @@
+topologyVersion: 1
+nodes:
+  - id: workspace
+    role: STUDENT_WORKSPACE
+    imageFromManifest: true
+    exposeToTerminal: true
+    env:
+      TARGET_BASE_URL: http://target:8080
+  - id: target
+    role: CHALLENGE_TARGET
+    image: cla/web-sqli-target:dev
+    ports:
+      - name: http
+        containerPort: 8080
+    healthCheck:
+      path: /healthz
+      port: http
+networks:
+  - id: lab
+    policy: DENY_ALL_EXCEPT_TOPOLOGY
+

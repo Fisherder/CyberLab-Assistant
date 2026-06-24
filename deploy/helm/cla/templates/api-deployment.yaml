@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cla-api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      app: cla-api
+  template:
+    metadata:
+      labels:
+        app: cla-api
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: api
+          image: {{ .Values.api.image | quote }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: CLA_TRANSCRIPT_STORAGE_BACKEND
+              value: {{ .Values.api.transcriptStorage.backend | quote }}
+            - name: CLA_TRANSCRIPT_OBJECT_ROOT
+              value: {{ .Values.api.transcriptStorage.objectRoot | quote }}
+            - name: CLA_TRANSCRIPT_S3_BUCKET
+              value: {{ .Values.api.transcriptStorage.s3Bucket | quote }}
+            - name: CLA_TRANSCRIPT_S3_PREFIX
+              value: {{ .Values.api.transcriptStorage.s3Prefix | quote }}
+            - name: CLA_TRANSCRIPT_S3_ENDPOINT_URL
+              value: {{ .Values.api.transcriptStorage.s3EndpointURL | quote }}
+            - name: CLA_TRANSCRIPT_S3_REGION
+              value: {{ .Values.api.transcriptStorage.s3Region | quote }}
+            - name: CLA_TRANSCRIPT_S3_FORCE_PATH_STYLE
+              value: {{ .Values.api.transcriptStorage.s3ForcePathStyle | quote }}
+            - name: CLA_TRANSCRIPT_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.api.transcriptStorage.encryptionKeySecretName | quote }}
+                  key: encryption-key
+            - name: CLA_REMOTE_DESKTOP_ENABLED
+              value: {{ .Values.features.remoteDesktop | quote }}
+            - name: CLA_SIMULATED_WORKSPACE_ENABLED
+              value: {{ .Values.features.simulatedWorkspace | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]

@@ -1,0 +1,10 @@
+go 1.22.0
+
+toolchain go1.22.12
+
+use (
+	./packages/sessionwire
+	./runtime/sessiond
+	./services/environment-controller
+	./services/terminal-gateway
+)

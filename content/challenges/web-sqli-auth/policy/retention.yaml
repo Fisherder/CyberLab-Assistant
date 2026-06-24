@@ -1,0 +1,8 @@
+terminalTranscript:
+  rawSegmentRetentionDays: 30
+  summaryRetentionDays: 365
+  requireTeacherReasonForRawAccess: true
+events:
+  businessRetentionDays: 2555
+  auditRetentionDays: 2555
+

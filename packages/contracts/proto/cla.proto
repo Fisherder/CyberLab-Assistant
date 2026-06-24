@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package cla.v1;
+
+option go_package = "cla-platform/packages/contracts/proto;clapb";
+
+enum WorkspaceType {
+  TERMINAL = 0;
+  REMOTE_DESKTOP = 1;
+  SIMULATED = 2;
+}
+
+message SessionRoute {
+  string session_id = 1;
+  uint32 epoch = 2;
+  WorkspaceType workspace_type = 3;
+  string endpoint = 4;
+  bytes session_credential = 5;
+  int64 expires_unix_ms = 6;
+}
+
+message CreateSessionRequest {
+  string tenant_id = 1;
+  string attempt_id = 2;
+  WorkspaceType workspace_type = 3;
+  string challenge_version_id = 4;
+  bytes seed = 5;
+}
+
+message ResetSessionRequest {
+  string tenant_id = 1;
+  string attempt_id = 2;
+  uint32 previous_epoch = 3;
+}
+
+message DestroySessionRequest {
+  string tenant_id = 1;
+  string attempt_id = 2;
+  uint32 epoch = 3;
+}
+
+message GetSessionRouteRequest {
+  string tenant_id = 1;
+  string session_id = 2;
+  uint32 epoch = 3;
+}
+
+message OperationRef {
+  string operation_id = 1;
+  string workflow_id = 2;
+}
+
+message OracleResult {
+  string attempt_id = 1;
+  bool passed = 2;
+  string oracle_version = 3;
+  repeated string evidence_refs = 4;
+}
+
+service EnvironmentControl {
+  rpc CreateSession(CreateSessionRequest) returns (OperationRef);
+  rpc ResetSession(ResetSessionRequest) returns (OperationRef);
+  rpc DestroySession(DestroySessionRequest) returns (OperationRef);
+  rpc GetSessionRoute(GetSessionRouteRequest) returns (SessionRoute);
+}
+

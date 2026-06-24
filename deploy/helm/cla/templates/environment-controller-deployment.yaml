@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cla-environment-controller
+spec:
+  replicas: {{ .Values.environmentController.replicas }}
+  selector:
+    matchLabels:
+      app: cla-environment-controller
+  template:
+    metadata:
+      labels:
+        app: cla-environment-controller
+    spec:
+      serviceAccountName: {{ .Values.environmentController.serviceAccountName | quote }}
+      automountServiceAccountToken: true
+      containers:
+        - name: environment-controller
+          image: {{ .Values.environmentController.image | quote }}
+          env:
+            - name: CLA_API_URL
+              value: {{ .Values.environmentController.apiURL | quote }}
+            - name: CLA_ORPHAN_SCAN_INTERVAL
+              value: {{ .Values.environmentController.orphanScanInterval | quote }}
+            - name: CLA_ORPHAN_GRACE_PERIOD
+              value: {{ .Values.environmentController.orphanGracePeriod | quote }}
+            - name: CLA_INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.environmentController.internalServiceTokenSecretName | quote }}
+                  key: token
+            - name: CLA_TARGET_SESSION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.environmentController.targetSessionKeySecretName | quote }}
+                  key: targetSessionKey
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]

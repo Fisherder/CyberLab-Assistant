@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cla.edu/contracts/workspace-type.schema.json",
+  "title": "WorkspaceType",
+  "type": "string",
+  "enum": ["TERMINAL", "REMOTE_DESKTOP", "SIMULATED"],
+  "description": "Phase one enables only TERMINAL. Other values are reserved and must return WORKSPACE_FEATURE_NOT_ENABLED when requested."
+}
+

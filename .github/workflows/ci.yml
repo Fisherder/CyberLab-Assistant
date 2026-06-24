@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cla
+          POSTGRES_PASSWORD: cla
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cla -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install alembic==1.14.0 fastapi==0.115.6 cryptography==43.0.3 pydantic==2.10.4 sqlalchemy==2.0.36 uvicorn==0.34.0 pytest==8.3.4 httpx==0.28.1 PyJWT==2.10.1 "psycopg[binary]==3.2.3" python-multipart==0.0.20 pyyaml==6.0.2 jsonschema==4.23.0
+      - run: python -m pytest services/api/tests
+        env:
+          CLA_TEST_POSTGRES_URL: postgresql+psycopg://cla:cla@localhost:5432/postgres
+      - run: python -m compileall services/api/src services/agent-runtime/src workers/temporal/src content/challenges/web-sqli-auth
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm --filter @cla/web typecheck
+      - run: pnpm --filter @cla/web build
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: go test ./packages/sessionwire/... ./services/terminal-gateway/... ./services/environment-controller/... ./runtime/sessiond/...

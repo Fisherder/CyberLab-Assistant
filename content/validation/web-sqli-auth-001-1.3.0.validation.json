@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "cla.validation-report/0.1",
+  "challengeVersionId": "cv_web_sqli_auth_1_3_0",
+  "artifactDigest": "sha256:dev-fixture-web-sqli-auth",
+  "overallStatus": "PASS",
+  "summary": {
+    "passed": 8,
+    "warnings": 1,
+    "blocked": 0
+  },
+  "checks": [
+    {
+      "id": "schema-lint",
+      "category": "SCHEMA",
+      "status": "PASS",
+      "title": "Manifest、topology、rubric、milestone 和 policy 文件校验通过",
+      "evidenceRefs": [
+        "challenge.schema.json",
+        "rubric.schema.json",
+        "policy/network.yaml"
+      ]
+    },
+    {
+      "id": "fixed-dependency-build",
+      "category": "BUILD",
+      "status": "PASS",
+      "title": "Workspace 与 target 镜像只从受限本地 fixture 上下文构建",
+      "evidenceRefs": [
+        "workspace/Dockerfile",
+        "target/Dockerfile"
+      ]
+    },
+    {
+      "id": "supply-chain-scan",
+      "category": "SCAN",
+      "status": "WARN",
+      "title": "开发标签镜像引用仅允许用于本地验证",
+      "evidenceRefs": [
+        "artifact:sbom:web-sqli-auth-001@1.3.0"
+      ]
+    },
+    {
+      "id": "isolated-startup",
+      "category": "RUNTIME",
+      "status": "PASS",
+      "title": "终端拓扑声明 workspace、target、默认拒绝网络和资源上限",
+      "evidenceRefs": [
+        "topology.yaml",
+        "policy/network.yaml"
+      ]
+    },
+    {
+      "id": "reference-solve",
+      "category": "SOLVE",
+      "status": "PASS",
+      "title": "参考路径能够到达外部可观测的认证绕过状态",
+      "evidenceRefs": [
+        "oracle/validator.py",
+        "target/server.py",
+        "rubric.yaml"
+      ]
+    },
+    {
+      "id": "negative-controls",
+      "category": "ORACLE",
+      "status": "PASS",
+      "title": "负例观测不能满足外部 Oracle 谓词",
+      "evidenceRefs": [
+        "oracle/validator.py",
+        "target/server.py"
+      ]
+    },
+    {
+      "id": "resource-budget",
+      "category": "RESOURCE",
+      "status": "PASS",
+      "title": "声明的 CPU、内存、存储和 TTL 符合一级终端实践限制",
+      "evidenceRefs": [
+        "manifest.yaml:spec.runtime"
+      ]
+    },
+    {
+      "id": "hint-leakage",
+      "category": "TUTOR",
+      "status": "PASS",
+      "title": "L1-L3 提示策略会阻断配置中的禁泄露类别",
+      "evidenceRefs": [
+        "manifest.yaml:spec.tutorPolicy",
+        "rubric.yaml"
+      ]
+    },
+    {
+      "id": "phase-one-workspace-boundary",
+      "category": "WORKSPACE",
+      "status": "PASS",
+      "title": "REMOTE_DESKTOP 和 SIMULATED 能力在一期被显式禁用",
+      "evidenceRefs": [
+        "manifest.yaml:spec.futureCapabilities"
+      ]
+    }
+  ],
+  "forbiddenDisclosuresChecked": [
+    "final_payload",
+    "dynamic_secret",
+    "teacher_solution"
+  ]
+}

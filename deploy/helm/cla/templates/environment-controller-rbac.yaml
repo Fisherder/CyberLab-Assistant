@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.environmentController.serviceAccountName | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cla-environment-controller
+rules:
+  - apiGroups: ["cla.edu"]
+    resources: ["labsessions"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["cla.edu"]
+    resources: ["labsessions/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["namespaces", "resourcequotas", "limitranges", "secrets", "services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cla-environment-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cla-environment-controller
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.environmentController.serviceAccountName | quote }}
+    namespace: {{ .Release.Namespace | quote }}

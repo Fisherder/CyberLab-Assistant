@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cla-terminal-gateway
+spec:
+  replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      app: cla-terminal-gateway
+  template:
+    metadata:
+      labels:
+        app: cla-terminal-gateway
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: gateway
+          image: {{ .Values.gateway.image | quote }}
+          ports:
+            - containerPort: 8081
+          env:
+            - name: CLA_API_URL
+              value: {{ .Values.gateway.apiURL | quote }}
+            - name: CLA_INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.gateway.internalServiceTokenSecretName | quote }}
+                  key: token
+            - name: CLA_GATEWAY_ADDR
+              value: ":8081"
+            - name: CLA_RECORDING_QUEUE_SIZE
+              value: {{ .Values.gateway.recordingQueueSize | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]

@@ -1,0 +1,25 @@
+[project]
+name = "cla-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic==1.14.0",
+  "boto3==1.35.90",
+  "fastapi==0.115.6",
+  "cryptography==43.0.3",
+  "pydantic==2.10.4",
+  "sqlalchemy==2.0.36",
+  "uvicorn==0.34.0",
+  "PyJWT==2.10.1",
+  "psycopg[binary]==3.2.3",
+  "python-multipart==0.0.20",
+  "jsonschema==4.23.0",
+  "pyyaml==6.0.2"
+]
+
+[project.optional-dependencies]
+test = ["pytest==8.3.4", "httpx==0.28.1"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

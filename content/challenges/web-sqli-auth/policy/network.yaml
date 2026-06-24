@@ -1,0 +1,16 @@
+egress: DENY_ALL
+ingress:
+  workspace:
+    allowFrom:
+      - terminal-gateway
+  target:
+    allowFrom:
+      - workspace
+      - oracle
+forbidden:
+  privileged: true
+  hostPath: true
+  hostNetwork: true
+  hostPID: true
+  automountServiceAccountToken: true
+

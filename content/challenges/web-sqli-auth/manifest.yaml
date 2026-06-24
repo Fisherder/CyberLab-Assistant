@@ -1,0 +1,60 @@
+apiVersion: cla.edu/v1
+kind: CyberChallenge
+metadata:
+  id: web-sqli-auth-001
+  version: 1.3.0
+  title: 登录逻辑与输入信任边界
+  license: internal-course
+spec:
+  category: WEB
+  modality: REAL_LAB
+  workspace:
+    type: TERMINAL
+    image: cla/workspace-web:dev
+    shell: /bin/bash
+    user: student
+    capabilities:
+      - curl
+      - python
+      - sqlmap-disabled
+    fileTransfer: CONTROLLED
+  learningObjectives:
+    - identify-input-trust-boundary
+    - validate-authentication-impact
+    - explain-parameterized-query
+  difficulty: 2
+  expectedMinutes: 75
+  prerequisites:
+    - http-basics
+    - sql-basics
+  runtime:
+    isolationTier: 1
+    cpu: "500m"
+    memory: "768Mi"
+    ephemeralStorage: "1Gi"
+    ttlMinutes: 90
+    maxResets: 2
+    egressPolicy: DENY_ALL
+  topologyRef: topology.yaml
+  randomization:
+    seedScope: PER_ATTEMPT
+    secretProvider: PLATFORM_INJECTED
+  successOracle:
+    type: EXTERNAL_HTTP_PREDICATE
+    validatorRef: oracle/validator.py
+    timeoutSeconds: 10
+  milestonesRef: milestones.yaml
+  tutorPolicy:
+    maxHintLevel: 3
+    autoHint: true
+    cooldownTurns: 3
+    forbiddenDisclosures:
+      - final_payload
+      - dynamic_secret
+      - teacher_solution
+  rubricRef: rubric.yaml
+  retentionPolicyRef: policy/retention.yaml
+  futureCapabilities:
+    remoteDesktop: false
+    simulatedWorkspace: false
+

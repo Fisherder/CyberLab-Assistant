@@ -1,0 +1,1166 @@
+openapi: 3.1.0
+info:
+  title: CLA Terminal Practice API
+  version: 0.1.0
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /me:
+    get:
+      summary: Current OIDC-derived user context
+      responses:
+        "200":
+          description: Current user, tenant, and roles
+  /courses:
+    post:
+      summary: Create a course and add the creator as TEACHER
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, title, term]
+              properties:
+                code: {type: string}
+                title: {type: string}
+                term: {type: string}
+      responses:
+        "201":
+          description: Course created
+  /courses/{courseId}/members/{userId}:
+    put:
+      summary: Add or update a course member role
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema: {type: string}
+        - in: path
+          name: userId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [STUDENT, TEACHER, TA]
+      responses:
+        "200":
+          description: Course member role upserted
+  /assignments:
+    post:
+      summary: Create an assignment from a published ChallengeVersion
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courseId, challengeVersionId, title]
+              properties:
+                courseId: {type: string}
+                challengeVersionId: {type: string}
+                title: {type: string}
+                openAt: {type: [string, "null"], format: date-time}
+                dueAt: {type: [string, "null"], format: date-time}
+                attemptPolicy: {type: object}
+      responses:
+        "201":
+          description: Assignment created
+        "409":
+          description: CHALLENGE_VERSION_NOT_PUBLISHED
+  /challenge-drafts:
+    post:
+      summary: Create a teacher Challenge-as-Code brief draft and parse typed CourseIntent
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courseId, brief]
+              properties:
+                courseId: {type: string}
+                brief: {type: string}
+                constraints: {type: object}
+      responses:
+        "201":
+          description: Parsed draft intent
+  /challenge-drafts/{draftId}/candidates:
+    get:
+      summary: Explainable hard-filtered Challenge Registry candidates
+      parameters:
+        - in: path
+          name: draftId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Candidate versions and rejected candidates with conflicts
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [draftId, status, courseIntent, candidates, rejectedCandidates]
+                properties:
+                  draftId: {type: string}
+                  status: {type: string}
+                  courseIntent: {type: object}
+                  candidates:
+                    type: array
+                    items: {$ref: "#/components/schemas/ChallengeCandidate"}
+                  rejectedCandidates:
+                    type: array
+                    items: {$ref: "#/components/schemas/ChallengeCandidate"}
+  /challenge-drafts/{draftId}/materialize:
+    post:
+      summary: Materialize a selected candidate into a validated pending ChallengeVersion
+      parameters:
+        - in: path
+          name: draftId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [selectedCandidateId]
+              properties:
+                selectedCandidateId: {type: string}
+      responses:
+        "200":
+          description: Pending ChallengeVersion with validation report URL
+        "422":
+          description: AUTHORING_HARD_CONSTRAINT_CONFLICT
+  /assignments/{assignmentId}/attempts:
+    post:
+      summary: Idempotently create a student attempt
+      parameters:
+        - in: path
+          name: assignmentId
+          required: true
+          schema: {type: string}
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string}
+      responses:
+        "202":
+          description: Attempt created or returned from idempotency key
+  /assignments/{assignmentId}/live:
+    get:
+      summary: Teacher live assignment monitor without raw terminal output
+      parameters:
+        - in: path
+          name: assignmentId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Aggregated live session status, stuck state, and alert counts
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assignmentId, title, generatedAt, summary, sessions]
+                properties:
+                  assignmentId:
+                    type: string
+                  title:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  summary:
+                    type: object
+                    required: [totalAttempts, readySessions, stuckSuspected, resourceAlerts, securityAlerts]
+                    properties:
+                      totalAttempts: {type: integer}
+                      readySessions: {type: integer}
+                      stuckSuspected: {type: integer}
+                      resourceAlerts: {type: integer}
+                      securityAlerts: {type: integer}
+                  sessions:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - attemptId
+                        - studentId
+                        - studentDisplayName
+                        - attemptStatus
+                        - workspaceType
+                        - latestAssessment
+                        - latestHint
+                        - alerts
+                      properties:
+                        attemptId: {type: string}
+                        studentId: {type: string}
+                        studentDisplayName: {type: string}
+                        attemptStatus: {type: string}
+                        workspaceType: {type: string, enum: [TERMINAL, REMOTE_DESKTOP, SIMULATED]}
+                        sessionStatus: {type: [string, "null"]}
+                        sessionEpoch: {type: [integer, "null"]}
+                        sessionExpiresAt: {type: [string, "null"], format: date-time}
+                        latestAssessment:
+                          type: [object, "null"]
+                        latestHint:
+                          type: [object, "null"]
+                        alerts:
+                          type: object
+                          required: [resource, security]
+                          properties:
+                            resource: {type: integer}
+                            security: {type: integer}
+                        latestEventAt: {type: [string, "null"], format: date-time}
+  /challenge-versions/{versionId}/validation:
+    get:
+      summary: Teacher-visible ChallengeVersion validation report
+      parameters:
+        - in: path
+          name: versionId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Latest validation run and report checks
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - challengeVersionId
+                  - challengeId
+                  - semver
+                  - versionStatus
+                  - artifactDigest
+                  - validationRunId
+                  - workflowId
+                  - status
+                  - reportRef
+                  - startedAt
+                  - endedAt
+                  - overallStatus
+                  - summary
+                  - checks
+                  - forbiddenDisclosuresChecked
+                properties:
+                  challengeVersionId: {type: string}
+                  challengeId: {type: string}
+                  semver: {type: string}
+                  versionStatus: {type: string}
+                  artifactDigest: {type: string}
+                  validationRunId: {type: string}
+                  workflowId: {type: string}
+                  status: {type: string}
+                  reportRef: {type: [string, "null"]}
+                  startedAt: {type: string, format: date-time}
+                  endedAt: {type: [string, "null"], format: date-time}
+                  overallStatus:
+                    type: string
+                    enum: [PASS, WARN, BLOCK]
+                  summary:
+                    type: object
+                    required: [passed, warnings, blocked]
+                    properties:
+                      passed: {type: integer}
+                      warnings: {type: integer}
+                      blocked: {type: integer}
+                  checks:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, category, status, title, evidenceRefs]
+                      properties:
+                        id: {type: string}
+                        category: {type: string}
+                        status:
+                          type: string
+                          enum: [PASS, WARN, BLOCK]
+                        title: {type: string}
+                        evidenceRefs:
+                          type: array
+                          items: {type: string}
+                  forbiddenDisclosuresChecked:
+                    type: array
+                    items: {type: string}
+  /challenge-versions/{versionId}/approve:
+    post:
+      summary: Teacher approval gate that publishes a validated ChallengeVersion
+      parameters:
+        - in: path
+          name: versionId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ChallengeVersion publication status
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - challengeVersionId
+                  - challengeId
+                  - semver
+                  - status
+                  - artifactDigest
+                  - validationRunId
+                  - validationStatus
+                  - overallStatus
+                  - published
+                  - alreadyPublished
+                properties:
+                  challengeVersionId: {type: string}
+                  challengeId: {type: string}
+                  semver: {type: string}
+                  status: {type: string}
+                  artifactDigest: {type: string}
+                  validationRunId: {type: string}
+                  validationStatus:
+                    type: string
+                    enum: [PASS, WARN]
+                  overallStatus:
+                    type: string
+                    enum: [PASS, WARN]
+                  published: {type: boolean}
+                  alreadyPublished: {type: boolean}
+        "409":
+          description: VALIDATION_REPORT_REQUIRED, VALIDATION_NOT_PASSING, or CHALLENGE_VERSION_NOT_PUBLISHABLE
+  /attempts/{attemptId}:
+    get:
+      summary: Read attempt state
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Attempt state without internal route information
+  /attempts/{attemptId}/sessions:
+    post:
+      summary: Ensure a terminal LabSession for an attempt
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "202":
+          description: LabSession ready or provisioning
+        "422":
+          description: WORKSPACE_FEATURE_NOT_ENABLED
+  /attempts/{attemptId}/sessions/reset:
+    post:
+      summary: Reset an attempt LabSession by creating a new session epoch and route
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "202":
+          description: New LabSession epoch ready or provisioning
+  /attempts/{attemptId}/terminal-ticket:
+    post:
+      summary: Issue a one-time terminal ticket
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Opaque ticket and websocket URL
+  /attempts/{attemptId}/tutor-state:
+    get:
+      summary: Evaluate current rule-first stuck state and latest hint
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Current tutor state
+  /attempts/{attemptId}/hints/request:
+    post:
+      summary: Request an L1-L3 static tutor hint
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                level:
+                  type: string
+                  enum: [L1, L2, L3]
+      responses:
+        "201":
+          description: Hint shown
+  /hints/{hintId}/feedback:
+    post:
+      summary: Submit hint feedback or disable automatic hints for the attempt
+      parameters:
+        - in: path
+          name: hintId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [feedback]
+              properties:
+                feedback:
+                  type: string
+                  enum: [ACCEPTED, LATER, MISJUDGED, AUTO_DISABLED]
+      responses:
+        "200":
+          description: Feedback recorded
+  /attempts/{attemptId}/submit:
+    post:
+      summary: Submit student explanation and start deterministic grading
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "202":
+          description: Submission accepted
+  /attempts/{attemptId}/grade:
+    get:
+      summary: Latest evidence-backed grade revision
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Latest grade revision
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - gradeRevisionId
+                  - attemptId
+                  - revisionNo
+                  - status
+                  - totalScore
+                  - independenceIndex
+                  - rubricVersion
+                  - graderVersion
+                  - publishedAt
+                  - criteria
+                properties:
+                  gradeRevisionId:
+                    type: string
+                  attemptId:
+                    type: string
+                  revisionNo:
+                    type: integer
+                  status:
+                    type: string
+                  totalScore:
+                    type: number
+                  independenceIndex:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                    description: Separate 0-1 index affected by shown hints; it does not lower totalScore.
+                  rubricVersion:
+                    type: string
+                  graderVersion:
+                    type: string
+                  publishedAt:
+                    type: string
+                    format: date-time
+                  criteria:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - criterionId
+                        - score
+                        - maxScore
+                        - graderType
+                        - confidence
+                        - explanation
+                        - evidenceRefs
+                      properties:
+                        criterionId:
+                          type: string
+                        score:
+                          type: number
+                        maxScore:
+                          type: number
+                        graderType:
+                          type: string
+                        confidence:
+                          type: number
+                        explanation:
+                          type: string
+                        evidenceRefs:
+                          type: array
+                          items:
+                            type: string
+  /grades/{gradeRevisionId}/appeals:
+    post:
+      summary: Submit an appeal for a grade revision
+      parameters:
+        - in: path
+          name: gradeRevisionId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [criterionId, reason]
+              properties:
+                criterionId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        "201":
+          description: Appeal created
+  /appeals/{appealId}/resolve:
+    post:
+      summary: Resolve an appeal and optionally append a teacher override revision
+      parameters:
+        - in: path
+          name: appealId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, resolution]
+              properties:
+                decision:
+                  type: string
+                  enum: [UPHOLD_ORIGINAL, OVERRIDE_SCORE]
+                resolution:
+                  type: string
+                criterionOverrides:
+                  type: array
+                  items:
+                    type: object
+                    required: [criterionId, score, explanation]
+                    properties:
+                      criterionId:
+                        type: string
+                      score:
+                        type: number
+                      explanation:
+                        type: string
+      responses:
+        "200":
+          description: Appeal resolved
+  /internal/attempts/{attemptId}/events:
+    post:
+      summary: Internal append-only event ingestion for gateway, sessiond, shell hook, and oracle-adjacent services
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "202":
+          description: Events appended
+  /internal/attempts/{attemptId}/sessions/{sessionEpoch}/route:
+    post:
+      summary: Internal route registration for environment-controller to bind route_ref to sessiond
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+        - in: path
+          name: sessionEpoch
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteRegistrationRequest"
+      responses:
+        "202":
+          description: Route registered
+  /internal/attempts/{attemptId}/sessions/{sessionEpoch}/route/unregister:
+    post:
+      summary: Internal route unregistration for environment-controller cleanup
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+        - in: path
+          name: sessionEpoch
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteUnregisterRequest"
+      responses:
+        "202":
+          description: Route unregistered
+  /internal/attempts/{attemptId}/sessions/{sessionEpoch}/tickets/revoke:
+    post:
+      summary: Internal ticket revocation for environment-controller TTL and finalizer cleanup
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+        - in: path
+          name: sessionEpoch
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketRevokeRequest"
+      responses:
+        "202":
+          description: Outstanding terminal tickets revoked
+  /internal/attempts/{attemptId}/transcript-segments:
+    post:
+      summary: Internal transcript segment index ingestion without raw terminal payload
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranscriptSegmentIndexRequest"
+      responses:
+        "202":
+          description: Transcript segment indexed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptSegmentIndexResponse"
+  /internal/attempts/{attemptId}/transcript-segments/upload:
+    post:
+      summary: Internal encrypted transcript segment object write plus index creation
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranscriptSegmentUploadRequest"
+      responses:
+        "202":
+          description: Transcript object encrypted and segment indexed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptSegmentUploadResponse"
+  /internal/attempts/{attemptId}/transcript-segments/verify-restore:
+    post:
+      summary: Internal restore verifier for encrypted transcript segment objects
+      security:
+        - serviceToken: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranscriptRestoreVerifyRequest"
+      responses:
+        "200":
+          description: Restore verification result without terminal plaintext
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptRestoreVerifyResponse"
+  /internal/transcript-segments/apply-retention:
+    post:
+      summary: Internal transcript retention sweep for expired encrypted segment objects
+      security:
+        - serviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranscriptRetentionApplyRequest"
+      responses:
+        "200":
+          description: Retention sweep result without terminal plaintext
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptRetentionApplyResponse"
+  /internal/terminal/tickets/consume:
+    post:
+      summary: Terminal Gateway consumes a one-time ticket and receives internal route details
+      security:
+        - serviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsumeTerminalTicketRequest"
+      responses:
+        "200":
+          description: Internal route returned to Gateway only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalTerminalRoute"
+  /internal/oracle/attempts/{attemptId}/observations:
+    post:
+      summary: External oracle submits signed objective evidence
+      security:
+        - oracleSignature: []
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: {type: string}
+      responses:
+        "202":
+          description: Oracle observation accepted
+components:
+  schemas:
+    ConsumeTerminalTicketRequest:
+      type: object
+      required:
+        - ticket
+      properties:
+        ticket: {type: string}
+    RouteRegistrationRequest:
+      type: object
+      required:
+        - routeRef
+        - endpoint
+        - protocol
+      properties:
+        routeRef: {type: string}
+        endpoint: {type: string}
+        protocol:
+          type: string
+          enum: [tcp-sessionwire]
+    RouteUnregisterRequest:
+      type: object
+      required:
+        - routeRef
+      properties:
+        routeRef: {type: string}
+    TicketRevokeRequest:
+      type: object
+      required:
+        - routeRef
+      properties:
+        routeRef: {type: string}
+    TranscriptSegmentIndexRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - sessionEpoch
+        - direction
+        - seqFrom
+        - seqTo
+        - objectRef
+        - sha256
+      properties:
+        sessionEpoch:
+          type: integer
+          minimum: 1
+        direction:
+          $ref: "#/components/schemas/TranscriptDirection"
+        seqFrom:
+          type: integer
+          minimum: 0
+        seqTo:
+          type: integer
+          minimum: 0
+          description: Must be greater than or equal to seqFrom.
+        objectRef:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Server-issued object reference; raw terminal bytes are not sent on this endpoint.
+        sha256:
+          type: string
+          pattern: "^(sha256:)?[0-9a-fA-F]{64}$"
+        redactionState:
+          type: string
+          enum: [RAW, REDACTED, ENCRYPTED, INDEX_ONLY]
+          default: INDEX_ONLY
+    TranscriptSegmentUploadRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - sessionEpoch
+        - direction
+        - seqFrom
+        - seqTo
+        - segmentBase64
+      properties:
+        sessionEpoch:
+          type: integer
+          minimum: 1
+        direction:
+          $ref: "#/components/schemas/TranscriptDirection"
+        seqFrom:
+          type: integer
+          minimum: 0
+        seqTo:
+          type: integer
+          minimum: 0
+          description: Must be greater than or equal to seqFrom.
+        segmentBase64:
+          type: string
+          minLength: 1
+          contentEncoding: base64
+          description: Base64-encoded terminal segment bytes; the API encrypts before indexing.
+    TranscriptSegmentIndexResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - segmentId
+        - attemptId
+      properties:
+        segmentId: {type: string}
+        attemptId: {type: string}
+    TranscriptSegmentUploadResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - segmentId
+        - attemptId
+        - objectRef
+        - objectSha256
+        - plaintextSha256
+        - byteCount
+      properties:
+        segmentId: {type: string}
+        attemptId: {type: string}
+        objectRef:
+          type: string
+          description: Server-generated encrypted object reference for internal evidence indexing.
+        objectSha256:
+          type: string
+          pattern: "^sha256:[0-9a-fA-F]{64}$"
+        plaintextSha256:
+          type: string
+          pattern: "^sha256:[0-9a-fA-F]{64}$"
+        byteCount:
+          type: integer
+          minimum: 0
+    TranscriptRestoreVerifyRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionEpoch:
+          type: [integer, "null"]
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+    TranscriptRestoreVerifyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - attemptId
+        - checked
+        - passed
+        - failed
+        - restorable
+        - results
+      properties:
+        attemptId: {type: string}
+        checked:
+          type: integer
+          minimum: 0
+        passed:
+          type: integer
+          minimum: 0
+        failed:
+          type: integer
+          minimum: 0
+        restorable:
+          type: boolean
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - segmentId
+              - epoch
+              - direction
+              - seqFrom
+              - seqTo
+              - objectRef
+              - status
+              - code
+              - byteCount
+            properties:
+              segmentId: {type: string}
+              epoch:
+                type: integer
+                minimum: 1
+              direction:
+                $ref: "#/components/schemas/TranscriptDirection"
+              seqFrom:
+                type: integer
+                minimum: 0
+              seqTo:
+                type: integer
+                minimum: 0
+              objectRef: {type: string}
+              status:
+                type: string
+                enum: [PASS, FAIL]
+              code:
+                type: [string, "null"]
+                enum:
+                  - UNSUPPORTED_OBJECT_REF
+                  - OBJECT_NOT_FOUND
+                  - OBJECT_FORMAT_INVALID
+                  - OBJECT_HASH_MISMATCH
+                  - OBJECT_DECRYPT_FAILED
+                  - OBJECT_READ_FAILED
+                  - null
+              byteCount:
+                type: [integer, "null"]
+                minimum: 0
+    TranscriptRetentionApplyRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        olderThanDays:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 3650
+          description: Optional override. When omitted, the API resolves the ChallengeVersion retention policy for each segment.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1000
+        dryRun:
+          type: boolean
+          default: true
+    TranscriptRetentionApplyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - cutoff
+        - dryRun
+        - candidates
+        - deleted
+        - skipped
+        - failed
+        - results
+      properties:
+        cutoff:
+          type: [string, "null"]
+          format: date-time
+        dryRun: {type: boolean}
+        candidates:
+          type: integer
+          minimum: 0
+        deleted:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+        failed:
+          type: integer
+          minimum: 0
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - segmentId
+              - attemptId
+              - objectRef
+              - retentionDays
+              - policyRef
+              - status
+              - code
+            properties:
+              segmentId: {type: string}
+              attemptId: {type: string}
+              objectRef: {type: string}
+              retentionDays:
+                type: integer
+                minimum: 1
+              policyRef:
+                type: string
+              status:
+                type: string
+                enum: [CANDIDATE, DELETED, SKIPPED, FAIL]
+              code:
+                type: [string, "null"]
+                enum:
+                  - DELETED
+                  - MISSING
+                  - UNSUPPORTED_OBJECT_REF
+                  - OBJECT_DELETE_FAILED
+                  - null
+    TranscriptDirection:
+      type: string
+      enum: [INPUT, OUTPUT]
+    InternalTerminalRoute:
+      type: object
+      required:
+        - tenantId
+        - attemptId
+        - sessionId
+        - sessionEpoch
+        - sessionRoute
+        - permissions
+      properties:
+        tenantId: {type: string}
+        attemptId: {type: string}
+        sessionId: {type: string}
+        sessionEpoch: {type: integer}
+        sessionRoute:
+          type: object
+          required:
+            - routeRef
+            - endpoint
+            - protocol
+          properties:
+            routeRef: {type: string}
+            endpoint: {type: string}
+            protocol:
+              type: string
+              enum: [tcp-sessionwire]
+        permissions:
+          type: array
+          items: {type: string}
+    ChallengeCandidate:
+      type: object
+      required:
+        - candidateId
+        - challengeId
+        - challengeVersionId
+        - title
+        - semver
+        - artifactDigest
+        - riskTier
+        - score
+        - constraintsSatisfied
+        - matchReasons
+        - conflicts
+        - validationStatus
+      properties:
+        candidateId: {type: string}
+        challengeId: {type: string}
+        challengeVersionId: {type: string}
+        title: {type: string}
+        semver: {type: string}
+        artifactDigest: {type: string}
+        riskTier: {type: integer}
+        score: {type: number}
+        constraintsSatisfied: {type: boolean}
+        matchReasons:
+          type: array
+          items: {type: string}
+        conflicts:
+          type: array
+          items: {type: string}
+        validationStatus: {type: string}
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    serviceToken:
+      type: apiKey
+      in: header
+      name: X-CLA-Service-Token
+    oracleSignature:
+      type: apiKey
+      in: header
+      name: X-CLA-Oracle-Signature

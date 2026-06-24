@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cla.edu/contracts/labsession.schema.json",
+  "title": "LabSession",
+  "type": "object",
+  "required": ["id", "attemptId", "epoch", "workspaceType", "runtimeTier", "status", "expiresAt"],
+  "properties": {
+    "id": {"type": "string"},
+    "attemptId": {"type": "string"},
+    "epoch": {"type": "integer", "minimum": 1},
+    "workspaceType": {"$ref": "workspace-type.schema.json"},
+    "runtimeTier": {"type": "integer", "enum": [1, 2]},
+    "status": {"type": "string", "enum": ["PROVISIONING", "READY", "RUNNING", "FAILED", "EXPIRED", "DESTROYED"]},
+    "routeRef": {
+      "type": "string",
+      "description": "Server-side opaque route. Never returned to browsers."
+    },
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "workflowId": {"type": "string"}
+  },
+  "additionalProperties": false
+}
+

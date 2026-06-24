@@ -1,0 +1,10 @@
+{
+  "oracleVersion": "web-sqli-auth-oracle/1.3.0",
+  "passed": true,
+  "targetSessionKey": "target-session-boundary-state",
+  "evidence": {
+    "predicate": "auth_bypass_observed",
+    "target": "external"
+  }
+}
+

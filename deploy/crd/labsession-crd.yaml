@@ -1,0 +1,103 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: labsessions.cla.edu
+spec:
+  group: cla.edu
+  scope: Namespaced
+  names:
+    plural: labsessions
+    singular: labsession
+    kind: LabSession
+    shortNames:
+      - zls
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - tenantId
+                - attemptId
+                - epoch
+                - workspaceType
+                - routeRef
+              properties:
+                tenantId:
+                  type: string
+                attemptId:
+                  type: string
+                epoch:
+                  type: integer
+                  minimum: 1
+                workspaceType:
+                  type: string
+                  enum:
+                    - TERMINAL
+                    - REMOTE_DESKTOP
+                    - SIMULATED
+                runtimeClassName:
+                  type: string
+                  default: gvisor
+                ttlSeconds:
+                  type: integer
+                  minimum: 60
+                routeRef:
+                  type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Provisioning
+                    - Ready
+                    - Failed
+                    - Expired
+                    - Terminating
+                observedGeneration:
+                  type: integer
+                  format: int64
+                namespaceName:
+                  type: string
+                routeReady:
+                  type: boolean
+                components:
+                  type: object
+                  additionalProperties:
+                    type: string
+                    enum:
+                      - Pending
+                      - Ready
+                      - Failed
+                expiresAt:
+                  type: string
+                  format: date-time
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                reason:
+                  type: string
+      subresources:
+        status: {}

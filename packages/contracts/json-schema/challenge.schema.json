@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cla.edu/contracts/challenge.schema.json",
+  "title": "CyberChallenge",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {"const": "cla.edu/v1"},
+    "kind": {"const": "CyberChallenge"},
+    "metadata": {
+      "type": "object",
+      "required": ["id", "version", "title", "license"],
+      "properties": {
+        "id": {"type": "string"},
+        "version": {"type": "string"},
+        "title": {"type": "string"},
+        "license": {"type": "string"}
+      }
+    },
+    "spec": {
+      "type": "object",
+      "required": ["category", "modality", "workspace", "runtime", "successOracle", "rubricRef"],
+      "properties": {
+        "category": {"type": "string"},
+        "modality": {"const": "REAL_LAB"},
+        "workspace": {
+          "type": "object",
+          "required": ["type", "shell", "user"],
+          "properties": {
+            "type": {"$ref": "workspace-type.schema.json"},
+            "image": {"type": "string"},
+            "shell": {"type": "string"},
+            "user": {"type": "string"},
+            "capabilities": {"type": "array", "items": {"type": "string"}},
+            "fileTransfer": {"type": "string", "enum": ["DISABLED", "CONTROLLED"]}
+          }
+        },
+        "learningObjectives": {"type": "array", "items": {"type": "string"}},
+        "difficulty": {"type": "integer", "minimum": 1, "maximum": 5},
+        "expectedMinutes": {"type": "integer", "minimum": 1},
+        "runtime": {
+          "type": "object",
+          "required": ["isolationTier", "ttlMinutes", "egressPolicy"],
+          "properties": {
+            "isolationTier": {"type": "integer", "enum": [1, 2]},
+            "cpu": {"type": "string"},
+            "memory": {"type": "string"},
+            "ephemeralStorage": {"type": "string"},
+            "ttlMinutes": {"type": "integer"},
+            "maxResets": {"type": "integer"},
+            "egressPolicy": {"type": "string", "enum": ["DENY_ALL", "ALLOWLIST"]}
+          }
+        },
+        "successOracle": {"type": "object"},
+        "rubricRef": {"type": "string"},
+        "futureCapabilities": {
+          "type": "object",
+          "properties": {
+            "remoteDesktop": {"type": "boolean"},
+            "simulatedWorkspace": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
+

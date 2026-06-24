@@ -1,0 +1,35 @@
+api:
+  image: cla/api:dev
+  replicas: 1
+  transcriptStorage:
+    backend: s3
+    objectRoot: /tmp/cla-transcript-objects
+    s3Bucket: cla-transcript-raw
+    s3Prefix: terminal-transcripts
+    s3EndpointURL: ""
+    s3Region: us-east-1
+    s3ForcePathStyle: false
+    encryptionKeySecretName: cla-transcript-encryption
+web:
+  image: cla/web:dev
+  replicas: 1
+gateway:
+  image: cla/terminal-gateway:dev
+  replicas: 1
+  apiURL: http://cla-api:8000
+  recordingQueueSize: 1024
+  internalServiceTokenSecretName: cla-internal-service
+environmentController:
+  image: cla/environment-controller:dev
+  replicas: 1
+  serviceAccountName: cla-environment-controller
+  apiURL: http://cla-api:8000
+  orphanScanInterval: 5m
+  orphanGracePeriod: 10m
+  internalServiceTokenSecretName: cla-internal-service
+  targetSessionKeySecretName: cla-target-session
+features:
+  remoteDesktop: false
+  simulatedWorkspace: false
+runtime:
+  defaultRuntimeClassName: gvisor

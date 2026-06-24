@@ -1,0 +1,7 @@
+apiVersion: v2
+name: cla
+description: CLA terminal-first cyber practice platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+

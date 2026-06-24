@@ -1,0 +1,19 @@
+rubricVersion: web-sqli-auth-001@1.3.0-rubric.1
+criteria:
+  - id: oracle-auth-bypass
+    title: External oracle observes authentication bypass
+    graderType: DETERMINISTIC_ORACLE
+    maxScore: 60
+    evidencePolicy:
+      minTrustLevel: S4
+      requiredEventTypes:
+        - oracle.observed
+  - id: root-cause-explanation
+    title: Root cause and mitigation explanation
+    graderType: EVENT_PATTERN
+    maxScore: 40
+    evidencePolicy:
+      minTrustLevel: S3
+      requiredEventTypes:
+        - attempt.submitted
+

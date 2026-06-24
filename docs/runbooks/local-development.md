@@ -1,0 +1,301 @@
+# CLA 本地开发运行手册
+
+本文用于在本机运行和验证 CyberLab Assistant（CLA）一期终端切片。完整需求基线见 [cla_terminal_first_complete_development_spec.html](/Users/fisherder/Desktop/研究生/Security_Class_Tool/cla_terminal_first_complete_development_spec.html)。
+
+## 本地环境要求
+
+建议环境：
+
+- Python 3.12。
+- 项目根目录 `.venv`。
+- Go 1.22 或仓库现有 `/tmp/cla-go/go/bin/go`。
+- Node.js 与 pnpm。
+- Docker Desktop 或 OrbStack，用于 Compose live smoke。
+- 可选 Kubernetes 开发集群，用于 CRD/Helm live smoke。
+
+如果只开发 API 或文档，不需要 Docker daemon。若要跑真实终端 E2E，需要 API、Gateway、sessiond、target 和 Web 同时可用。
+
+## 环境变量
+
+本地 API 常用变量：
+
+```bash
+export PYTHONPATH=services/api/src
+export CLA_DATABASE_URL=sqlite:///./cla-dev.db
+export CLA_DEV_MODE=true
+export CLA_GATEWAY_URL=ws://localhost:8081/ws/terminal
+export CLA_SESSIOND_ENDPOINT=127.0.0.1:7777
+export CLA_INTERNAL_SERVICE_TOKEN=change-me-internal
+export CLA_TERMINAL_TICKET_SECRET=change-me-terminal-ticket
+export CLA_ORACLE_SHARED_SECRET=change-me-oracle
+export CLA_TRANSCRIPT_STORAGE_BACKEND=local
+export CLA_TRANSCRIPT_OBJECT_ROOT=/tmp/cla-transcript-objects
+export CLA_REMOTE_DESKTOP_ENABLED=false
+export CLA_SIMULATED_WORKSPACE_ENABLED=false
+```
+
+安全说明：
+
+- 本地默认密钥只用于开发，不得进入生产。
+- 生产必须使用 Secret 管理数据库、内部 token、Oracle secret、票据 secret 和对象存储凭据。
+- `CLA_REMOTE_DESKTOP_ENABLED` 和 `CLA_SIMULATED_WORKSPACE_ENABLED` 在一期必须保持 `false`。
+
+## 启动 API
+
+```bash
+export PYTHONPATH=services/api/src
+export CLA_DATABASE_URL=sqlite:///./cla-dev.db
+export CLA_DEV_MODE=true
+.venv/bin/uvicorn cla.main:app --reload --app-dir services/api/src
+```
+
+健康检查：
+
+```bash
+curl http://localhost:8000/healthz
+```
+
+预期返回：
+
+```json
+{"ok":true,"agentRuntimeEnabled":false}
+```
+
+## 生成开发 token
+
+```bash
+PYTHONPATH=services/api/src .venv/bin/python -m cla.dev_tokens
+```
+
+脚本会输出教师和学生 token。使用 Web 工作台时，把学生 token 写入浏览器 localStorage：
+
+```javascript
+localStorage.setItem("claDevToken", "<student-token>")
+```
+
+教师页面使用教师 token：
+
+```javascript
+localStorage.setItem("claDevToken", "<teacher-token>")
+```
+
+开发 token 只在 `CLA_DEV_MODE=true` 时使用。
+
+## 执行数据库迁移
+
+SQLite 本地开发默认由应用初始化表。需要显式执行 Alembic 时：
+
+```bash
+cd services/api
+../../.venv/bin/python -m alembic upgrade head
+```
+
+PostgreSQL smoke：
+
+```bash
+CLA_TEST_POSTGRES_URL=postgresql+psycopg://cla:cla@localhost:5432/postgres \
+  .venv/bin/python -m pytest services/api/tests/test_alembic_migrations.py
+```
+
+## 启动 Gateway
+
+Gateway 需要 API 可访问。
+
+```bash
+cd services/terminal-gateway
+CLA_API_URL=http://localhost:8000 \
+CLA_INTERNAL_SERVICE_TOKEN=change-me-internal \
+CLA_GATEWAY_ADDR=:8081 \
+go run ./cmd/gateway
+```
+
+健康检查：
+
+```bash
+curl http://localhost:8081/healthz
+```
+
+指标：
+
+```bash
+curl http://localhost:8081/metrics
+```
+
+## 启动 sessiond
+
+sessiond 必须以 non-root 运行。不要使用 root 或带特权的容器运行它。
+
+```bash
+cd runtime/sessiond
+CLA_SESSIOND_ADDR=127.0.0.1:7777 \
+CLA_WORKSPACE_SHELL=/bin/bash \
+CLA_WORKSPACE_DIR=/tmp \
+go run ./cmd/sessiond
+```
+
+若看到 `cla-sessiond refuses to run as root`，说明当前用户是 root，应切换到普通用户。
+
+## 启动 Web
+
+```bash
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web dev
+```
+
+默认访问：
+
+```text
+http://localhost:3000
+```
+
+Web 页面依赖 `localStorage.claDevToken`。没有 token 时 API 会返回认证失败。
+
+## Compose 本地栈
+
+解析配置：
+
+```bash
+docker compose -f deploy/compose/docker-compose.yml config
+```
+
+构建：
+
+```bash
+docker compose -f deploy/compose/docker-compose.yml build
+```
+
+启动：
+
+```bash
+docker compose -f deploy/compose/docker-compose.yml up
+```
+
+服务端口：
+
+| 服务 | 端口 |
+|---|---|
+| API | `8000` |
+| Gateway | `8081` |
+| Postgres | `5432` |
+| Redis | `6379` |
+| MinIO API | `9000` |
+| MinIO Console | `9001` |
+| 示例 target | `18080` |
+
+注意：Compose 只用于可信本地开发，不能承载不可信学生正式实验。
+
+## 运行测试
+
+API：
+
+```bash
+.venv/bin/python -m pytest services/api/tests
+```
+
+Go：
+
+```bash
+env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sessionwire/... ./services/terminal-gateway/... ./services/environment-controller/... ./runtime/sessiond/...
+```
+
+Web：
+
+```bash
+env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
+env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
+```
+
+内容验证：
+
+```bash
+PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output content/validation/web-sqli-auth-001-1.3.0.validation.json
+```
+
+## 手动纵向验证路径
+
+在 API、Gateway、sessiond 和 Web 都启动后：
+
+1. 生成开发 token。
+2. 打开 `http://localhost:3000`。
+3. 写入学生 token 到 `localStorage.claDevToken`。
+4. 进入学生工作台。
+5. 点击开始，创建 Attempt 和 LabSession。
+6. API 返回一次性终端票据，Web 建立 WebSocket。
+7. 在终端中执行命令。
+8. 提交解释。
+9. 查看成绩证据页。
+10. 提交申诉。
+
+如果 Gateway 显示票据拒绝，检查：
+
+- API 是否正在运行。
+- `CLA_INTERNAL_SERVICE_TOKEN` 是否一致。
+- 票据是否超过 60 秒。
+- 是否重复使用同一个 nonce。
+- reset 后是否仍使用旧票据。
+
+## 常见问题
+
+### API 启动后没有种子数据
+
+确认：
+
+- `CLA_DATABASE_URL` 是否指向预期数据库。
+- 是否删除过 `cla-dev.db`。
+- `seed_dev_data` 是否执行。
+
+可重新删除本地数据库后启动 API。注意本地数据库被 `.gitignore` 忽略，不应提交。
+
+### Web typecheck 报 `.next/types` 缺失
+
+先运行 build，再运行 typecheck。不要并行运行二者。
+
+```bash
+env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
+env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
+```
+
+### Compose 不能连接 Docker daemon
+
+确认 Docker Desktop 或 OrbStack 正在运行。若当前环境没有 daemon，只能运行静态 `docker compose config`，不能把 live Compose 标记为已验证。
+
+### Gateway 无法连接 sessiond
+
+检查：
+
+- sessiond 是否监听 `127.0.0.1:7777`。
+- API 中 LabSession 的 `route_endpoint` 是否匹配。
+- reset 后是否刷新了 session epoch。
+- 防火墙或容器网络是否阻断。
+
+### Oracle 观测被拒绝
+
+检查：
+
+- `CLA_ORACLE_SHARED_SECRET` 是否一致。
+- payload 是否按规范 JSON 计算签名。
+- `targetSessionKey` 是否匹配当前 Attempt。
+- `X-CLA-Oracle-Signature` Header 是否存在。
+
+### 终端没有输出
+
+检查：
+
+- WebSocket 是否连接。
+- Gateway 是否收到 `SERVER_STATUS=CONNECTED`。
+- sessiond 是否成功启动 shell。
+- 浏览器是否发送 binary frame。
+- Gateway 指标中的 terminal bytes 是否增加。
+
+## 上课前必须检查
+
+正式上课或演示前至少检查：
+
+- `CLA_REMOTE_DESKTOP_ENABLED=false`
+- `CLA_SIMULATED_WORKSPACE_ENABLED=false`
+- Gateway 通过票据消费接口解析路由。
+- 浏览器响应不包含 route、Pod 名称、容器 IP 或 sessiond 地址。
+- sessiond 以 non-root 运行。
+- Oracle 观测带签名。
+- 终端录制故障不影响终端。
+- Agent Runtime 关闭时终端和客观评分仍可运行。
+- 状态文档记录了本次实际运行命令和结果。

@@ -1,0 +1,16 @@
+milestones:
+  - id: inspect-login
+    title: Inspect login behavior
+    evidence:
+      eventPattern: terminal.command.completed
+      commandClass: http_request
+  - id: validate-impact
+    title: Validate authentication impact
+    evidence:
+      eventPattern: oracle.observed
+      trust: S4
+  - id: explain-boundary
+    title: Explain input trust boundary
+    evidence:
+      submissionQuestion: root-cause
+
