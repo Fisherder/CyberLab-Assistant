@@ -10,6 +10,8 @@ import pytest
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 
+from cla.database import init_db
+
 
 ROOT = Path(__file__).resolve().parents[3]
 API_ROOT = ROOT / "services/api"
@@ -81,6 +83,52 @@ def test_alembic_upgrade_head_creates_versioned_core_schema(tmp_path: Path) -> N
     command.upgrade(alembic_config(db_url), "head")
 
     assert_core_schema(db_url)
+
+
+def test_init_db_reconciles_legacy_sqlite_appeals_schema(tmp_path: Path) -> None:
+    db_url = f"sqlite+pysqlite:///{tmp_path / 'cla-legacy-dev.db'}"
+    engine = create_engine(db_url, future=True)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE appeals (
+                        id VARCHAR(64) PRIMARY KEY,
+                        grade_revision_id VARCHAR(64) NOT NULL,
+                        student_id VARCHAR(64) NOT NULL,
+                        reason TEXT NOT NULL,
+                        status VARCHAR(32) NOT NULL,
+                        resolution TEXT,
+                        resolved_by VARCHAR(64),
+                        created_at DATETIME
+                    )
+                    """
+                )
+            )
+
+        init_db(engine)
+
+        appeal_columns = {
+            column["name"] for column in inspect(engine).get_columns("appeals")
+        }
+        assert "criterion_id" in appeal_columns
+
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO appeals (
+                        id, grade_revision_id, criterion_id, student_id, reason, status
+                    ) VALUES (
+                        'ap_test', 'gr_test', 'root-cause-explanation', 'u_student',
+                        '请复核解释项。', 'OPEN'
+                    )
+                    """
+                )
+            )
+    finally:
+        engine.dispose()
 
 
 def test_alembic_upgrade_head_on_postgresql_when_configured() -> None:

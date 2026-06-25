@@ -73,6 +73,12 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.dev_tokens
 localStorage.setItem("claDevToken", "<student-token>")
 ```
 
+也可以在本地验证时通过 URL hash 一次性写入，页面会读取后自动清理地址栏中的 token：
+
+```text
+http://localhost:3000/#claDevToken=<student-token>
+```
+
 教师页面使用教师 token：
 
 ```javascript
@@ -137,9 +143,24 @@ go run ./cmd/sessiond
 
 ## 启动 Web
 
+开发模式：
+
 ```bash
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web dev
 ```
+
+构建后 smoke 模式：
+
+```bash
+env CI=true NEXT_PUBLIC_CLA_API_BASE= CLA_API_INTERNAL_BASE=http://127.0.0.1:8000 \
+  /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
+cp -R apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
+cd apps/web/.next/standalone/apps/web
+HOSTNAME=:: PORT=3000 NEXT_PUBLIC_CLA_API_BASE= CLA_API_INTERNAL_BASE=http://127.0.0.1:8000 \
+  node server.js
+```
+
+注意：standalone 服务必须从 `apps/web/.next/standalone/apps/web` 作为工作目录启动，并且要把 `apps/web/.next/static` 复制到该目录的 `.next/static`。否则浏览器会出现 chunk 404 或 `ChunkLoadError`。
 
 默认访问：
 
@@ -224,6 +245,9 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output 
 8. 提交解释。
 9. 查看成绩证据页。
 10. 提交申诉。
+11. 教师打开 `/teacher/challenges/cv_web_sqli_auth_1_3_0/validation` 查看验证报告。
+12. 教师打开 `/teacher/assignments/asg_web_sqli_auth/live` 查看 live monitor。
+13. 教师通过 `/api/v1/appeals/{appeal_id}/resolve` 复核申诉，确认生成新的 GradeRevision。
 
 如果 Gateway 显示票据拒绝，检查：
 

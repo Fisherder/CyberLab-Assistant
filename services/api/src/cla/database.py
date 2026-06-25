@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -37,6 +37,26 @@ def init_db(engine: Engine) -> None:
     from cla import models  # noqa: F401
 
     Base.metadata.create_all(engine)
+    _reconcile_sqlite_development_schema(engine)
+
+
+def _reconcile_sqlite_development_schema(engine: Engine) -> None:
+    if engine.dialect.name != "sqlite":
+        return
+
+    inspector = inspect(engine)
+    if "appeals" not in inspector.get_table_names():
+        return
+
+    appeal_columns = {column["name"] for column in inspector.get_columns("appeals")}
+    if "criterion_id" in appeal_columns:
+        return
+
+    # 本地 SQLite 开发库可能来自旧版本；create_all 不会自动补齐既有表列。
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE appeals ADD COLUMN criterion_id VARCHAR(120)")
+        )
 
 
 def session_scope(SessionLocal: sessionmaker[Session]) -> Generator[Session, None, None]:
@@ -49,4 +69,3 @@ def session_scope(SessionLocal: sessionmaker[Session]) -> Generator[Session, Non
         raise
     finally:
         db.close()
-

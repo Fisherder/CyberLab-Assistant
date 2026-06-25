@@ -52,6 +52,12 @@ export function TerminalWorkbench() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const devToken = params.get("claDevToken");
+    if (devToken) {
+      window.localStorage.setItem("claDevToken", devToken);
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
     return () => wsRef.current?.close();
   }, []);
 
@@ -103,7 +109,7 @@ export function TerminalWorkbench() {
     term.loadAddon(fit);
     term.open(target);
     fit.fit();
-    const wsUrl = new URL(url);
+    const wsUrl = resolveBrowserWebSocketUrl(url);
     wsUrl.searchParams.set("ticket", ticket);
     if (lastServerSequenceRef.current !== null) {
       wsUrl.searchParams.set("last_server_sequence", String(lastServerSequenceRef.current));
@@ -356,6 +362,19 @@ function sendJsonFrame(ws: WebSocket, frameType: number, payload: Record<string,
   frame[0] = frameType;
   frame.set(body, 1);
   ws.send(frame);
+}
+
+function resolveBrowserWebSocketUrl(url: string): URL {
+  const wsUrl = new URL(url);
+  const pageHost = window.location.hostname;
+  const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+
+  if (localHosts.has(wsUrl.hostname) && pageHost && !localHosts.has(pageHost)) {
+    wsUrl.hostname = pageHost;
+    wsUrl.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  }
+
+  return wsUrl;
 }
 
 function readJsonFrame(bytes: Uint8Array): Record<string, unknown> {
