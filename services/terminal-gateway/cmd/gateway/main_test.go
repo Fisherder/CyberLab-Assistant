@@ -187,12 +187,8 @@ func TestTerminalHandlerRecordsConnectionByteAndBackpressureMetrics(t *testing.T
 	if got := string(stdout[9:]); got != "world" {
 		t.Fatalf("stdout payload = %q, want world", got)
 	}
-	if got := metricValue(t, registry, "cla_terminal_gateway_terminal_bytes_total", map[string]string{"direction": "stdin"}); got != 5 {
-		t.Fatalf("stdin bytes = %f, want 5", got)
-	}
-	if got := metricValue(t, registry, "cla_terminal_gateway_terminal_bytes_total", map[string]string{"direction": "stdout"}); got != 5 {
-		t.Fatalf("stdout bytes = %f, want 5", got)
-	}
+	waitForMetric(t, registry, "cla_terminal_gateway_terminal_bytes_total", map[string]string{"direction": "stdin"}, 5)
+	waitForMetric(t, registry, "cla_terminal_gateway_terminal_bytes_total", map[string]string{"direction": "stdout"}, 5)
 	if pending := metricValue(t, registry, "cla_terminal_gateway_unacked_window_bytes", nil); pending != float64(len(stdout)) {
 		t.Fatalf("unacked bytes = %f, want %d", pending, len(stdout))
 	}
