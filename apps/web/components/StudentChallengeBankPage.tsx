@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft,
   BookOpenCheck,
   Clock,
   ExternalLink,
@@ -12,6 +11,7 @@ import {
   TerminalSquare,
   Trash2
 } from "lucide-react";
+import { StudentWorkspaceShell } from "./StudentWorkspaceShell";
 import {
   destroyStudentChallengeBankEnvironment,
   fetchStudentChallengeBank,
@@ -102,19 +102,17 @@ export function StudentChallengeBankPage() {
   }
 
   return (
-    <main className="student-bank-shell">
-      <header className="registry-header">
-        <div>
-          <Link className="backlink" href="/">
-            <ArrowLeft size={16} /> Workbench
-          </Link>
-          <h1>学生题库</h1>
-          <span>{items.length} 个可见题目</span>
-        </div>
-        <button className="iconbutton" type="button" onClick={loadItems} disabled={loading !== ""}>
-          <RefreshCw size={16} /> 刷新
-        </button>
-      </header>
+    <StudentWorkspaceShell active="bank">
+      <main className="student-bank-shell">
+        <header className="registry-header">
+          <div>
+            <h1>学生题库</h1>
+            <span>{items.length} 个可见题目</span>
+          </div>
+          <button className="iconbutton" type="button" onClick={loadItems} disabled={loading !== ""}>
+            <RefreshCw size={16} /> 刷新
+          </button>
+        </header>
 
       {error ? <div className="error banner">{error}</div> : null}
       {message ? <div className="status-note">{message}</div> : null}
@@ -140,6 +138,9 @@ export function StudentChallengeBankPage() {
                   {formatDate(item.openAt)} - {formatDate(item.dueAt)}
                 </span>
                 {item.hasEnvironment ? <span className="pill good">已获取环境</span> : null}
+                <span className={`pill ${item.completed ? "good" : "warn"}`}>
+                  {item.completed ? "已完成" : "未完成"}
+                </span>
               </div>
             </button>
           ))}
@@ -165,6 +166,18 @@ export function StudentChallengeBankPage() {
                 <div className="student-time">
                   <Clock size={16} />
                   <span>{formatDate(selected.openAt)} - {formatDate(selected.dueAt)}</span>
+                </div>
+                <div className="student-completion-summary">
+                  <div>
+                    <span>完成状态</span>
+                    <strong>{selected.completed ? "已完成" : "未完成"}</strong>
+                  </div>
+                  {selected.completed ? (
+                    <div>
+                      <span>当前得分</span>
+                      <strong>{formatScore(selected.latestScore)}</strong>
+                    </div>
+                  ) : null}
                 </div>
                 <h3>题目说明</h3>
                 <p>{selected.description}</p>
@@ -222,7 +235,8 @@ export function StudentChallengeBankPage() {
           )}
         </aside>
       </section>
-    </main>
+      </main>
+    </StudentWorkspaceShell>
   );
 }
 
@@ -259,6 +273,10 @@ function stateLabel(value: string): string {
   if (value === "NOT_STARTED") return "未开始";
   if (value === "ENDED") return "已结束";
   return "不可用";
+}
+
+function formatScore(score?: number | null): string {
+  return typeof score === "number" ? `${score.toFixed(1)} / 100` : "--";
 }
 
 function readError(err: unknown): string {

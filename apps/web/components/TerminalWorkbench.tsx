@@ -1,38 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Ban,
   BookOpenCheck,
-  Cable,
-  ClipboardCheck,
   FileText,
   Lightbulb,
-  LogOut,
   Play,
   RefreshCcw,
+  RefreshCw,
   Send,
-  ShieldCheck,
+  TerminalSquare,
   ThumbsUp
 } from "lucide-react";
 import {
-  createAttempt,
-  clearAuthToken,
   ensureSession,
   fetchGrade,
   fetchMe,
+  fetchStudentChallengeBank,
   fetchTutorState,
   hasAuthToken,
   requestHint,
   resetSession,
   sendHintFeedback,
-  submitAnswer,
   setDevToken,
+  submitAnswer,
   terminalTicket,
   type GradeResponse,
+  type StudentChallengeBankItemResponse,
   type TutorStateResponse
 } from "../lib/api";
+import { StudentWorkspaceShell } from "./StudentWorkspaceShell";
 
 type ConnectionState = "idle" | "provisioning" | "connected" | "closed" | "error";
 
@@ -48,14 +47,35 @@ const SERVER_ERROR = 0x1f;
 export function TerminalWorkbench() {
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const cleanupConnectionRef = useRef<(() => void) | null>(null);
   const lastServerSequenceRef = useRef<number | null>(null);
-  const [attemptId, setAttemptId] = useState<string>("");
-  const [session, setSession] = useState<string>("");
+  const selectedAttemptRef = useRef("");
+  const contextRequestRef = useRef(0);
+  const [items, setItems] = useState<StudentChallengeBankItemResponse[]>([]);
+  const [selectedAttemptId, setSelectedAttemptId] = useState("");
+  const [session, setSession] = useState("");
   const [state, setState] = useState<ConnectionState>("idle");
-  const [answer, setAnswer] = useState("");
+  const [answerByAttempt, setAnswerByAttempt] = useState<Record<string, string>>({});
   const [grade, setGrade] = useState<GradeResponse | null>(null);
   const [tutor, setTutor] = useState<TutorStateResponse | null>(null);
   const [error, setError] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [loadingEnvironments, setLoadingEnvironments] = useState(false);
+  const [loadingContext, setLoadingContext] = useState(false);
+
+  const runningItems = useMemo(
+    () => items.filter((item) => item.hasEnvironment && item.attemptId),
+    [items]
+  );
+  const selectedItem = useMemo(
+    () => runningItems.find((item) => item.attemptId === selectedAttemptId) ?? null,
+    [runningItems, selectedAttemptId]
+  );
+  const answer = selectedAttemptId ? answerByAttempt[selectedAttemptId] ?? "" : "";
+
+  useEffect(() => {
+    selectedAttemptRef.current = selectedAttemptId;
+  }, [selectedAttemptId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -64,16 +84,11 @@ export function TerminalWorkbench() {
       setDevToken(devToken);
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
-    const query = new URLSearchParams(window.location.search);
-    const queryAttemptId = query.get("attemptId");
-    if (queryAttemptId) {
-      setAttemptId(queryAttemptId);
-    }
     if (!hasAuthToken()) {
       window.location.replace(
         `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
       );
-      return;
+      return undefined;
     }
     void fetchMe()
       .then((me) => {
@@ -86,47 +101,141 @@ export function TerminalWorkbench() {
           `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
         );
       });
-    return () => wsRef.current?.close();
+
+    const query = new URLSearchParams(window.location.search);
+    void loadRunningItems(query.get("attemptId") ?? "");
+    return () => closeTerminalSurface();
   }, []);
 
-  function logout() {
-    clearAuthToken();
-    window.location.href = "/login";
+  useEffect(() => {
+    closeTerminalSurface();
+    lastServerSequenceRef.current = null;
+    setError("");
+    setMessage("");
+    if (!selectedAttemptId) {
+      setState("idle");
+      setSession("");
+      setGrade(null);
+      setTutor(null);
+      setLoadingContext(false);
+      replaceAttemptQuery("");
+      return;
+    }
+    setState("idle");
+    setSession(formatSession(selectedItem));
+    replaceAttemptQuery(selectedAttemptId);
+    void loadAttemptContext(selectedAttemptId);
+  }, [selectedAttemptId]);
+
+  useEffect(() => {
+    if (selectedAttemptId && selectedItem) {
+      setSession(formatSession(selectedItem));
+    }
+  }, [selectedAttemptId, selectedItem?.sessionId, selectedItem?.sessionStatus]);
+
+  async function loadRunningItems(preferredAttemptId = "") {
+    setError("");
+    setLoadingEnvironments(true);
+    try {
+      const result = await fetchStudentChallengeBank();
+      const nextRunning = result.items.filter((item) => item.hasEnvironment && item.attemptId);
+      setItems(result.items);
+      setSelectedAttemptId((current) => {
+        const preferred = preferredAttemptId || current;
+        if (preferred && nextRunning.some((item) => item.attemptId === preferred)) {
+          return preferred;
+        }
+        return nextRunning[0]?.attemptId ?? "";
+      });
+    } catch (err) {
+      setError(readError(err));
+    } finally {
+      setLoadingEnvironments(false);
+    }
+  }
+
+  async function loadAttemptContext(nextAttemptId: string) {
+    const requestNo = contextRequestRef.current + 1;
+    contextRequestRef.current = requestNo;
+    setLoadingContext(true);
+    setGrade(null);
+    setTutor(null);
+    const [tutorResult, gradeResult] = await Promise.allSettled([
+      fetchTutorState(nextAttemptId),
+      fetchGrade(nextAttemptId)
+    ]);
+    if (contextRequestRef.current !== requestNo || selectedAttemptRef.current !== nextAttemptId) {
+      return;
+    }
+    if (tutorResult.status === "fulfilled") {
+      setTutor(tutorResult.value);
+    } else {
+      setError(readError(tutorResult.reason));
+    }
+    if (gradeResult.status === "fulfilled") {
+      setGrade(gradeResult.value);
+    } else if (readError(gradeResult.reason) !== "NOT_FOUND") {
+      setError(readError(gradeResult.reason));
+    }
+    setLoadingContext(false);
+  }
+
+  function chooseAttempt(nextAttemptId: string) {
+    if (nextAttemptId === selectedAttemptId) return;
+    setSelectedAttemptId(nextAttemptId);
+  }
+
+  function updateAnswer(value: string) {
+    if (!selectedAttemptId) return;
+    setAnswerByAttempt((current) => ({ ...current, [selectedAttemptId]: value }));
   }
 
   async function start() {
+    if (!selectedAttemptId) {
+      setError("请先在题库获取容器，然后回到终端界面选择题目。");
+      return;
+    }
     setError("");
+    setMessage("");
     setState("provisioning");
     try {
-      const isReconnect = Boolean(attemptId);
-      if (!isReconnect) lastServerSequenceRef.current = null;
-      const attempt = isReconnect ? { attemptId } : await createAttempt();
-      setAttemptId(attempt.attemptId);
-      const lab = await ensureSession(attempt.attemptId);
+      const currentAttemptId = selectedAttemptId;
+      const lab = await ensureSession(currentAttemptId);
+      if (selectedAttemptRef.current !== currentAttemptId) return;
       setSession(`${lab.sessionId} / epoch ${lab.sessionEpoch}`);
-      setTutor(await fetchTutorState(attempt.attemptId));
-      const ticket = await terminalTicket(attempt.attemptId);
+      const nextTutor = await fetchTutorState(currentAttemptId);
+      if (selectedAttemptRef.current !== currentAttemptId) return;
+      setTutor(nextTutor);
+      const ticket = await terminalTicket(currentAttemptId);
+      if (selectedAttemptRef.current !== currentAttemptId) return;
       await connect(ticket.websocketUrl, ticket.ticket);
     } catch (err) {
       setState("error");
-      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+      setError(readError(err));
     }
   }
 
   async function resetLab() {
-    if (!attemptId) return;
+    if (!selectedAttemptId) return;
     setError("");
+    setMessage("");
     setState("provisioning");
     try {
+      const currentAttemptId = selectedAttemptId;
       lastServerSequenceRef.current = null;
-      const lab = await resetSession(attemptId);
+      const lab = await resetSession(currentAttemptId);
+      if (selectedAttemptRef.current !== currentAttemptId) return;
       setSession(`${lab.sessionId} / epoch ${lab.sessionEpoch}`);
-      setTutor(await fetchTutorState(attemptId));
-      const ticket = await terminalTicket(attemptId);
+      const nextTutor = await fetchTutorState(currentAttemptId);
+      if (selectedAttemptRef.current !== currentAttemptId) return;
+      setTutor(nextTutor);
+      await loadRunningItems(currentAttemptId);
+      const ticket = await terminalTicket(currentAttemptId);
+      if (selectedAttemptRef.current !== currentAttemptId) return;
       await connect(ticket.websocketUrl, ticket.ticket);
     } catch (err) {
       setState("error");
-      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+      setError(readError(err));
     }
   }
 
@@ -135,8 +244,7 @@ export function TerminalWorkbench() {
     const { FitAddon } = await import("@xterm/addon-fit");
     const target = terminalRef.current;
     if (!target) return;
-    wsRef.current?.close();
-    target.innerHTML = "";
+    closeTerminalSurface();
     const term = new Terminal({ convertEol: true, cursorBlink: true, fontSize: 13 });
     const fit = new FitAddon();
     term.loadAddon(fit);
@@ -151,6 +259,7 @@ export function TerminalWorkbench() {
     ws.binaryType = "arraybuffer";
     let heartbeatId: number | undefined;
     let resizeId: number | undefined;
+    let cleaned = false;
     const sendResize = () => {
       if (ws.readyState !== WebSocket.OPEN) return;
       fit.fit();
@@ -160,6 +269,18 @@ export function TerminalWorkbench() {
       window.clearTimeout(resizeId);
       resizeId = window.setTimeout(sendResize, 150);
     };
+    const cleanupConnection = () => {
+      if (cleaned) return;
+      cleaned = true;
+      if (heartbeatId !== undefined) window.clearInterval(heartbeatId);
+      window.clearTimeout(resizeId);
+      window.removeEventListener("resize", onResize);
+      term.dispose();
+      if (cleanupConnectionRef.current === cleanupConnection) {
+        cleanupConnectionRef.current = null;
+      }
+    };
+    cleanupConnectionRef.current = cleanupConnection;
     ws.onopen = () => {
       setState("connected");
       term.focus();
@@ -193,19 +314,17 @@ export function TerminalWorkbench() {
       }
     };
     ws.onclose = () => {
-      if (heartbeatId !== undefined) window.clearInterval(heartbeatId);
-      window.clearTimeout(resizeId);
-      window.removeEventListener("resize", onResize);
-      term.dispose();
+      cleanupConnection();
+      if (wsRef.current === ws) wsRef.current = null;
       setState("closed");
     };
     ws.onerror = () => {
-      if (heartbeatId !== undefined) window.clearInterval(heartbeatId);
-      window.clearTimeout(resizeId);
-      window.removeEventListener("resize", onResize);
+      cleanupConnection();
+      if (wsRef.current === ws) wsRef.current = null;
       setState("error");
     };
     term.onData((data) => {
+      if (ws.readyState !== WebSocket.OPEN) return;
       const payload = new TextEncoder().encode(data);
       const frame = new Uint8Array(payload.length + 1);
       frame[0] = CLIENT_STDIN;
@@ -215,184 +334,248 @@ export function TerminalWorkbench() {
     wsRef.current = ws;
   }
 
+  function closeTerminalSurface() {
+    const ws = wsRef.current;
+    if (ws) {
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.onmessage = null;
+      ws.close();
+      wsRef.current = null;
+    }
+    cleanupConnectionRef.current?.();
+    cleanupConnectionRef.current = null;
+    if (terminalRef.current) terminalRef.current.innerHTML = "";
+  }
+
   async function submit() {
-    if (!attemptId) return;
+    if (!selectedAttemptId || answer.trim().length === 0) return;
     setError("");
+    setMessage("");
     try {
-      await submitAnswer(attemptId, answer);
-      setGrade(await fetchGrade(attemptId));
-      setTutor(await fetchTutorState(attemptId));
+      await submitAnswer(selectedAttemptId, answer);
+      setGrade(await fetchGrade(selectedAttemptId));
+      setTutor(await fetchTutorState(selectedAttemptId));
+      await loadRunningItems(selectedAttemptId);
+      setMessage("提交完成，成绩已刷新。");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+      setError(readError(err));
     }
   }
 
   async function askHint(level: "L1" | "L2" | "L3") {
-    if (!attemptId) return;
+    if (!selectedAttemptId) return;
     setError("");
+    setMessage("");
     try {
-      await requestHint(attemptId, level);
-      setTutor(await fetchTutorState(attemptId));
+      await requestHint(selectedAttemptId, level);
+      setTutor(await fetchTutorState(selectedAttemptId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+      setError(readError(err));
     }
   }
 
   async function giveHintFeedback(feedback: "ACCEPTED" | "LATER" | "MISJUDGED" | "AUTO_DISABLED") {
     if (!tutor?.latestHint) return;
     setError("");
+    setMessage("");
     try {
       await sendHintFeedback(tutor.latestHint.hintId, feedback);
       setTutor(await fetchTutorState(tutor.attemptId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+      setError(readError(err));
     }
   }
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <strong>CLA</strong>
-          <span>WEBSEC-101 · web-sqli-auth</span>
-        </div>
-        <div className="nav">
-          <button className="active" type="button">
-            <Cable size={16} /> Terminal
-          </button>
-          <button type="button">
-            <ClipboardCheck size={16} /> Evidence
-          </button>
-          <button type="button">
-            <ShieldCheck size={16} /> Appeal
-          </button>
-          <Link className="navlink" href="/student/challenge-bank">
-            <BookOpenCheck size={16} /> 题库
-          </Link>
-        </div>
-        <div className="sidebar-actions">
-          <button type="button" onClick={logout}>
-            <LogOut size={16} /> 退出登录
-          </button>
-        </div>
-      </aside>
-      <main className="main">
-        <header className="topline">
-          <div>
-            <div className="label">当前 Attempt</div>
-            <strong>{attemptId || "未创建"}</strong>
-          </div>
-          <div className="statusline">
+    <StudentWorkspaceShell active="terminal">
+      <main className="student-terminal-main">
+        <section className="student-terminal-workspace">
+          <header className="terminal-topline">
+            <div>
+              <div className="label">终端连接题目</div>
+              <h1>{selectedItem?.title ?? "请选择已开启的题目环境"}</h1>
+            </div>
+            <div className="terminal-selector">
+              <label htmlFor="runningChallenge">题目环境</label>
+              <select
+                id="runningChallenge"
+                className="select"
+                value={selectedAttemptId}
+                onChange={(event) => chooseAttempt(event.target.value)}
+                disabled={loadingEnvironments || runningItems.length === 0}
+              >
+                {runningItems.length === 0 ? (
+                  <option value="">暂无已开启容器</option>
+                ) : (
+                  runningItems.map((item) => (
+                    <option key={item.attemptId ?? item.itemId} value={item.attemptId ?? ""}>
+                      {item.title} · {item.sessionStatus ?? "UNKNOWN"}
+                    </option>
+                  ))
+                )}
+              </select>
+              <button
+                className="iconbutton"
+                type="button"
+                onClick={() => loadRunningItems(selectedAttemptId)}
+                disabled={loadingEnvironments}
+              >
+                <RefreshCw size={16} /> 刷新
+              </button>
+            </div>
+          </header>
+
+          {message ? <div className="status-note">{message}</div> : null}
+
+          <div className="terminal-selected-meta">
             <span className={`pill ${state === "connected" ? "good" : "warn"}`}>{state}</span>
             <span className="pill">{session || "no session"}</span>
-          </div>
-        </header>
-        <section className="terminalwrap">
-          <div className="terminal" ref={terminalRef} />
-        </section>
-        <footer className="actions">
-          <button className="toolbutton primary" type="button" onClick={start}>
-            <Play size={16} /> {attemptId ? "连接终端" : "启动"}
-          </button>
-          <button className="toolbutton" type="button" onClick={start}>
-            <RefreshCcw size={16} /> 重连
-          </button>
-          <button className="toolbutton" type="button" onClick={resetLab} disabled={!attemptId}>
-            <RefreshCcw size={16} /> 重置
-          </button>
-        </footer>
-      </main>
-      <aside className="assist">
-        <div className="stack">
-          <section className="panel">
-            <h3>辅助</h3>
-            <div className="tutor-state">
-              <span className={`pill ${tutor?.assessment.state === "CONFIRMED" ? "warn" : "good"}`}>
-                {tutor ? `${tutor.assessment.state} · ${Math.round(tutor.assessment.score * 100)}%` : "未评估"}
-              </span>
-              <span className="meta">
-                {tutor?.autoHintsEnabled === false ? "自动提示已关闭" : "自动提示开启"}
-              </span>
-            </div>
-            <div className="hint-buttons">
-              <button className="toolbutton" type="button" onClick={() => askHint("L1")} disabled={!attemptId}>
-                <Lightbulb size={16} /> L1
-              </button>
-              <button className="toolbutton" type="button" onClick={() => askHint("L2")} disabled={!attemptId}>
-                <Lightbulb size={16} /> L2
-              </button>
-              <button className="toolbutton" type="button" onClick={() => askHint("L3")} disabled={!attemptId}>
-                <Lightbulb size={16} /> L3
-              </button>
-            </div>
-            {tutor?.latestHint ? (
-              <div className="hint-card">
-                <div className="hint-card-title">
-                  <strong>
-                    {tutor.latestHint.level} · {tutor.latestHint.status}
-                  </strong>
-                  <span>{tutor.latestHint.tutorVersion}</span>
-                </div>
-                <p>{tutor.latestHint.content}</p>
-                <div className="hint-evidence">
-                  {tutor.latestHint.evidenceRefs.map((ref) => (
-                    <code key={ref}>{ref}</code>
-                  ))}
-                </div>
-                <div className="hint-actions">
-                  <button type="button" onClick={() => giveHintFeedback("ACCEPTED")}>
-                    <ThumbsUp size={14} /> 接受
-                  </button>
-                  <button type="button" onClick={() => giveHintFeedback("LATER")}>
-                    稍后
-                  </button>
-                  <button type="button" onClick={() => giveHintFeedback("MISJUDGED")}>
-                    这不是卡住
-                  </button>
-                  <button type="button" onClick={() => giveHintFeedback("AUTO_DISABLED")}>
-                    <Ban size={14} /> 关闭自动提示
-                  </button>
-                </div>
-              </div>
+            {selectedItem ? (
+              <>
+                <span className={`pill ${selectedItem.completed ? "good" : "warn"}`}>
+                  {selectedItem.completed ? `已完成 · ${formatScore(selectedItem.latestScore)}` : "未完成"}
+                </span>
+                <span className="pill">Attempt {selectedItem.attemptId}</span>
+              </>
             ) : null}
-          </section>
-          <section className="panel">
-            <h2>提交</h2>
-            <textarea className="answer" value={answer} onChange={(event) => setAnswer(event.target.value)} />
-            <button className="toolbutton primary" type="button" onClick={submit}>
-              <Send size={16} /> 提交
-            </button>
-          </section>
-          <section className="panel">
-            <h3>成绩证据</h3>
-            <div className="evidence">
-              {grade ? (
-                <>
-                  <div>
-                    <span>Total</span>
-                    <strong>{grade.totalScore}</strong>
-                  </div>
-                  {grade.criteria.map((criterion) => (
-                    <div key={criterion.criterionId}>
-                      <span>{criterion.criterionId}</span>
-                      <strong>
-                        {criterion.score}/{criterion.maxScore}
-                      </strong>
-                    </div>
-                  ))}
-                  <Link className="evidence-link" href={`/student/grades/${attemptId}`}>
-                    <FileText size={16} /> 完整证据页
-                  </Link>
-                </>
-              ) : (
-                <span className="meta">no grade</span>
-              )}
+          </div>
+
+          {runningItems.length === 0 ? (
+            <div className="empty-state terminal-empty">
+              <TerminalSquare size={28} />
+              <strong>还没有可连接的题目环境</strong>
+              <span>请先到题库打开题目详情，点击“获取容器”。</span>
+              <Link className="evidence-link" href="/student/challenge-bank">
+                <BookOpenCheck size={16} /> 前往题库
+              </Link>
             </div>
-          </section>
-          {error ? <div className="error">{error}</div> : null}
-        </div>
-      </aside>
-    </div>
+          ) : (
+            <>
+              <section className="terminalwrap">
+                <div className="terminal" ref={terminalRef} />
+              </section>
+              <footer className="actions">
+                <button className="toolbutton primary" type="button" onClick={start} disabled={!selectedAttemptId}>
+                  <Play size={16} /> 连接终端
+                </button>
+                <button className="toolbutton" type="button" onClick={start} disabled={!selectedAttemptId}>
+                  <RefreshCcw size={16} /> 重连
+                </button>
+                <button className="toolbutton" type="button" onClick={resetLab} disabled={!selectedAttemptId}>
+                  <RefreshCcw size={16} /> 重置
+                </button>
+              </footer>
+            </>
+          )}
+        </section>
+
+        <aside className="assist student-terminal-assist">
+          <div className="stack">
+            <section className="panel">
+              <h3>辅助</h3>
+              <div className="tutor-state">
+                <span className={`pill ${tutor?.assessment.state === "CONFIRMED" ? "warn" : "good"}`}>
+                  {loadingContext
+                    ? "加载中"
+                    : tutor
+                      ? `${tutor.assessment.state} · ${Math.round(tutor.assessment.score * 100)}%`
+                      : "未评估"}
+                </span>
+                <span className="meta">
+                  {tutor?.autoHintsEnabled === false ? "自动提示已关闭" : "自动提示开启"}
+                </span>
+              </div>
+              <div className="hint-buttons">
+                <button className="toolbutton" type="button" onClick={() => askHint("L1")} disabled={!selectedAttemptId}>
+                  <Lightbulb size={16} /> L1
+                </button>
+                <button className="toolbutton" type="button" onClick={() => askHint("L2")} disabled={!selectedAttemptId}>
+                  <Lightbulb size={16} /> L2
+                </button>
+                <button className="toolbutton" type="button" onClick={() => askHint("L3")} disabled={!selectedAttemptId}>
+                  <Lightbulb size={16} /> L3
+                </button>
+              </div>
+              {tutor?.latestHint ? (
+                <div className="hint-card">
+                  <div className="hint-card-title">
+                    <strong>
+                      {tutor.latestHint.level} · {tutor.latestHint.status}
+                    </strong>
+                    <span>{tutor.latestHint.tutorVersion}</span>
+                  </div>
+                  <p>{tutor.latestHint.content}</p>
+                  <div className="hint-evidence">
+                    {tutor.latestHint.evidenceRefs.map((ref) => (
+                      <code key={ref}>{ref}</code>
+                    ))}
+                  </div>
+                  <div className="hint-actions">
+                    <button type="button" onClick={() => giveHintFeedback("ACCEPTED")}>
+                      <ThumbsUp size={14} /> 接受
+                    </button>
+                    <button type="button" onClick={() => giveHintFeedback("LATER")}>
+                      稍后
+                    </button>
+                    <button type="button" onClick={() => giveHintFeedback("MISJUDGED")}>
+                      这不是卡住
+                    </button>
+                    <button type="button" onClick={() => giveHintFeedback("AUTO_DISABLED")}>
+                      <Ban size={14} /> 关闭自动提示
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+            <section className="panel">
+              <h2>提交</h2>
+              <textarea
+                className="answer"
+                value={answer}
+                onChange={(event) => updateAnswer(event.target.value)}
+                disabled={!selectedAttemptId}
+              />
+              <button
+                className="toolbutton primary"
+                type="button"
+                onClick={submit}
+                disabled={!selectedAttemptId || answer.trim().length === 0}
+              >
+                <Send size={16} /> 提交
+              </button>
+            </section>
+            <section className="panel">
+              <h3>成绩证据</h3>
+              <div className="evidence">
+                {grade ? (
+                  <>
+                    <div>
+                      <span>Total</span>
+                      <strong>{grade.totalScore.toFixed(1)}</strong>
+                    </div>
+                    {grade.criteria.map((criterion) => (
+                      <div key={criterion.criterionId}>
+                        <span>{criterion.criterionId}</span>
+                        <strong>
+                          {criterion.score}/{criterion.maxScore}
+                        </strong>
+                      </div>
+                    ))}
+                    <Link className="evidence-link" href={`/student/grades/${selectedAttemptId}`}>
+                      <FileText size={16} /> 完整证据页
+                    </Link>
+                  </>
+                ) : (
+                  <span className="meta">{loadingContext ? "加载中" : "暂无成绩"}</span>
+                )}
+              </div>
+            </section>
+            {error ? <div className="error">{error}</div> : null}
+          </div>
+        </aside>
+      </main>
+    </StudentWorkspaceShell>
   );
 }
 
@@ -425,4 +608,22 @@ function readJsonFrame(bytes: Uint8Array): Record<string, unknown> {
 function readServerSequence(bytes: Uint8Array): number {
   const view = new DataView(bytes.buffer, bytes.byteOffset + 1, 8);
   return Number(view.getBigUint64(0, false));
+}
+
+function formatSession(item: StudentChallengeBankItemResponse | null): string {
+  if (!item?.sessionId) return "no session";
+  return `${item.sessionId} / ${item.sessionStatus ?? "UNKNOWN"}`;
+}
+
+function formatScore(score?: number | null): string {
+  return typeof score === "number" ? `${score.toFixed(1)} / 100` : "--";
+}
+
+function replaceAttemptQuery(attemptId: string) {
+  const suffix = attemptId ? `?attemptId=${encodeURIComponent(attemptId)}` : "";
+  window.history.replaceState(null, "", `/student/terminal${suffix}`);
+}
+
+function readError(err: unknown): string {
+  return err instanceof Error ? err.message : "UNKNOWN_ERROR";
 }

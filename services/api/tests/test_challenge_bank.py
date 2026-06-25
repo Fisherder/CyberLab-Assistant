@@ -82,6 +82,9 @@ def test_teacher_bank_lifecycle_and_student_visibility(
     assert student_item["itemId"] == draft["itemId"]
     assert student_item["clickable"] is False
     assert student_item["disabledReason"] == "题目还未开始"
+    assert student_item["completionStatus"] == "INCOMPLETE"
+    assert student_item["completed"] is False
+    assert student_item["latestScore"] is None
 
     start_too_early = client.post(
         f"/api/v1/student/challenge-bank/{draft['itemId']}/start",
@@ -170,8 +173,51 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     first = first_start.json()
     assert first["reusedAttempt"] is False
     assert first["targetUrl"].startswith("http://127.0.0.1:18080")
+    assert first["terminalUrl"] == f"/student/terminal?attemptId={first['attemptId']}"
     assert "route" not in first
     assert "sessiond" not in str(first).lower()
+
+    before_submit = client.get("/api/v1/student/challenge-bank", headers=auth(student_token))
+    assert before_submit.status_code == 200, before_submit.text
+    first_item_before_submit = next(
+        item for item in before_submit.json()["items"] if item["itemId"] == item_one["itemId"]
+    )
+    assert first_item_before_submit["completionStatus"] == "INCOMPLETE"
+    assert first_item_before_submit["completed"] is False
+    assert first_item_before_submit["latestScore"] is None
+    assert first_item_before_submit["terminalUrl"] == f"/student/terminal?attemptId={first['attemptId']}"
+
+    submitted = client.post(
+        f"/api/v1/attempts/{first['attemptId']}/submit",
+        headers={**auth(student_token), "If-Match": '"attempt-version-1"'},
+        json={
+            "answers": [
+                {
+                    "questionId": "root-cause",
+                    "format": "MARKDOWN",
+                    "content": "根因是输入信任边界处理错误，应使用参数化查询。",
+                    "clientDraftId": "bank-draft-1",
+                }
+            ],
+            "requestOracleCheck": True,
+        },
+    )
+    assert submitted.status_code == 202, submitted.text
+    after_submit = client.get("/api/v1/student/challenge-bank", headers=auth(student_token))
+    assert after_submit.status_code == 200, after_submit.text
+    first_item_after_submit = next(
+        item for item in after_submit.json()["items"] if item["itemId"] == item_one["itemId"]
+    )
+    second_item_after_submit = next(
+        item for item in after_submit.json()["items"] if item["itemId"] == item_two["itemId"]
+    )
+    assert first_item_after_submit["completionStatus"] == "COMPLETED"
+    assert first_item_after_submit["completed"] is True
+    assert first_item_after_submit["latestScore"] == 40.0
+    assert first_item_after_submit["gradeRevisionId"]
+    assert second_item_after_submit["completionStatus"] == "INCOMPLETE"
+    assert second_item_after_submit["completed"] is False
+    assert second_item_after_submit["latestScore"] is None
 
     other_student_start = client.post(
         f"/api/v1/student/challenge-bank/{item_one['itemId']}/start",
@@ -181,6 +227,13 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     other = other_student_start.json()
     assert other["attemptId"] != first["attemptId"]
     assert other["sessionId"] != first["sessionId"]
+    other_student_list = client.get("/api/v1/student/challenge-bank", headers=auth(other_student_token))
+    assert other_student_list.status_code == 200, other_student_list.text
+    other_student_item = next(
+        item for item in other_student_list.json()["items"] if item["itemId"] == item_one["itemId"]
+    )
+    assert other_student_item["completed"] is False
+    assert other_student_item["latestScore"] is None
 
     repeated_start = client.post(
         f"/api/v1/student/challenge-bank/{item_one['itemId']}/start",
@@ -200,6 +253,7 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     second = second_start.json()
     assert second["attemptId"] != first["attemptId"]
     assert second["assignmentId"] != first["assignmentId"]
+    assert second["terminalUrl"] == f"/student/terminal?attemptId={second['attemptId']}"
 
     ticket = client.post(
         f"/api/v1/attempts/{first['attemptId']}/terminal-ticket",

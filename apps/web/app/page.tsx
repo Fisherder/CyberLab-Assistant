@@ -1,6 +1,5 @@
-import { TerminalWorkbench } from "../components/TerminalWorkbench";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <TerminalWorkbench />;
+  redirect("/student/challenge-bank");
 }
-

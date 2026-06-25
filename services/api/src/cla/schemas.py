@@ -277,6 +277,10 @@ class StudentChallengeBankItemView(BaseModel):
     openAt: datetime
     dueAt: datetime
     attemptId: str | None = None
+    completionStatus: str = "INCOMPLETE"
+    completed: bool = False
+    latestScore: float | None = None
+    gradeRevisionId: str | None = None
     hasEnvironment: bool = False
     sessionId: str | None = None
     sessionStatus: str | None = None

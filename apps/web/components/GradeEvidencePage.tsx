@@ -10,6 +10,7 @@ import {
   type AppealResponse,
   type GradeResponse
 } from "../lib/api";
+import { StudentWorkspaceShell } from "./StudentWorkspaceShell";
 
 type GradeEvidencePageProps = {
   attemptId: string;
@@ -74,11 +75,12 @@ export function GradeEvidencePage({ attemptId }: GradeEvidencePageProps) {
   }
 
   return (
-    <main className="grade-shell">
+    <StudentWorkspaceShell active="terminal">
+      <main className="grade-shell">
       <section className="grade-summary">
         <div className="grade-topbar">
-          <Link className="backlink" href="/">
-            <ArrowLeft size={16} /> Workbench
+          <Link className="backlink" href={`/student/terminal?attemptId=${attemptId}`}>
+            <ArrowLeft size={16} /> 返回终端
           </Link>
           <button className="iconbutton" type="button" onClick={loadGrade} disabled={loading}>
             <RefreshCw size={16} /> 刷新
@@ -209,7 +211,8 @@ export function GradeEvidencePage({ attemptId }: GradeEvidencePageProps) {
         ) : null}
         {error ? <div className="error">{error}</div> : null}
       </aside>
-    </main>
+      </main>
+    </StudentWorkspaceShell>
   );
 }
 

@@ -1470,8 +1470,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "sessionEpoch": lab.epoch,
             "sessionStatus": lab.status,
             "targetUrl": target_url,
-            "terminalUrl": f"/?attemptId={attempt.id}",
-            "workspaceUrl": f"/?attemptId={attempt.id}",
+            "terminalUrl": f"/student/terminal?attemptId={attempt.id}",
+            "workspaceUrl": f"/student/terminal?attemptId={attempt.id}",
             "reusedAttempt": reused,
         }
 
@@ -2853,6 +2853,8 @@ def _student_challenge_bank_item_view(
             .limit(1)
         )
     lab = _active_lab_session(db, attempt.id) if attempt else None
+    grade = _latest_grade_revision(db, attempt.id) if attempt else None
+    completed = grade is not None
     return {
         "itemId": item.id,
         "courseId": item.course_id,
@@ -2867,12 +2869,25 @@ def _student_challenge_bank_item_view(
         "openAt": item.open_at,
         "dueAt": item.due_at,
         "attemptId": attempt.id if attempt else None,
+        "completionStatus": "COMPLETED" if completed else "INCOMPLETE",
+        "completed": completed,
+        "latestScore": float(grade.total_score) if grade else None,
+        "gradeRevisionId": grade.id if grade else None,
         "hasEnvironment": lab is not None,
         "sessionId": lab.id if lab else None,
         "sessionStatus": lab.status if lab else None,
         "targetUrl": _challenge_bank_target_url(settings, item) if lab else None,
-        "terminalUrl": f"/?attemptId={attempt.id}" if lab and attempt else None,
+        "terminalUrl": f"/student/terminal?attemptId={attempt.id}" if lab and attempt else None,
     }
+
+
+def _latest_grade_revision(db: Session, attempt_id: str) -> models.GradeRevision | None:
+    return db.scalar(
+        select(models.GradeRevision)
+        .where(models.GradeRevision.attempt_id == attempt_id)
+        .order_by(models.GradeRevision.revision_no.desc(), models.GradeRevision.published_at.desc())
+        .limit(1)
+    )
 
 
 def _challenge_bank_target_url(settings: Settings, item: models.ChallengeBankItem) -> str:
