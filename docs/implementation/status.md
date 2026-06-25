@@ -43,6 +43,8 @@
 - 已修复旧版 SQLite 开发库 `appeals` 表缺少 `criterion_id` 导致申诉 500 的问题，启动时仅对 SQLite 本地库做缺列兼容，并增加回归测试。
 - 已为本地 Web 验证增加 `#claDevToken=` URL hash 写入方式，便于浏览器自动化和人工验证；页面读取后会清理地址栏中的 token。
 - 已让前端在通过 IPv6 页面访问时，把 API 返回的本地回环 Gateway WebSocket 地址改写为当前页面主机，避免 IPv6 页面连接到访问者本机的 `127.0.0.1`。
+- 已分析并修复本地 Web 样式退回浏览器默认样式的问题：根因是在 `next dev` 运行时执行 `next build` 覆盖了 `apps/web/.next`，dev server 继续引用无 hash 的开发态 CSS/JS，而磁盘已变为生产构建输出，导致 `/_next/static/...` 返回 404。
+- 已将修复路线落实到 `scripts/restart-local-dev.sh`：本地整套服务重启前会清理 `apps/web/.next`，再启动 Web dev server，确保 CSS、JS、RSC chunk 与当前 dev server 输出一致。
 
 ## 当前已验证能力
 
@@ -50,7 +52,7 @@
 - 本地账号认证：注册学生账号、学生登录、创建 Attempt，注册教师账号、教师访问验证报告和 live monitor 均已通过 API 测试和本机浏览器验证。
 - Gateway/sessiond：二进制 STDIN/STDOUT、resize、heartbeat、ACK、重连 replay、Redis replay、背压、异步录制和 metrics。
 - Environment Controller：LabSession CRD 类型、资源规划、调和决策、controller-runtime fake client、Kubernetes Event、route registry、ticket revoke、orphan scanner 和 metrics。
-- Web：学生工作台、成绩证据页、教师验证报告页、教师 live monitor 页面可以构建并通过类型检查；本机浏览器已验证学生终端连接、命令回显、提示、提交、成绩页、申诉、教师验证报告和教师 live monitor。
+- Web：学生工作台、登录页、成绩证据页、教师验证报告页、教师 live monitor 页面可以构建并通过类型检查；本机浏览器已验证登录页样式加载、学生终端连接、命令回显、提示、提交、成绩页、申诉、教师验证报告和教师 live monitor。
 - 一期 GUI 预留：REMOTE_DESKTOP 与 SIMULATED 只保留类型和 Feature Flag，不进入运行依赖。
 
 ## 本轮实际运行命令与结果
@@ -85,6 +87,15 @@ env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/depende
 
 scripts/restart-local-dev.sh
 # 结果：tmux -L cla-dev 会话已重启，target、sessiond、API、Gateway 和 Web 均启动
+
+curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/css/app/layout.css?v=1782385132045'
+# 结果：HTTP/1.1 200 OK，Content-Type: text/css
+
+curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782385132045'
+# 结果：HTTP/1.1 200 OK，Content-Type: application/javascript
+
+# 通过浏览器打开 http://127.0.0.1:3000/login，退出已有会话后验证登录页样式
+# 结果：登录页恢复为居中卡片式界面，styleSheetCount=1，输入框和按钮样式加载正常
 
 curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
 # 结果：{"ok":true,"agentRuntimeEnabled":true}
@@ -148,7 +159,7 @@ find . -path './.git' -prune -o -path './node_modules' -prune -o -path './apps/w
 # 结果：抽样 PNG 渲染成功，目视检查截图、正文、表格、清单和页脚可读
 ```
 
-说明：`next build` 会重写 `apps/web/next-env.d.ts` 的生成注释，本轮构建和类型检查通过后已再次把该文件注释修正为中文，并单独重跑 typecheck 通过。Go 根目录 `./...` 不适用于当前 go.work 布局，因此状态文档和开发文档均使用明确模块路径集合。
+说明：`next build` 会重写 `apps/web/next-env.d.ts` 的生成注释，本轮构建和类型检查通过后已再次把该文件注释修正为中文，并单独重跑 typecheck 通过。`next build` 还会覆盖 dev server 使用的 `apps/web/.next`，因此本地整套服务重启脚本会先清理该目录，再启动 Web dev server。Go 根目录 `./...` 不适用于当前 go.work 布局，因此状态文档和开发文档均使用明确模块路径集合。
 
 ## 当前可演示路径
 

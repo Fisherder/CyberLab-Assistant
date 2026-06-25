@@ -34,6 +34,8 @@ scripts/restart-local-dev.sh
 | gateway | 终端网关 | `http://127.0.0.1:8081` |
 | web | Next.js 前端 | `http://127.0.0.1:3000` |
 
+脚本会在启动 Web 前清理 `apps/web/.next`。这是必要步骤：如果刚运行过 `next build`，原来的 `next dev` 会继续引用开发态静态资源路径，但 `.next` 已被生产构建覆盖，浏览器会请求不到 CSS/JS，页面就会退回默认浏览器样式。
+
 进入 tmux：
 
 ```bash
@@ -195,6 +197,19 @@ go run ./cmd/sessiond
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web dev
 ```
 
+如果刚运行过 `next build`，不要直接复用旧的 dev server。推荐执行：
+
+```bash
+scripts/restart-local-dev.sh
+```
+
+或至少先清理 Web 构建目录，再启动开发服务：
+
+```bash
+rm -rf apps/web/.next
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web dev
+```
+
 构建后 smoke 模式：
 
 ```bash
@@ -322,6 +337,30 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 ```
+
+### Web 页面样式退回默认控件
+
+现象：
+
+- `/login` 页面只显示浏览器默认按钮和输入框。
+- tmux 的 web 窗口里出现 `/_next/static/css/app/layout.css`、`main-app.js` 或 `app-pages-internals.js` 返回 404。
+
+根因通常是：`next dev` 正在运行时又执行了 `next build`，生产构建覆盖了 `apps/web/.next`，导致 dev server 发出的静态资源路径和磁盘内容不一致。
+
+处理方式：
+
+```bash
+scripts/restart-local-dev.sh
+```
+
+验证：
+
+```bash
+curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/css/app/layout.css'
+curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/chunks/main-app.js'
+```
+
+如果 HTML 中带有 `?v=` 参数，验证时保留该参数也可以。预期 CSS 和 JS 都返回 `200 OK`。浏览器仍显示旧样式时，执行强制刷新。
 
 ### Compose 不能连接 Docker daemon
 
