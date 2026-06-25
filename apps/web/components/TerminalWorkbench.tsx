@@ -63,6 +63,11 @@ export function TerminalWorkbench() {
       setDevToken(devToken);
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
+    const query = new URLSearchParams(window.location.search);
+    const queryAttemptId = query.get("attemptId");
+    if (queryAttemptId) {
+      setAttemptId(queryAttemptId);
+    }
     if (!hasAuthToken()) {
       window.location.replace(
         `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
@@ -249,7 +254,7 @@ export function TerminalWorkbench() {
           <button type="button">
             <ShieldCheck size={16} /> Appeal
           </button>
-          <Link className="navlink" href="/teacher/challenges/registry">
+          <Link className="navlink" href="/student/challenge-bank">
             <BookOpenCheck size={16} /> 题库
           </Link>
         </div>
@@ -275,7 +280,7 @@ export function TerminalWorkbench() {
         </section>
         <footer className="actions">
           <button className="toolbutton primary" type="button" onClick={start}>
-            <Play size={16} /> 启动
+            <Play size={16} /> {attemptId ? "连接终端" : "启动"}
           </button>
           <button className="toolbutton" type="button" onClick={start}>
             <RefreshCcw size={16} /> 重连

@@ -24,7 +24,7 @@ chmod +x scripts/restart-local-dev.sh scripts/stop-local-dev.sh
 scripts/restart-local-dev.sh
 ```
 
-脚本会创建 `tmux -L cla-dev` 会话，并启动 5 个窗口：
+脚本会在默认 tmux socket 中创建 `cla` 会话，并启动 5 个窗口：
 
 | 窗口 | 服务 | 地址 |
 | --- | --- | --- |
@@ -39,7 +39,9 @@ scripts/restart-local-dev.sh
 进入 tmux：
 
 ```bash
-tmux -L cla-dev attach -t cla
+tmux attach -t cla
+# 或者
+tmux a -t cla
 ```
 
 停止整套本地服务：

@@ -27,6 +27,7 @@ CORE_TABLES = {
     "validation_runs",
     "challenge_artifacts",
     "challenge_drafts",
+    "challenge_bank_items",
     "assignments",
     "attempts",
     "lab_sessions",
@@ -75,7 +76,7 @@ def assert_core_schema(database_url: str) -> None:
             version = connection.execute(
                 text("select version_num from alembic_version")
             ).scalar_one()
-        assert version == "0003_challenge_artifacts"
+        assert version == "0004_challenge_bank_items"
     finally:
         engine.dispose()
 

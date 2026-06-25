@@ -13,6 +13,11 @@
 - 已实现题库检索接口：`GET /api/v1/challenge-registry` 支持查询、状态过滤、限制数量，并返回 BM25 风格全文检索信号；向量检索字段已预留但本地未启用 pgvector。
 - 已增强候选题检索：`GET /api/v1/challenge-drafts/{id}/candidates` 在硬约束过滤基础上返回 `searchScore` 和 `retrievalSignals`。
 - 已新增模型辅助生成题目版本草稿接口：`POST /api/v1/challenge-drafts/{id}/generate-version` 会基于候选题生成教师可审核草稿、创建 `PENDING_APPROVAL` ChallengeVersion、写入对象资产并保留教师审批门禁。
+- 已按 [题库要求.md](/Users/fisherder/Desktop/研究生/Security_Class_Tool/题库要求.md) 和 [cla_terminal_first_complete_development_spec.html](/Users/fisherder/Desktop/研究生/Security_Class_Tool/cla_terminal_first_complete_development_spec.html) 新增课堂题库发布层：`challenge_bank_items` 作为教学题库条目，区别于 Challenge Registry 题目数据库。
+- 已新增教师端题库 API：创建、列表、详情、修改、发布、下架、删除、最近 30 条回收站和恢复；已发布题目必须先下架才能修改或删除。
+- 已新增学生端题库 API：学生只看到本课程已发布题目，未开始和已结束题目可预览但不能获取环境，进行中题目才能启动。
+- 已实现题库环境幂等：同一学生同一题库条目重复获取容器返回同一 Attempt 和 LabSession；不同题库条目会分别创建不同 Attempt。
+- 已新增教师端题库页面 `/teacher/challenge-bank` 和学生端题库页面 `/student/challenge-bank`，登录后按角色进入对应题库；学生从题库获取容器后再进入终端，终端页支持 `attemptId` 查询参数。
 - 已新增教师端题库 Registry 页面：`/teacher/challenges/registry` 支持导入本地题目、搜索题库、输入 Brief、查看候选、生成版本草稿、打开验证报告和审批发布。
 - 已更新 OpenAPI、`.env.example`、README、内容开发规范、追踪矩阵和状态文档，记录模型接入、题库导入、对象资产和审核发布流程。
 - 已脱敏 `.env.example` 中的本地开发密钥、内部服务 token、Oracle secret、转录加密密钥和模型 API Key；真实密钥只保留在本机 `.env`。
@@ -67,8 +72,14 @@ python -m compileall services/api/src/cla
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 结果：tsc --noEmit 通过
 
+.venv/bin/pytest services/api/tests/test_challenge_bank.py services/api/tests/test_alembic_migrations.py services/api/tests/test_settings.py -q
+# 结果：6 passed, 1 skipped in 0.29s，覆盖课堂题库发布层、学生可见性、时间窗口、删除/恢复和题库 Attempt 幂等
+
+env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
+# 结果：tsc --noEmit 通过，覆盖教师题库页面、学生题库页面和题库 API 前端封装
+
 .venv/bin/pytest services/api/tests
-# 结果：67 passed, 1 skipped in 5.60s，包含本地账号注册登录、模型出题、Registry 导入和对象资产测试
+# 结果：70 passed, 1 skipped in 4.71s，包含本地账号注册登录、模型出题、Registry 导入、对象资产和课堂题库测试
 
 env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sessionwire/... ./services/terminal-gateway/... ./services/environment-controller/... ./runtime/sessiond/...
 # packages/sessionwire：通过
@@ -80,13 +91,16 @@ env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sess
 # 结果：Python 编译检查通过
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
-# 结果：Next.js build 通过，包含 /teacher/challenges/registry 页面
+# 结果：Next.js build 通过，包含 /teacher/challenge-bank、/student/challenge-bank 和 /teacher/challenges/registry 页面
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 结果：tsc --noEmit 通过
 
 scripts/restart-local-dev.sh
-# 结果：tmux -L cla-dev 会话已重启，target、sessiond、API、Gateway 和 Web 均启动
+# 结果：默认 tmux socket 中的 cla 会话已重启，target、sessiond、API、Gateway 和 Web 均启动
+
+tmux ls
+# 结果：默认 tmux socket 中可见 cla: 5 windows，用户可用 tmux attach -t cla 或 tmux a -t cla 进入
 
 curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/css/app/layout.css?v=1782385132045'
 # 结果：HTTP/1.1 200 OK，Content-Type: text/css
@@ -96,6 +110,12 @@ curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/chunks/main-app.js
 
 # 通过浏览器打开 http://127.0.0.1:3000/login，退出已有会话后验证登录页样式
 # 结果：登录页恢复为居中卡片式界面，styleSheetCount=1，输入框和按钮样式加载正常
+
+# 通过浏览器登录临时学生账号，打开 http://127.0.0.1:3000/student/challenge-bank
+# 结果：学生题库显示 1 个进行中题目；点击“获取容器”后显示目标网站、进入终端和 Attempt；进入终端后状态 connected，执行 echo CLA_BANK_OK 正常回显。
+
+# 通过浏览器登录临时教师账号，打开 http://127.0.0.1:3000/teacher/challenge-bank
+# 结果：教师题库显示 1 个 PUBLISHED/进行中题目，验证状态 PASS，发布窗口、下架、删除、恢复等按钮可见。
 
 curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
 # 结果：{"ok":true,"agentRuntimeEnabled":true}

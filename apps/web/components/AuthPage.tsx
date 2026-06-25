@@ -171,9 +171,9 @@ function safeNext(value: string | null): string {
 function destinationFor(result: AuthTokenResponse, nextUrl: string): string {
   if (nextUrl !== "/") return nextUrl;
   if (result.user.roles.includes("teacher") && !result.user.roles.includes("student")) {
-    return "/teacher/challenges/cv_web_sqli_auth_1_3_0/validation";
+    return "/teacher/challenge-bank";
   }
-  return "/";
+  return "/student/challenge-bank";
 }
 
 function readableAuthError(err: unknown): string {

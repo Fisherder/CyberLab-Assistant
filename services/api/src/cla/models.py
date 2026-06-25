@@ -153,6 +153,42 @@ class Assignment(Base):
     challenge_version: Mapped[ChallengeVersion] = relationship()
 
 
+class ChallengeBankItem(Base):
+    __tablename__ = "challenge_bank_items"
+    __table_args__ = (
+        UniqueConstraint("assignment_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
+    course_id: Mapped[str] = mapped_column(ForeignKey("courses.id"), nullable=False)
+    challenge_version_id: Mapped[str] = mapped_column(
+        ForeignKey("challenge_versions.id"), nullable=False
+    )
+    assignment_id: Mapped[str | None] = mapped_column(
+        ForeignKey("assignments.id"), nullable=True
+    )
+    title: Mapped[str] = mapped_column(String(240), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    requirements: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    tags_json: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    open_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    unpublished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    restored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    course: Mapped[Course] = relationship()
+    challenge_version: Mapped[ChallengeVersion] = relationship()
+    assignment: Mapped[Assignment | None] = relationship()
+
+
 class Attempt(Base):
     __tablename__ = "attempts"
     __table_args__ = (UniqueConstraint("assignment_id", "student_id", "number"),)

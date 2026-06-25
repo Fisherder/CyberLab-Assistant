@@ -295,6 +295,72 @@ const ChallengeGeneratedVersionResponse = z.object({
   modelDraft: z.record(z.unknown())
 });
 
+const ChallengeBankItemResponse = z.object({
+  itemId: z.string(),
+  courseId: z.string(),
+  challengeVersionId: z.string(),
+  assignmentId: z.string().nullable(),
+  title: z.string(),
+  summary: z.string(),
+  description: z.string(),
+  requirements: z.string(),
+  tags: z.array(z.string()),
+  status: z.string(),
+  publishState: z.string(),
+  openAt: z.string().nullable(),
+  dueAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  publishedAt: z.string().nullable(),
+  unpublishedAt: z.string().nullable(),
+  deletedAt: z.string().nullable(),
+  restoredAt: z.string().nullable(),
+  version: ChallengeRegistryVersionResponse,
+  actions: z.record(z.boolean())
+});
+
+const ChallengeBankListResponse = z.object({
+  courseId: z.string().nullable(),
+  count: z.number(),
+  items: z.array(ChallengeBankItemResponse)
+});
+
+const StudentChallengeBankItemResponse = z.object({
+  itemId: z.string(),
+  courseId: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  description: z.string(),
+  requirements: z.string(),
+  tags: z.array(z.string()),
+  publishState: z.string(),
+  clickable: z.boolean(),
+  disabledReason: z.string().nullable(),
+  openAt: z.string(),
+  dueAt: z.string(),
+  attemptId: z.string().nullable(),
+  targetUrl: z.string().nullable(),
+  terminalUrl: z.string().nullable()
+});
+
+const StudentChallengeBankListResponse = z.object({
+  count: z.number(),
+  items: z.array(StudentChallengeBankItemResponse)
+});
+
+const StartChallengeBankItemResponse = z.object({
+  itemId: z.string(),
+  assignmentId: z.string(),
+  attemptId: z.string(),
+  sessionId: z.string(),
+  sessionEpoch: z.number(),
+  sessionStatus: z.string(),
+  targetUrl: z.string(),
+  terminalUrl: z.string(),
+  workspaceUrl: z.string(),
+  reusedAttempt: z.boolean()
+});
+
 export type AttemptResponse = z.infer<typeof AttemptResponse>;
 export type SessionResponse = z.infer<typeof SessionResponse>;
 export type TicketResponse = z.infer<typeof TicketResponse>;
@@ -313,6 +379,11 @@ export type ChallengeImportResponse = z.infer<typeof ChallengeImportResponse>;
 export type ChallengeDraftResponse = z.infer<typeof ChallengeDraftResponse>;
 export type ChallengeCandidateSearchResponse = z.infer<typeof ChallengeCandidateSearchResponse>;
 export type ChallengeGeneratedVersionResponse = z.infer<typeof ChallengeGeneratedVersionResponse>;
+export type ChallengeBankItemResponse = z.infer<typeof ChallengeBankItemResponse>;
+export type ChallengeBankListResponse = z.infer<typeof ChallengeBankListResponse>;
+export type StudentChallengeBankItemResponse = z.infer<typeof StudentChallengeBankItemResponse>;
+export type StudentChallengeBankListResponse = z.infer<typeof StudentChallengeBankListResponse>;
+export type StartChallengeBankItemResponse = z.infer<typeof StartChallengeBankItemResponse>;
 
 export function currentToken(): string {
   if (typeof window === "undefined") return "";
@@ -494,6 +565,93 @@ export async function generateChallengeVersion(
   return api(`/api/v1/challenge-drafts/${draftId}/generate-version`, ChallengeGeneratedVersionResponse, {
     method: "POST",
     body: JSON.stringify({ selectedCandidateId })
+  });
+}
+
+export async function fetchTeacherChallengeBank(courseId?: string): Promise<ChallengeBankListResponse> {
+  const params = new URLSearchParams();
+  if (courseId?.trim()) params.set("courseId", courseId.trim());
+  const suffix = params.toString() ? `?${params}` : "";
+  return api(`/api/v1/teacher/challenge-bank${suffix}`, ChallengeBankListResponse);
+}
+
+export async function fetchTeacherChallengeBankTrash(courseId?: string): Promise<ChallengeBankListResponse> {
+  const params = new URLSearchParams();
+  if (courseId?.trim()) params.set("courseId", courseId.trim());
+  const suffix = params.toString() ? `?${params}` : "";
+  return api(`/api/v1/teacher/challenge-bank/trash${suffix}`, ChallengeBankListResponse);
+}
+
+export async function createChallengeBankItem(payload: {
+  courseId: string;
+  challengeVersionId: string;
+  title: string;
+  summary: string;
+  description: string;
+  requirements: string;
+  tags: string[];
+  publish: boolean;
+  publishWindow?: { openAt: string; dueAt: string } | null;
+}): Promise<ChallengeBankItemResponse> {
+  return api("/api/v1/teacher/challenge-bank", ChallengeBankItemResponse, {
+    method: "POST",
+    headers: { "Idempotency-Key": crypto.randomUUID() },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateChallengeBankItem(
+  itemId: string,
+  payload: {
+    title?: string;
+    summary?: string;
+    description?: string;
+    requirements?: string;
+    tags?: string[];
+  }
+): Promise<ChallengeBankItemResponse> {
+  return api(`/api/v1/teacher/challenge-bank/${itemId}`, ChallengeBankItemResponse, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function publishChallengeBankItem(
+  itemId: string,
+  openAt: string,
+  dueAt: string
+): Promise<ChallengeBankItemResponse> {
+  return api(`/api/v1/teacher/challenge-bank/${itemId}/publish`, ChallengeBankItemResponse, {
+    method: "POST",
+    body: JSON.stringify({ openAt, dueAt })
+  });
+}
+
+export async function unpublishChallengeBankItem(itemId: string): Promise<ChallengeBankItemResponse> {
+  return api(`/api/v1/teacher/challenge-bank/${itemId}/unpublish`, ChallengeBankItemResponse, {
+    method: "POST"
+  });
+}
+
+export async function deleteChallengeBankItem(itemId: string): Promise<ChallengeBankItemResponse> {
+  return api(`/api/v1/teacher/challenge-bank/${itemId}`, ChallengeBankItemResponse, {
+    method: "DELETE"
+  });
+}
+
+export async function restoreChallengeBankItem(itemId: string): Promise<ChallengeBankItemResponse> {
+  return api(`/api/v1/teacher/challenge-bank/${itemId}/restore`, ChallengeBankItemResponse, {
+    method: "POST"
+  });
+}
+
+export async function fetchStudentChallengeBank(): Promise<StudentChallengeBankListResponse> {
+  return api("/api/v1/student/challenge-bank", StudentChallengeBankListResponse);
+}
+
+export async function startStudentChallengeBankItem(itemId: string): Promise<StartChallengeBankItemResponse> {
+  return api(`/api/v1/student/challenge-bank/${itemId}/start`, StartChallengeBankItemResponse, {
+    method: "POST"
   });
 }
 

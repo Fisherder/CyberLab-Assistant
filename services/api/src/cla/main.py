@@ -6,6 +6,7 @@ from pathlib import Path
 import secrets
 
 from fastapi import Depends, FastAPI, Header, Request
+from fastapi.encoders import jsonable_encoder
 import jwt
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -49,6 +50,7 @@ from cla.schemas import (
     CourseMemberView,
     CourseView,
     CreateAssignmentRequest,
+    CreateChallengeBankItemRequest,
     CreateChallengeDraftRequest,
     CreateAttemptRequest,
     CreateCourseRequest,
@@ -68,6 +70,10 @@ from cla.schemas import (
     SessionResponse,
     SubmitRequest,
     SubmitResponse,
+    PublishChallengeBankItemRequest,
+    StartChallengeBankItemView,
+    StudentChallengeBankItemView,
+    StudentChallengeBankListView,
     TerminalTicketResponse,
     TicketRevokeRequest,
     TutorStateView,
@@ -75,6 +81,9 @@ from cla.schemas import (
     TranscriptRestoreVerifyRequest,
     TranscriptSegmentRequest,
     TranscriptSegmentUploadRequest,
+    ChallengeBankItemView,
+    ChallengeBankListView,
+    UpdateChallengeBankItemRequest,
     UpsertCourseMemberRequest,
 )
 from cla.security import (
@@ -846,6 +855,515 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             overall_status=overall_status,
             already_published=already_published,
         )
+
+    @app.get(
+        "/api/v1/teacher/challenge-bank",
+        response_model=ChallengeBankListView,
+    )
+    def teacher_challenge_bank(
+        courseId: str | None = None,
+        status: str | None = None,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        query = (
+            select(models.ChallengeBankItem)
+            .where(models.ChallengeBankItem.tenant_id == principal.tenant_id)
+            .where(models.ChallengeBankItem.status != "DELETED")
+            .order_by(
+                models.ChallengeBankItem.updated_at.desc(),
+                models.ChallengeBankItem.id.desc(),
+            )
+        )
+        if courseId:
+            course = _get_course_or_404(db, courseId)
+            _require_course_same_tenant(principal, course)
+            require_course_role(db, principal, course.id, {"TEACHER", "TA"})
+            query = query.where(models.ChallengeBankItem.course_id == course.id)
+        else:
+            _require_global_teacher(principal)
+        if status:
+            query = query.where(models.ChallengeBankItem.status == status)
+        items = db.scalars(query).all()
+        visible_items = [
+            item
+            for item in items
+            if courseId or _has_course_role(db, principal, item.course_id, {"TEACHER", "TA"})
+        ]
+        _audit(
+            db,
+            principal,
+            "challenge_bank.read",
+            "challenge_bank",
+            courseId or "all",
+            "ALLOW",
+        )
+        return {
+            "courseId": courseId,
+            "count": len(visible_items),
+            "items": [_challenge_bank_item_view(db, item) for item in visible_items],
+        }
+
+    @app.get(
+        "/api/v1/teacher/challenge-bank/trash",
+        response_model=ChallengeBankListView,
+    )
+    def teacher_challenge_bank_trash(
+        courseId: str | None = None,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        query = (
+            select(models.ChallengeBankItem)
+            .where(models.ChallengeBankItem.tenant_id == principal.tenant_id)
+            .where(models.ChallengeBankItem.status == "DELETED")
+            .order_by(
+                models.ChallengeBankItem.deleted_at.desc(),
+                models.ChallengeBankItem.id.desc(),
+            )
+        )
+        if courseId:
+            course = _get_course_or_404(db, courseId)
+            _require_course_same_tenant(principal, course)
+            require_course_role(db, principal, course.id, {"TEACHER", "TA"})
+            query = query.where(models.ChallengeBankItem.course_id == course.id)
+        else:
+            _require_global_teacher(principal)
+        items = db.scalars(query.limit(30)).all()
+        visible_items = [
+            item
+            for item in items
+            if courseId or _has_course_role(db, principal, item.course_id, {"TEACHER", "TA"})
+        ][:30]
+        _audit(
+            db,
+            principal,
+            "challenge_bank.trash.read",
+            "challenge_bank",
+            courseId or "all",
+            "ALLOW",
+        )
+        return {
+            "courseId": courseId,
+            "count": len(visible_items),
+            "items": [_challenge_bank_item_view(db, item) for item in visible_items],
+        }
+
+    @app.post(
+        "/api/v1/teacher/challenge-bank",
+        response_model=ChallengeBankItemView,
+        status_code=201,
+    )
+    def create_challenge_bank_item(
+        body: CreateChallengeBankItemRequest,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        if not idempotency_key:
+            raise api_error(400, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required")
+        route = "POST /api/v1/teacher/challenge-bank"
+        existing = _idempotent_response(db, principal, route, idempotency_key)
+        if existing is not None:
+            return existing
+        course = _get_course_or_404(db, body.courseId)
+        _require_course_same_tenant(principal, course)
+        require_course_role(db, principal, course.id, {"TEACHER", "TA"})
+        version = _get_published_challenge_version_or_error(db, principal, body.challengeVersionId)
+        item = models.ChallengeBankItem(
+            id=new_id("bank"),
+            tenant_id=principal.tenant_id,
+            course_id=course.id,
+            challenge_version_id=version.id,
+            assignment_id=None,
+            title=body.title,
+            summary=body.summary,
+            description=body.description,
+            requirements=body.requirements,
+            status="DRAFT",
+            tags_json=_normalized_tags(body.tags),
+            created_by=principal.user_id,
+            updated_at=datetime.now(timezone.utc),
+        )
+        db.add(item)
+        if body.publish:
+            if body.publishWindow is None:
+                raise api_error(
+                    422,
+                    "PUBLISH_WINDOW_REQUIRED",
+                    "publishWindow is required when publish=true",
+                )
+            _publish_challenge_bank_item(db, principal, item, body.publishWindow.openAt, body.publishWindow.dueAt)
+        db.flush()
+        db.refresh(item)
+        response = _challenge_bank_item_view(db, item)
+        _remember_idempotent_response(db, principal, route, idempotency_key, response)
+        _audit(
+            db,
+            principal,
+            "challenge_bank.create",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            after_ref=item.status,
+        )
+        _outbox(
+            db,
+            "challenge_bank_item",
+            item.id,
+            "challenge_bank.item.created",
+            {
+                "itemId": item.id,
+                "courseId": item.course_id,
+                "challengeVersionId": item.challenge_version_id,
+                "status": item.status,
+            },
+        )
+        return response
+
+    @app.get(
+        "/api/v1/teacher/challenge-bank/{item_id}",
+        response_model=ChallengeBankItemView,
+    )
+    def teacher_challenge_bank_detail(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_teacher(db, principal, item)
+        _audit(db, principal, "challenge_bank.read_detail", "challenge_bank_item", item.id, "ALLOW")
+        return _challenge_bank_item_view(db, item)
+
+    @app.patch(
+        "/api/v1/teacher/challenge-bank/{item_id}",
+        response_model=ChallengeBankItemView,
+    )
+    def update_challenge_bank_item(
+        item_id: str,
+        body: UpdateChallengeBankItemRequest,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_teacher(db, principal, item)
+        if item.status == "DELETED":
+            raise api_error(409, "CHALLENGE_BANK_ITEM_DELETED", "Deleted items must be restored first")
+        if item.status == "PUBLISHED":
+            raise api_error(
+                409,
+                "CHALLENGE_BANK_ITEM_PUBLISHED",
+                "Published items must be unpublished before editing",
+            )
+        before_ref = item.status
+        if body.title is not None:
+            item.title = body.title
+        if body.summary is not None:
+            item.summary = body.summary
+        if body.description is not None:
+            item.description = body.description
+        if body.requirements is not None:
+            item.requirements = body.requirements
+        if body.tags is not None:
+            item.tags_json = _normalized_tags(body.tags)
+        item.updated_at = datetime.now(timezone.utc)
+        _audit(
+            db,
+            principal,
+            "challenge_bank.update",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            before_ref=before_ref,
+            after_ref=item.status,
+        )
+        return _challenge_bank_item_view(db, item)
+
+    @app.post(
+        "/api/v1/teacher/challenge-bank/{item_id}/publish",
+        response_model=ChallengeBankItemView,
+    )
+    def publish_challenge_bank_item(
+        item_id: str,
+        body: PublishChallengeBankItemRequest,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_teacher(db, principal, item)
+        if item.status == "DELETED":
+            raise api_error(409, "CHALLENGE_BANK_ITEM_DELETED", "Deleted items must be restored first")
+        before_ref = item.status
+        _publish_challenge_bank_item(db, principal, item, body.openAt, body.dueAt)
+        _audit(
+            db,
+            principal,
+            "challenge_bank.publish",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            before_ref=before_ref,
+            after_ref=item.status,
+        )
+        _outbox(
+            db,
+            "challenge_bank_item",
+            item.id,
+            "challenge_bank.item.published",
+            {
+                "itemId": item.id,
+                "assignmentId": item.assignment_id,
+                "openAt": item.open_at.isoformat() if item.open_at else None,
+                "dueAt": item.due_at.isoformat() if item.due_at else None,
+            },
+        )
+        return _challenge_bank_item_view(db, item)
+
+    @app.post(
+        "/api/v1/teacher/challenge-bank/{item_id}/unpublish",
+        response_model=ChallengeBankItemView,
+    )
+    def unpublish_challenge_bank_item(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_teacher(db, principal, item)
+        if item.status == "DELETED":
+            raise api_error(409, "CHALLENGE_BANK_ITEM_DELETED", "Deleted items must be restored first")
+        before_ref = item.status
+        item.status = "UNPUBLISHED"
+        item.unpublished_at = datetime.now(timezone.utc)
+        item.updated_at = item.unpublished_at
+        _audit(
+            db,
+            principal,
+            "challenge_bank.unpublish",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            before_ref=before_ref,
+            after_ref=item.status,
+        )
+        _outbox(
+            db,
+            "challenge_bank_item",
+            item.id,
+            "challenge_bank.item.unpublished",
+            {"itemId": item.id, "assignmentId": item.assignment_id},
+        )
+        return _challenge_bank_item_view(db, item)
+
+    @app.delete(
+        "/api/v1/teacher/challenge-bank/{item_id}",
+        response_model=ChallengeBankItemView,
+    )
+    def delete_challenge_bank_item(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_teacher(db, principal, item)
+        if item.status == "PUBLISHED":
+            raise api_error(
+                409,
+                "CHALLENGE_BANK_ITEM_PUBLISHED",
+                "Published items must be unpublished before deletion",
+            )
+        before_ref = item.status
+        item.status = "DELETED"
+        item.deleted_at = datetime.now(timezone.utc)
+        item.updated_at = item.deleted_at
+        _audit(
+            db,
+            principal,
+            "challenge_bank.delete",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            before_ref=before_ref,
+            after_ref=item.status,
+        )
+        return _challenge_bank_item_view(db, item)
+
+    @app.post(
+        "/api/v1/teacher/challenge-bank/{item_id}/restore",
+        response_model=ChallengeBankItemView,
+    )
+    def restore_challenge_bank_item(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_teacher(db, principal, item)
+        if item.status != "DELETED":
+            raise api_error(
+                409,
+                "CHALLENGE_BANK_ITEM_NOT_DELETED",
+                "Only deleted items can be restored",
+            )
+        item.status = "UNPUBLISHED"
+        item.deleted_at = None
+        item.restored_at = datetime.now(timezone.utc)
+        item.updated_at = item.restored_at
+        _audit(
+            db,
+            principal,
+            "challenge_bank.restore",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            before_ref="DELETED",
+            after_ref=item.status,
+        )
+        return _challenge_bank_item_view(db, item)
+
+    @app.get(
+        "/api/v1/student/challenge-bank",
+        response_model=StudentChallengeBankListView,
+    )
+    def student_challenge_bank(
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        course_ids = _principal_course_ids(db, principal, {"STUDENT"})
+        items = db.scalars(
+            select(models.ChallengeBankItem)
+            .where(models.ChallengeBankItem.tenant_id == principal.tenant_id)
+            .where(models.ChallengeBankItem.course_id.in_(course_ids or [""]))
+            .where(models.ChallengeBankItem.status == "PUBLISHED")
+            .order_by(models.ChallengeBankItem.open_at.asc(), models.ChallengeBankItem.id.asc())
+        ).all()
+        _audit(db, principal, "student.challenge_bank.read", "challenge_bank", "mine", "ALLOW")
+        return {
+            "count": len(items),
+            "items": [_student_challenge_bank_item_view(db, settings, principal, item) for item in items],
+        }
+
+    @app.get(
+        "/api/v1/student/challenge-bank/{item_id}",
+        response_model=StudentChallengeBankItemView,
+    )
+    def student_challenge_bank_detail(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_student(db, principal, item)
+        if item.status != "PUBLISHED":
+            raise api_error(404, "NOT_FOUND", "Challenge bank item is not published")
+        _audit(db, principal, "student.challenge_bank.read_detail", "challenge_bank_item", item.id, "ALLOW")
+        return _student_challenge_bank_item_view(db, settings, principal, item)
+
+    @app.post(
+        "/api/v1/student/challenge-bank/{item_id}/start",
+        response_model=StartChallengeBankItemView,
+        status_code=202,
+    )
+    def start_challenge_bank_item(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_student(db, principal, item)
+        if _challenge_bank_publish_state(item) != "ACTIVE":
+            raise api_error(
+                409,
+                "CHALLENGE_BANK_ITEM_NOT_ACTIVE",
+                "Only active challenge bank items can start a lab environment",
+            )
+        if item.assignment_id is None:
+            raise api_error(
+                500,
+                "ASSIGNMENT_MISSING",
+                "Published challenge bank item is missing its internal assignment",
+            )
+        assignment = db.get(models.Assignment, item.assignment_id)
+        if assignment is None:
+            raise api_error(500, "ASSIGNMENT_MISSING", "Challenge bank assignment is missing")
+        attempt = db.scalar(
+            select(models.Attempt)
+            .where(models.Attempt.assignment_id == assignment.id)
+            .where(models.Attempt.student_id == principal.user_id)
+            .order_by(models.Attempt.number.asc(), models.Attempt.created_at.asc())
+            .limit(1)
+        )
+        reused = attempt is not None
+        if attempt is None:
+            attempt = models.Attempt(
+                id=new_id("a"),
+                tenant_id=principal.tenant_id,
+                assignment_id=assignment.id,
+                student_id=principal.user_id,
+                number=1,
+                seed_hex=secrets.token_hex(16),
+                status="PROVISIONING",
+                started_at=datetime.now(timezone.utc),
+            )
+            db.add(attempt)
+            append_event(
+                db,
+                tenant_id=principal.tenant_id,
+                attempt_id=attempt.id,
+                session_epoch=1,
+                source="cla-api",
+                event_type="attempt.created",
+                payload={
+                    "assignment_id": assignment.id,
+                    "challenge_bank_item_id": item.id,
+                    "student_id": principal.user_id,
+                },
+            )
+            _outbox(
+                db,
+                "attempt",
+                attempt.id,
+                "attempt.created",
+                {"attemptId": attempt.id, "challengeBankItemId": item.id},
+            )
+        lab = _active_lab_session(db, attempt.id)
+        if lab is None:
+            lab = _create_local_lab_session(db, settings, principal.tenant_id, attempt)
+        target_url = _challenge_bank_target_url(settings, item)
+        append_event(
+            db,
+            tenant_id=principal.tenant_id,
+            attempt_id=attempt.id,
+            session_epoch=lab.epoch,
+            source="cla-api",
+            event_type="target.access_url.issued",
+            payload={
+                "challenge_bank_item_id": item.id,
+                "target_url_kind": "local-dev",
+                "http_observation": "reserved",
+            },
+        )
+        _audit(
+            db,
+            principal,
+            "student.challenge_bank.start",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            after_ref=f"attempt={attempt.id} reused={str(reused).lower()}",
+        )
+        return {
+            "itemId": item.id,
+            "assignmentId": assignment.id,
+            "attemptId": attempt.id,
+            "sessionId": lab.id,
+            "sessionEpoch": lab.epoch,
+            "sessionStatus": lab.status,
+            "targetUrl": target_url,
+            "terminalUrl": f"/?attemptId={attempt.id}",
+            "workspaceUrl": f"/?attemptId={attempt.id}",
+            "reusedAttempt": reused,
+        }
 
     @app.post(
         "/api/v1/assignments/{assignment_id}/attempts",
@@ -1836,7 +2354,7 @@ def _remember_idempotent_response(
             actor_id=principal.user_id,
             route=route,
             idempotency_key=idempotency_key,
-            response_json=response,
+            response_json=jsonable_encoder(response),
         )
     )
 
@@ -1870,6 +2388,294 @@ def _assignment_view(assignment: models.Assignment) -> dict:
         "dueAt": assignment.due_at.isoformat() if assignment.due_at else None,
         "attemptPolicy": assignment.attempt_policy_json,
     }
+
+
+def _get_course_or_404(db: Session, course_id: str) -> models.Course:
+    course = db.get(models.Course, course_id)
+    if course is None:
+        raise api_error(404, "NOT_FOUND", "Course not found")
+    return course
+
+
+def _require_course_same_tenant(principal: Principal, course: models.Course) -> None:
+    if course.tenant_id != principal.tenant_id:
+        raise api_error(403, "FORBIDDEN_SCOPE", "Course belongs to another tenant")
+
+
+def _require_global_teacher(principal: Principal) -> None:
+    if not ({"teacher", "admin"} & set(principal.roles)):
+        raise api_error(403, "FORBIDDEN_SCOPE", "Only teachers or admins can manage bank items")
+
+
+def _has_course_role(
+    db: Session, principal: Principal, course_id: str, roles: set[str]
+) -> bool:
+    member = db.get(models.CourseMember, {"course_id": course_id, "user_id": principal.user_id})
+    return member is not None and member.role in roles
+
+
+def _principal_course_ids(db: Session, principal: Principal, roles: set[str]) -> list[str]:
+    members = db.scalars(
+        select(models.CourseMember)
+        .where(models.CourseMember.user_id == principal.user_id)
+        .where(models.CourseMember.role.in_(roles))
+    ).all()
+    return [member.course_id for member in members]
+
+
+def _get_challenge_bank_item_or_404(
+    db: Session, item_id: str
+) -> models.ChallengeBankItem:
+    item = db.get(models.ChallengeBankItem, item_id)
+    if item is None:
+        raise api_error(404, "NOT_FOUND", "Challenge bank item not found")
+    return item
+
+
+def _require_challenge_bank_teacher(
+    db: Session, principal: Principal, item: models.ChallengeBankItem
+) -> None:
+    if item.tenant_id != principal.tenant_id:
+        raise api_error(403, "FORBIDDEN_SCOPE", "Challenge bank item belongs to another tenant")
+    require_course_role(db, principal, item.course_id, {"TEACHER", "TA"})
+
+
+def _require_challenge_bank_student(
+    db: Session, principal: Principal, item: models.ChallengeBankItem
+) -> None:
+    if item.tenant_id != principal.tenant_id:
+        raise api_error(403, "FORBIDDEN_SCOPE", "Challenge bank item belongs to another tenant")
+    require_course_role(db, principal, item.course_id, {"STUDENT"})
+
+
+def _get_published_challenge_version_or_error(
+    db: Session, principal: Principal, version_id: str
+) -> models.ChallengeVersion:
+    version = db.get(models.ChallengeVersion, version_id)
+    if version is None:
+        raise api_error(404, "NOT_FOUND", "ChallengeVersion not found")
+    challenge = db.get(models.Challenge, version.challenge_id)
+    if challenge is None:
+        raise api_error(404, "NOT_FOUND", "Challenge not found")
+    if challenge.tenant_id != principal.tenant_id:
+        raise api_error(403, "FORBIDDEN_SCOPE", "ChallengeVersion belongs to another tenant")
+    if version.status != "PUBLISHED":
+        raise api_error(
+            409,
+            "CHALLENGE_VERSION_NOT_PUBLISHED",
+            "Bank items must reference a published ChallengeVersion",
+        )
+    return version
+
+
+def _validate_publish_window(open_at: datetime, due_at: datetime) -> tuple[datetime, datetime]:
+    open_value = _aware_utc(open_at)
+    due_value = _aware_utc(due_at)
+    if due_value <= open_value:
+        raise api_error(
+            422,
+            "INVALID_PUBLISH_WINDOW",
+            "dueAt must be later than openAt",
+        )
+    return open_value, due_value
+
+
+def _publish_challenge_bank_item(
+    db: Session,
+    principal: Principal,
+    item: models.ChallengeBankItem,
+    open_at: datetime,
+    due_at: datetime,
+) -> None:
+    open_value, due_value = _validate_publish_window(open_at, due_at)
+    _get_published_challenge_version_or_error(db, principal, item.challenge_version_id)
+    assignment = db.get(models.Assignment, item.assignment_id) if item.assignment_id else None
+    if assignment is None:
+        assignment = models.Assignment(
+            id=new_id("asg"),
+            course_id=item.course_id,
+            challenge_version_id=item.challenge_version_id,
+            title=item.title,
+            open_at=open_value,
+            due_at=due_value,
+            attempt_policy_json={
+                "maxAttempts": 1,
+                "maxResets": 2,
+                "source": "challenge-bank",
+            },
+        )
+        db.add(assignment)
+        item.assignment_id = assignment.id
+    else:
+        assignment.title = item.title
+        assignment.open_at = open_value
+        assignment.due_at = due_value
+        assignment.challenge_version_id = item.challenge_version_id
+        assignment.attempt_policy_json = {
+            **(assignment.attempt_policy_json or {}),
+            "source": "challenge-bank",
+            "maxAttempts": 1,
+        }
+    now = datetime.now(timezone.utc)
+    item.status = "PUBLISHED"
+    item.open_at = open_value
+    item.due_at = due_value
+    item.published_at = now
+    item.updated_at = now
+
+
+def _normalized_tags(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for raw in values:
+        value = raw.strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        result.append(value[:40])
+        if len(result) >= 20:
+            break
+    return result
+
+
+def _challenge_bank_publish_state(item: models.ChallengeBankItem) -> str:
+    if item.status == "DELETED":
+        return "DELETED"
+    if item.status != "PUBLISHED":
+        return "UNPUBLISHED"
+    now = datetime.now(timezone.utc)
+    if item.open_at and now < _aware_utc(item.open_at):
+        return "NOT_STARTED"
+    if item.due_at and now > _aware_utc(item.due_at):
+        return "ENDED"
+    return "ACTIVE"
+
+
+def _challenge_bank_actions(item: models.ChallengeBankItem) -> dict:
+    state = _challenge_bank_publish_state(item)
+    return {
+        "canEdit": item.status in {"DRAFT", "UNPUBLISHED"},
+        "canPublish": item.status in {"DRAFT", "UNPUBLISHED"},
+        "canUnpublish": item.status == "PUBLISHED",
+        "canDelete": item.status in {"DRAFT", "UNPUBLISHED"},
+        "canRestore": item.status == "DELETED",
+        "canStart": state == "ACTIVE",
+    }
+
+
+def _challenge_bank_version_view(db: Session, version: models.ChallengeVersion) -> dict:
+    challenge = db.get(models.Challenge, version.challenge_id)
+    if challenge is None:
+        raise api_error(404, "NOT_FOUND", "Challenge not found")
+    manifest = version.manifest_json or {}
+    spec = manifest.get("spec", {}) if isinstance(manifest.get("spec", {}), dict) else {}
+    metadata = (
+        manifest.get("metadata", {}) if isinstance(manifest.get("metadata", {}), dict) else {}
+    )
+    workspace = spec.get("workspace", {}) if isinstance(spec.get("workspace", {}), dict) else {}
+    validation = _latest_validation_run(db, version.id)
+    artifacts = db.scalars(
+        select(models.ChallengeArtifact)
+        .where(models.ChallengeArtifact.version_id == version.id)
+        .order_by(models.ChallengeArtifact.created_at.desc(), models.ChallengeArtifact.id.desc())
+    ).all()
+    return {
+        "challengeId": challenge.id,
+        "challengeVersionId": version.id,
+        "slug": challenge.slug,
+        "title": str(metadata.get("title") or challenge.title),
+        "category": challenge.category,
+        "semver": version.semver,
+        "status": version.status,
+        "workspaceType": str(workspace.get("type") or spec.get("workspaceType") or "TERMINAL"),
+        "difficulty": int(spec.get("difficulty") or 0),
+        "expectedMinutes": int(spec.get("expectedMinutes") or 0),
+        "riskTier": version.risk_tier,
+        "artifactDigest": version.artifact_digest,
+        "validationStatus": validation.status if validation else "UNKNOWN",
+        "searchScore": 0.0,
+        "created": False,
+        "artifactCount": len(artifacts),
+        "latestArtifactRef": artifacts[0].object_ref if artifacts else None,
+        "approvalUrl": f"/api/v1/challenge-versions/{version.id}/approve",
+        "validationUrl": f"/api/v1/challenge-versions/{version.id}/validation",
+    }
+
+
+def _challenge_bank_item_view(db: Session, item: models.ChallengeBankItem) -> dict:
+    version = db.get(models.ChallengeVersion, item.challenge_version_id)
+    if version is None:
+        raise api_error(404, "NOT_FOUND", "ChallengeVersion not found")
+    return {
+        "itemId": item.id,
+        "courseId": item.course_id,
+        "challengeVersionId": item.challenge_version_id,
+        "assignmentId": item.assignment_id,
+        "title": item.title,
+        "summary": item.summary,
+        "description": item.description,
+        "requirements": item.requirements,
+        "tags": list(item.tags_json or []),
+        "status": item.status,
+        "publishState": _challenge_bank_publish_state(item),
+        "openAt": item.open_at,
+        "dueAt": item.due_at,
+        "createdAt": item.created_at,
+        "updatedAt": item.updated_at,
+        "publishedAt": item.published_at,
+        "unpublishedAt": item.unpublished_at,
+        "deletedAt": item.deleted_at,
+        "restoredAt": item.restored_at,
+        "version": _challenge_bank_version_view(db, version),
+        "actions": _challenge_bank_actions(item),
+    }
+
+
+def _student_challenge_bank_item_view(
+    db: Session,
+    settings: Settings,
+    principal: Principal,
+    item: models.ChallengeBankItem,
+) -> dict:
+    state = _challenge_bank_publish_state(item)
+    disabled_reason = None
+    if state == "NOT_STARTED":
+        disabled_reason = "题目还未开始"
+    elif state == "ENDED":
+        disabled_reason = "题目已结束"
+    elif state != "ACTIVE":
+        disabled_reason = "题目未发布"
+    attempt = None
+    if item.assignment_id:
+        attempt = db.scalar(
+            select(models.Attempt)
+            .where(models.Attempt.assignment_id == item.assignment_id)
+            .where(models.Attempt.student_id == principal.user_id)
+            .order_by(models.Attempt.number.asc(), models.Attempt.created_at.asc())
+            .limit(1)
+        )
+    return {
+        "itemId": item.id,
+        "courseId": item.course_id,
+        "title": item.title,
+        "summary": item.summary,
+        "description": item.description,
+        "requirements": item.requirements,
+        "tags": list(item.tags_json or []),
+        "publishState": state,
+        "clickable": state == "ACTIVE",
+        "disabledReason": disabled_reason,
+        "openAt": item.open_at,
+        "dueAt": item.due_at,
+        "attemptId": attempt.id if attempt else None,
+        "targetUrl": _challenge_bank_target_url(settings, item) if attempt else None,
+        "terminalUrl": f"/?attemptId={attempt.id}" if attempt else None,
+    }
+
+
+def _challenge_bank_target_url(settings: Settings, item: models.ChallengeBankItem) -> str:
+    base_url = settings.local_target_base_url.rstrip("/")
+    return base_url
 
 
 def _get_challenge_draft_or_404(db: Session, draft_id: str) -> models.ChallengeDraft:

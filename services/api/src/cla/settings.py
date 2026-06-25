@@ -32,6 +32,7 @@ class Settings:
     internal_service_token: str = "change-me-internal"
     gateway_url: str = "ws://localhost:8081/ws/terminal"
     sessiond_endpoint: str = "127.0.0.1:7777"
+    local_target_base_url: str = "http://127.0.0.1:18080"
     transcript_storage_backend: str = "local"
     transcript_object_root: str = "/tmp/cla-transcript-objects"
     transcript_s3_bucket: str = ""
@@ -104,6 +105,9 @@ def load_settings() -> Settings:
         ),
         gateway_url=os.getenv("CLA_GATEWAY_URL", Settings.gateway_url),
         sessiond_endpoint=os.getenv("CLA_SESSIOND_ENDPOINT", Settings.sessiond_endpoint),
+        local_target_base_url=os.getenv(
+            "CLA_LOCAL_TARGET_BASE_URL", Settings.local_target_base_url
+        ),
         transcript_storage_backend=os.getenv(
             "CLA_TRANSCRIPT_STORAGE_BACKEND", Settings.transcript_storage_backend
         ).strip().lower(),

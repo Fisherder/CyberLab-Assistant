@@ -8,7 +8,7 @@ if [[ -f "$ROOT/.env" ]]; then
   source "$ROOT/.env"
   set +a
 fi
-TMUX_SOCKET="${CLA_TMUX_SOCKET:-cla-dev}"
+TMUX_SOCKET="${CLA_TMUX_SOCKET:-default}"
 SESSION="${CLA_TMUX_SESSION:-cla}"
 WORKSPACE_ROOT="${CLA_LOCAL_WORKSPACE_DIR:-/private/tmp/cla-local-workspace/web-sqli-auth}"
 TEMPLATE_DIR="$ROOT/runtime/sessiond/workspace-template/web-sqli-auth"
@@ -40,27 +40,35 @@ if [[ ! -d "$TEMPLATE_DIR" ]]; then
   exit 1
 fi
 
+tmux_cmd() {
+  if [[ "$TMUX_SOCKET" == "default" ]]; then
+    tmux "$@"
+  else
+    tmux -L "$TMUX_SOCKET" "$@"
+  fi
+}
+
 rm -rf "$WORKSPACE_ROOT"
 mkdir -p "$WORKSPACE_ROOT"
 cp -R "$TEMPLATE_DIR/." "$WORKSPACE_ROOT/"
 
 rm -rf "$ROOT/apps/web/.next"
 
-tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION" 2>/dev/null || true
+tmux_cmd kill-session -t "$SESSION" 2>/dev/null || true
 
-tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION" -n target -c "$ROOT" \
+tmux_cmd new-session -d -s "$SESSION" -n target -c "$ROOT" \
   "env TARGET_PORT=18080 TARGET_SESSION_KEY=dev-session-key '$PYTHON_BIN' content/challenges/web-sqli-auth/target/server.py"
 
-tmux -L "$TMUX_SOCKET" new-window -t "$SESSION" -n sessiond -c "$ROOT/runtime/sessiond" \
+tmux_cmd new-window -t "$SESSION" -n sessiond -c "$ROOT/runtime/sessiond" \
   "env CLA_SESSIOND_ADDR=127.0.0.1:7777 CLA_WORKSPACE_SHELL=/bin/bash CLA_WORKSPACE_DIR='$WORKSPACE_ROOT' TARGET_BASE_URL=http://127.0.0.1:18080 '$GO_BIN' run ./cmd/sessiond"
 
-tmux -L "$TMUX_SOCKET" new-window -t "$SESSION" -n api -c "$ROOT" \
+tmux_cmd new-window -t "$SESSION" -n api -c "$ROOT" \
   "env PYTHONPATH=services/api/src CLA_DATABASE_URL=sqlite:///./cla-dev.db CLA_DEV_MODE=true CLA_LOCAL_AUTH_ENABLED=true CLA_INTERNAL_SERVICE_TOKEN=change-me-internal CLA_GATEWAY_URL=ws://127.0.0.1:8081/ws/terminal CLA_SESSIOND_ENDPOINT=127.0.0.1:7777 CLA_REMOTE_DESKTOP_ENABLED=false CLA_SIMULATED_WORKSPACE_ENABLED=false .venv/bin/uvicorn cla.main:app --host 127.0.0.1 --port 8000 --app-dir services/api/src"
 
-tmux -L "$TMUX_SOCKET" new-window -t "$SESSION" -n gateway -c "$ROOT/services/terminal-gateway" \
+tmux_cmd new-window -t "$SESSION" -n gateway -c "$ROOT/services/terminal-gateway" \
   "env CLA_API_URL=http://127.0.0.1:8000 CLA_INTERNAL_SERVICE_TOKEN=change-me-internal CLA_GATEWAY_ADDR=127.0.0.1:8081 '$GO_BIN' run ./cmd/gateway"
 
-tmux -L "$TMUX_SOCKET" new-window -t "$SESSION" -n web -c "$ROOT" \
+tmux_cmd new-window -t "$SESSION" -n web -c "$ROOT" \
   "env NEXT_PUBLIC_CLA_API_BASE= CLA_API_INTERNAL_BASE=http://127.0.0.1:8000 PORT=3000 HOSTNAME=127.0.0.1 '$PNPM_BIN' --dir apps/web dev"
 
 cat <<EOF
@@ -77,5 +85,6 @@ CLA 本地服务已在 tmux 中启动。
   $WORKSPACE_ROOT
 
 进入 tmux：
-  tmux -L $TMUX_SOCKET attach -t $SESSION
+  tmux attach -t $SESSION
+  或：tmux a -t $SESSION
 EOF

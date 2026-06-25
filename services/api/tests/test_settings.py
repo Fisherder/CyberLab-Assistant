@@ -15,6 +15,7 @@ def test_load_settings_maps_production_oidc_environment(monkeypatch) -> None:
     monkeypatch.setenv("CLA_OIDC_JWKS_JSON", '{"keys":[]}')
     monkeypatch.setenv("CLA_OIDC_ALGORITHMS", "RS256,ES256")
     monkeypatch.setenv("CLA_TRANSCRIPT_STORAGE_BACKEND", "s3")
+    monkeypatch.setenv("CLA_LOCAL_TARGET_BASE_URL", "https://target.example/labs")
     monkeypatch.setenv("CLA_TRANSCRIPT_S3_BUCKET", "cla-transcript-raw")
     monkeypatch.setenv("CLA_TRANSCRIPT_S3_PREFIX", "raw/terminal")
     monkeypatch.setenv("CLA_TRANSCRIPT_S3_ENDPOINT_URL", "http://minio:9000")
@@ -47,6 +48,7 @@ def test_load_settings_maps_production_oidc_environment(monkeypatch) -> None:
     )
     assert settings.oidc_jwks_json == '{"keys":[]}'
     assert settings.oidc_algorithms == ("RS256", "ES256")
+    assert settings.local_target_base_url == "https://target.example/labs"
     assert settings.transcript_storage_backend == "s3"
     assert settings.transcript_s3_bucket == "cla-transcript-raw"
     assert settings.transcript_s3_prefix == "raw/terminal"

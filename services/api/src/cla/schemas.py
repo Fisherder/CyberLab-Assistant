@@ -201,6 +201,102 @@ class ChallengeGeneratedVersionView(ChallengeMaterializeView):
     modelDraft: dict
 
 
+class ChallengeBankPublishWindow(BaseModel):
+    openAt: datetime
+    dueAt: datetime
+
+
+class CreateChallengeBankItemRequest(BaseModel):
+    courseId: str = Field(min_length=1, max_length=64)
+    challengeVersionId: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=240)
+    summary: str = Field(min_length=1, max_length=1000)
+    description: str = Field(min_length=1, max_length=8000)
+    requirements: str = Field(min_length=1, max_length=8000)
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    publish: bool = False
+    publishWindow: ChallengeBankPublishWindow | None = None
+
+
+class UpdateChallengeBankItemRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=240)
+    summary: str | None = Field(default=None, min_length=1, max_length=1000)
+    description: str | None = Field(default=None, min_length=1, max_length=8000)
+    requirements: str | None = Field(default=None, min_length=1, max_length=8000)
+    tags: list[str] | None = Field(default=None, max_length=20)
+
+
+class PublishChallengeBankItemRequest(BaseModel):
+    openAt: datetime
+    dueAt: datetime
+
+
+class ChallengeBankItemView(BaseModel):
+    itemId: str
+    courseId: str
+    challengeVersionId: str
+    assignmentId: str | None
+    title: str
+    summary: str
+    description: str
+    requirements: str
+    tags: list[str]
+    status: str
+    publishState: str
+    openAt: datetime | None
+    dueAt: datetime | None
+    createdAt: datetime
+    updatedAt: datetime
+    publishedAt: datetime | None
+    unpublishedAt: datetime | None
+    deletedAt: datetime | None
+    restoredAt: datetime | None
+    version: ChallengeRegistryVersionView
+    actions: dict
+
+
+class ChallengeBankListView(BaseModel):
+    courseId: str | None
+    count: int
+    items: list[ChallengeBankItemView]
+
+
+class StudentChallengeBankItemView(BaseModel):
+    itemId: str
+    courseId: str
+    title: str
+    summary: str
+    description: str
+    requirements: str
+    tags: list[str]
+    publishState: str
+    clickable: bool
+    disabledReason: str | None
+    openAt: datetime
+    dueAt: datetime
+    attemptId: str | None = None
+    targetUrl: str | None = None
+    terminalUrl: str | None = None
+
+
+class StudentChallengeBankListView(BaseModel):
+    count: int
+    items: list[StudentChallengeBankItemView]
+
+
+class StartChallengeBankItemView(BaseModel):
+    itemId: str
+    assignmentId: str
+    attemptId: str
+    sessionId: str
+    sessionEpoch: int
+    sessionStatus: str
+    targetUrl: str
+    terminalUrl: str
+    workspaceUrl: str
+    reusedAttempt: bool
+
+
 class CreateAttemptRequest(BaseModel):
     clientCapabilities: ClientCapabilities = Field(default_factory=ClientCapabilities)
 
