@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   FileText,
   Lightbulb,
+  LogOut,
   Play,
   RefreshCcw,
   Send,
@@ -16,13 +17,16 @@ import {
 } from "lucide-react";
 import {
   createAttempt,
+  clearAuthToken,
   ensureSession,
   fetchGrade,
   fetchTutorState,
+  hasAuthToken,
   requestHint,
   resetSession,
   sendHintFeedback,
   submitAnswer,
+  setDevToken,
   terminalTicket,
   type GradeResponse,
   type TutorStateResponse
@@ -55,11 +59,22 @@ export function TerminalWorkbench() {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const devToken = params.get("claDevToken");
     if (devToken) {
-      window.localStorage.setItem("claDevToken", devToken);
+      setDevToken(devToken);
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    if (!hasAuthToken()) {
+      window.location.replace(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      );
+      return;
     }
     return () => wsRef.current?.close();
   }, []);
+
+  function logout() {
+    clearAuthToken();
+    window.location.href = "/login";
+  }
 
   async function start() {
     setError("");
@@ -232,6 +247,11 @@ export function TerminalWorkbench() {
           </button>
           <button type="button">
             <ShieldCheck size={16} /> Appeal
+          </button>
+        </div>
+        <div className="sidebar-actions">
+          <button type="button" onClick={logout}>
+            <LogOut size={16} /> 退出登录
           </button>
         </div>
       </aside>

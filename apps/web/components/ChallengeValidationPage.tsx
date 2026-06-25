@@ -15,6 +15,7 @@ import {
 import {
   approveChallengeVersion,
   fetchChallengeValidation,
+  hasAuthToken,
   type ChallengeValidationResponse
 } from "../lib/api";
 
@@ -30,6 +31,12 @@ export function ChallengeValidationPage({ versionId }: ChallengeValidationPagePr
   const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
+    if (!hasAuthToken()) {
+      window.location.replace(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      );
+      return;
+    }
     void loadReport();
   }, [versionId]);
 

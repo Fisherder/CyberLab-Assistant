@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, FileCheck2, RefreshCw, Scale, Send, ShieldCheck } from "lucide-react";
-import { createAppeal, fetchGrade, type AppealResponse, type GradeResponse } from "../lib/api";
+import {
+  createAppeal,
+  fetchGrade,
+  hasAuthToken,
+  type AppealResponse,
+  type GradeResponse
+} from "../lib/api";
 
 type GradeEvidencePageProps = {
   attemptId: string;
@@ -19,6 +25,12 @@ export function GradeEvidencePage({ attemptId }: GradeEvidencePageProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!hasAuthToken()) {
+      window.location.replace(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      );
+      return;
+    }
     void loadGrade();
   }, [attemptId]);
 

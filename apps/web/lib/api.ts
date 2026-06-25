@@ -2,6 +2,24 @@ import { z } from "zod";
 
 const API_BASE = process.env.NEXT_PUBLIC_CLA_API_BASE ?? "http://localhost:8000";
 const ASSIGNMENT_ID = process.env.NEXT_PUBLIC_CLA_ASSIGNMENT_ID ?? "asg_web_sqli_auth";
+const AUTH_TOKEN_KEY = "claAuthToken";
+const DEV_TOKEN_KEY = "claDevToken";
+
+const AuthUserResponse = z.object({
+  tenantId: z.string(),
+  userId: z.string(),
+  displayName: z.string(),
+  email: z.string().optional(),
+  roles: z.array(z.string()),
+  courseRoles: z.array(z.object({ courseId: z.string(), role: z.string() }))
+});
+
+const AuthTokenResponse = z.object({
+  accessToken: z.string(),
+  tokenType: z.literal("Bearer"),
+  expiresAt: z.string(),
+  user: AuthUserResponse
+});
 
 const AttemptResponse = z.object({
   attemptId: z.string(),
@@ -186,10 +204,37 @@ export type TutorStateResponse = z.infer<typeof TutorStateResponse>;
 export type AssignmentLiveResponse = z.infer<typeof AssignmentLiveResponse>;
 export type ChallengeValidationResponse = z.infer<typeof ChallengeValidationResponse>;
 export type ChallengeApprovalResponse = z.infer<typeof ChallengeApprovalResponse>;
+export type AuthUserResponse = z.infer<typeof AuthUserResponse>;
+export type AuthTokenResponse = z.infer<typeof AuthTokenResponse>;
+
+export function currentToken(): string {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(AUTH_TOKEN_KEY) ?? window.localStorage.getItem(DEV_TOKEN_KEY) ?? "";
+}
+
+export function hasAuthToken(): boolean {
+  return currentToken().length > 0;
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+  window.localStorage.removeItem(DEV_TOKEN_KEY);
+}
+
+export function setDevToken(tokenValue: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DEV_TOKEN_KEY, tokenValue);
+}
+
+export function clearAuthToken(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.localStorage.removeItem(DEV_TOKEN_KEY);
+}
 
 function token(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("claDevToken") ?? "";
+  return currentToken();
 }
 
 async function api<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}): Promise<T> {
@@ -203,6 +248,29 @@ async function api<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}
     throw new Error(body?.detail?.code ?? response.statusText);
   }
   return schema.parse(await response.json());
+}
+
+export async function loginLocalAccount(email: string, password: string): Promise<AuthTokenResponse> {
+  return api("/api/v1/auth/login", AuthTokenResponse, {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+}
+
+export async function registerLocalAccount(
+  email: string,
+  password: string,
+  displayName: string,
+  role: "STUDENT" | "TEACHER"
+): Promise<AuthTokenResponse> {
+  return api("/api/v1/auth/register", AuthTokenResponse, {
+    method: "POST",
+    body: JSON.stringify({ email, password, displayName, role })
+  });
+}
+
+export async function fetchMe(): Promise<AuthUserResponse> {
+  return api("/api/v1/me", AuthUserResponse);
 }
 
 export async function createAttempt(): Promise<AttemptResponse> {

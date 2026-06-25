@@ -61,7 +61,17 @@ curl http://localhost:8000/healthz
 {"ok":true,"agentRuntimeEnabled":false}
 ```
 
-## 生成开发 token
+## 登录方式与开发 token
+
+默认本地 Web 已提供注册和登录页面：
+
+```text
+http://localhost:3000/login
+```
+
+学生可以注册学生账号并进入学生工作台。教师可以注册教师账号并进入教师验证报告页。生产环境仍建议接入学校 OIDC，并由管理员审核教师身份。
+
+开发 token 仍保留给自动化和底层接口调试使用：
 
 ```bash
 PYTHONPATH=services/api/src .venv/bin/python -m cla.dev_tokens
@@ -85,7 +95,7 @@ http://localhost:3000/#claDevToken=<student-token>
 localStorage.setItem("claDevToken", "<teacher-token>")
 ```
 
-开发 token 只在 `CLA_DEV_MODE=true` 时使用。
+开发 token 只在 `CLA_DEV_MODE=true` 时使用。本地账号登录由 `CLA_LOCAL_AUTH_ENABLED` 控制，默认开启。
 
 ## 执行数据库迁移
 
@@ -168,7 +178,7 @@ HOSTNAME=:: PORT=3000 NEXT_PUBLIC_CLA_API_BASE= CLA_API_INTERNAL_BASE=http://127
 http://localhost:3000
 ```
 
-Web 页面依赖 `localStorage.claDevToken`。没有 token 时 API 会返回认证失败。
+Web 页面未登录时会自动跳转到 `/login`。登录成功后，页面会把会话 token 保存在浏览器本地存储中；点击“退出登录”会清除 token 并回到登录页。
 
 ## Compose 本地栈
 
@@ -235,10 +245,9 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output 
 
 在 API、Gateway、sessiond 和 Web 都启动后：
 
-1. 生成开发 token。
-2. 打开 `http://localhost:3000`。
-3. 写入学生 token 到 `localStorage.claDevToken`。
-4. 进入学生工作台。
+1. 打开 `http://localhost:3000/login`。
+2. 注册或登录学生账号。
+3. 进入学生工作台。
 5. 点击开始，创建 Attempt 和 LabSession。
 6. API 返回一次性终端票据，Web 建立 WebSocket。
 7. 在终端中执行命令。

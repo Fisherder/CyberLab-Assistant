@@ -45,7 +45,20 @@ def _reconcile_sqlite_development_schema(engine: Engine) -> None:
         return
 
     inspector = inspect(engine)
-    if "appeals" not in inspector.get_table_names():
+    table_names = set(inspector.get_table_names())
+    if "users" in table_names:
+        user_columns = {column["name"] for column in inspector.get_columns("users")}
+        missing_user_columns = {
+            "password_hash": "ALTER TABLE users ADD COLUMN password_hash VARCHAR(300)",
+            "created_at": "ALTER TABLE users ADD COLUMN created_at DATETIME",
+            "last_login_at": "ALTER TABLE users ADD COLUMN last_login_at DATETIME",
+        }
+        with engine.begin() as connection:
+            for column_name, statement in missing_user_columns.items():
+                if column_name not in user_columns:
+                    connection.execute(text(statement))
+
+    if "appeals" not in table_names:
         return
 
     appeal_columns = {column["name"] for column in inspector.get_columns("appeals")}

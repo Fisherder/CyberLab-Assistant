@@ -30,6 +30,7 @@ from cla.schemas import (
     AppendBatchRequest,
     AssignmentLiveView,
     AssignmentView,
+    AuthTokenResponse,
     AttemptResponse,
     AttemptView,
     ChallengeApprovalView,
@@ -50,8 +51,10 @@ from cla.schemas import (
     HintFeedbackRequest,
     HintRequest,
     HintView,
+    LoginRequest,
     MaterializeChallengeDraftRequest,
     OracleObservation,
+    RegisterRequest,
     RouteRegistrationRequest,
     RouteUnregisterRequest,
     ResolveAppealRequest,
@@ -71,9 +74,12 @@ from cla.security import (
     Principal,
     api_error,
     authenticate_request,
+    create_local_auth_token,
+    hash_password,
     require_attempt_owner,
     require_attempt_owner_or_teacher,
     require_course_role,
+    verify_password,
 )
 from cla.seed import DEV_IDS, seed_dev_data
 from cla.settings import Settings, load_settings
@@ -125,6 +131,92 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/healthz")
     def healthz() -> dict:
         return {"ok": True, "agentRuntimeEnabled": settings.agent_runtime_enabled}
+
+    @app.post("/api/v1/auth/register", response_model=AuthTokenResponse, status_code=201)
+    def register_local_account(body: RegisterRequest, db: Session = Depends(get_db)) -> dict:
+        _require_local_auth_enabled(settings)
+        email = _normalize_email(body.email)
+        display_name = body.displayName.strip()
+        if not email:
+            raise api_error(422, "INVALID_EMAIL", "Email is invalid")
+        if db.scalar(
+            select(models.User).where(
+                models.User.tenant_id == DEV_IDS["tenant"],
+                func.lower(models.User.email) == email,
+            )
+        ):
+            raise api_error(409, "ACCOUNT_ALREADY_EXISTS", "Account already exists")
+        tenant = db.get(models.Tenant, DEV_IDS["tenant"])
+        course = db.get(models.Course, DEV_IDS["course"])
+        if tenant is None or course is None:
+            raise api_error(500, "AUTH_BOOTSTRAP_MISSING", "Local auth bootstrap data is missing")
+        user = models.User(
+            id=new_id("user"),
+            tenant_id=tenant.id,
+            oidc_subject=f"local:{email}",
+            display_name=display_name,
+            email=email,
+            password_hash=hash_password(body.password),
+            created_at=datetime.now(timezone.utc),
+        )
+        course_role = body.role
+        db.add_all(
+            [
+                user,
+                models.CourseMember(course_id=course.id, user_id=user.id, role=course_role),
+            ]
+        )
+        db.flush()
+        roles = _global_roles_from_course_roles([course_role])
+        token, expires_at = create_local_auth_token(
+            settings,
+            subject=user.oidc_subject,
+            tenant_id=user.tenant_id,
+            roles=roles,
+        )
+        _audit(
+            db,
+            Principal(user.tenant_id, user.id, user.oidc_subject, frozenset(roles)),
+            "auth.register",
+            "user",
+            user.id,
+            "ALLOW",
+        )
+        return _auth_token_response(db, user, roles, token, expires_at)
+
+    @app.post("/api/v1/auth/login", response_model=AuthTokenResponse)
+    def login_local_account(body: LoginRequest, db: Session = Depends(get_db)) -> dict:
+        _require_local_auth_enabled(settings)
+        email = _normalize_email(body.email)
+        user = db.scalar(
+            select(models.User).where(
+                models.User.tenant_id == DEV_IDS["tenant"],
+                func.lower(models.User.email) == email,
+                models.User.status == "ACTIVE",
+            )
+        )
+        if user is None or not verify_password(body.password, user.password_hash):
+            raise api_error(401, "INVALID_CREDENTIALS", "Email or password is incorrect")
+        memberships = db.scalars(
+            select(models.CourseMember).where(models.CourseMember.user_id == user.id)
+        ).all()
+        roles = _global_roles_from_course_roles([membership.role for membership in memberships])
+        user.last_login_at = datetime.now(timezone.utc)
+        token, expires_at = create_local_auth_token(
+            settings,
+            subject=user.oidc_subject,
+            tenant_id=user.tenant_id,
+            roles=roles,
+        )
+        _audit(
+            db,
+            Principal(user.tenant_id, user.id, user.oidc_subject, frozenset(roles)),
+            "auth.login",
+            "user",
+            user.id,
+            "ALLOW",
+        )
+        return _auth_token_response(db, user, roles, token, expires_at)
 
     @app.get("/api/v1/me")
     def me(principal: Principal = Depends(get_principal), db: Session = Depends(get_db)) -> dict:
@@ -2180,6 +2272,60 @@ def _aware_utc(value: datetime | None) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
+
+
+def _require_local_auth_enabled(settings: Settings) -> None:
+    if not settings.local_auth_enabled:
+        raise api_error(403, "LOCAL_AUTH_DISABLED", "Local account login is disabled")
+
+
+def _normalize_email(email: str) -> str:
+    value = email.strip().lower()
+    if "@" not in value or value.startswith("@") or value.endswith("@"):
+        return ""
+    return value
+
+
+def _global_roles_from_course_roles(course_roles: list[str]) -> list[str]:
+    roles: set[str] = set()
+    for role in course_roles:
+        if role in {"TEACHER", "TA"}:
+            roles.add("teacher")
+        elif role == "STUDENT":
+            roles.add("student")
+    return sorted(roles)
+
+
+def _auth_token_response(
+    db: Session,
+    user: models.User,
+    roles: list[str],
+    access_token: str,
+    expires_at: datetime,
+) -> dict:
+    return {
+        "accessToken": access_token,
+        "tokenType": "Bearer",
+        "expiresAt": expires_at,
+        "user": _auth_user_view(db, user, roles),
+    }
+
+
+def _auth_user_view(db: Session, user: models.User, roles: list[str]) -> dict:
+    memberships = db.scalars(
+        select(models.CourseMember).where(models.CourseMember.user_id == user.id)
+    ).all()
+    return {
+        "tenantId": user.tenant_id,
+        "userId": user.id,
+        "displayName": user.display_name,
+        "email": user.email,
+        "roles": sorted(roles),
+        "courseRoles": [
+            {"courseId": membership.course_id, "role": membership.role}
+            for membership in memberships
+        ],
+    }
 
 
 def _require_internal_service(settings: Settings, token: str | None) -> None:

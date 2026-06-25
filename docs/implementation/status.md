@@ -5,6 +5,8 @@
 ## 本轮完成
 
 - 已按用户视角重写教师端和学生端使用手册：从进入页面、点击按钮、输入内容、查看结果到常见问题逐步说明，不再把开发接口、内部模块和实现细节作为主体内容。
+- 已新增本地账号注册登录功能：学生和教师可以通过 `/login` 页面注册或登录，登录后获得平台会话 token；学生进入终端工作台，教师进入验证报告页，退出登录会清除浏览器 token。
+- 已在后端新增本地账号密码哈希、会话 token、注册/登录接口和 Alembic 迁移，并保留原有 OIDC、开发 token、RBAC、课程成员权限检查。
 - 已为手册补充真实本机页面截图，覆盖学生工作台、终端连接、提示、答案提交、成绩证据、申诉，以及教师验证报告和实时监控页面。
 - 已更新 `tools/build_user_manuals.py`，用同一份结构化内容生成 Markdown、HTML 和 PDF，便于后续同步维护教师端和学生端手册。
 - 当前用户手册源文档位于 `docs/user-manuals/teacher-guide.md`、`docs/user-manuals/student-guide.md`，HTML 版本位于 `docs/user-manuals/teacher-guide.html`、`docs/user-manuals/student-guide.html`，PDF 版本位于 `output/pdf/cla-teacher-guide.pdf` 和 `output/pdf/cla-student-guide.pdf`。
@@ -32,6 +34,7 @@
 ## 当前已验证能力
 
 - API 控制平面：OIDC、RBAC、课程/成员/作业、Attempt 幂等、LabSession、本地 reset、终端票据、路由注册、票据撤销、事件接入、转录索引/加密/恢复/保留、Oracle、评分、申诉、Tutor、教师监控和内容验证。
+- 本地账号认证：注册学生账号、学生登录、创建 Attempt，注册教师账号、教师访问验证报告和 live monitor 均已通过 API 测试和本机浏览器验证。
 - Gateway/sessiond：二进制 STDIN/STDOUT、resize、heartbeat、ACK、重连 replay、Redis replay、背压、异步录制和 metrics。
 - Environment Controller：LabSession CRD 类型、资源规划、调和决策、controller-runtime fake client、Kubernetes Event、route registry、ticket revoke、orphan scanner 和 metrics。
 - Web：学生工作台、成绩证据页、教师验证报告页、教师 live monitor 页面可以构建并通过类型检查；本机浏览器已验证学生终端连接、命令回显、提示、提交、成绩页、申诉、教师验证报告和教师 live monitor。
@@ -41,7 +44,7 @@
 
 ```bash
 .venv/bin/python -m pytest services/api/tests
-# 结果：61 passed, 1 skipped in 3.39s
+# 结果：65 passed, 1 skipped in 3.86s，包含本地账号注册登录测试
 
 env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sessionwire/... ./services/terminal-gateway/... ./services/environment-controller/... ./runtime/sessiond/...
 # packages/sessionwire：通过

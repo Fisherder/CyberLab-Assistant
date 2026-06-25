@@ -12,7 +12,7 @@ import {
   ShieldAlert,
   Users
 } from "lucide-react";
-import { fetchAssignmentLive, type AssignmentLiveResponse } from "../lib/api";
+import { fetchAssignmentLive, hasAuthToken, type AssignmentLiveResponse } from "../lib/api";
 
 type TeacherLivePageProps = {
   assignmentId: string;
@@ -24,6 +24,12 @@ export function TeacherLivePage({ assignmentId }: TeacherLivePageProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!hasAuthToken()) {
+      window.location.replace(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      );
+      return;
+    }
     void loadLive();
   }, [assignmentId]);
 

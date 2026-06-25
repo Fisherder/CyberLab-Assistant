@@ -65,6 +65,8 @@ def assert_core_schema(database_url: str) -> None:
         }
         assert {"object_ref", "sha256", "redaction_state"} <= transcript_columns
         assert not {"raw_text", "content", "plaintext"} & transcript_columns
+        user_columns = {column["name"] for column in inspector.get_columns("users")}
+        assert {"password_hash", "created_at", "last_login_at"} <= user_columns
         appeal_columns = {column["name"] for column in inspector.get_columns("appeals")}
         assert {"grade_revision_id", "criterion_id", "reason", "status"} <= appeal_columns
 
@@ -72,7 +74,7 @@ def assert_core_schema(database_url: str) -> None:
             version = connection.execute(
                 text("select version_num from alembic_version")
             ).scalar_one()
-        assert version == "0001_core"
+        assert version == "0002_local_auth"
     finally:
         engine.dispose()
 

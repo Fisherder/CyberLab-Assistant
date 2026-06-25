@@ -7,6 +7,35 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 WorkspaceType = Literal["TERMINAL", "REMOTE_DESKTOP", "SIMULATED"]
+AccountRole = Literal["STUDENT", "TEACHER"]
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    displayName: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=8, max_length=128)
+    role: AccountRole = "STUDENT"
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class AuthUserView(BaseModel):
+    tenantId: str
+    userId: str
+    displayName: str
+    email: str
+    roles: list[str]
+    courseRoles: list[dict]
+
+
+class AuthTokenResponse(BaseModel):
+    accessToken: str
+    tokenType: Literal["Bearer"] = "Bearer"
+    expiresAt: datetime
+    user: AuthUserView
 
 
 class ClientCapabilities(BaseModel):

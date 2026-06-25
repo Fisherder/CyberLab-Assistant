@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+import base64
+import binascii
 from functools import lru_cache
+import hashlib
+import hmac
 import json
+import secrets
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
@@ -15,6 +20,8 @@ from sqlalchemy.orm import Session
 
 from cla import models
 from cla.settings import Settings
+
+PBKDF2_ITERATIONS = 210_000
 
 
 @dataclass(frozen=True)
@@ -49,12 +56,72 @@ def create_dev_token(
     )
 
 
+def create_local_auth_token(
+    settings: Settings,
+    *,
+    subject: str,
+    tenant_id: str,
+    roles: list[str],
+) -> tuple[str, datetime]:
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(minutes=settings.local_auth_token_minutes)
+    token = jwt.encode(
+        {
+            "iss": settings.local_auth_issuer,
+            "aud": settings.local_auth_audience,
+            "sub": subject,
+            "tenant_id": tenant_id,
+            "roles": roles,
+            "auth_provider": "local",
+            "iat": int(now.timestamp()),
+            "exp": int(expires_at.timestamp()),
+        },
+        settings.local_auth_secret,
+        algorithm="HS256",
+    )
+    return token, expires_at
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        PBKDF2_ITERATIONS,
+    )
+    return "$".join(
+        [
+            "pbkdf2_sha256",
+            str(PBKDF2_ITERATIONS),
+            base64.b64encode(salt).decode("ascii"),
+            base64.b64encode(digest).decode("ascii"),
+        ]
+    )
+
+
+def verify_password(password: str, password_hash: str | None) -> bool:
+    if not password_hash:
+        return False
+    try:
+        algorithm, iterations_raw, salt_raw, digest_raw = password_hash.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        iterations = int(iterations_raw)
+        salt = base64.b64decode(salt_raw.encode("ascii"))
+        expected = base64.b64decode(digest_raw.encode("ascii"))
+    except (binascii.Error, ValueError, TypeError):
+        return False
+    actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+    return hmac.compare_digest(actual, expected)
+
+
 def authenticate_request(request: Request, db: Session, settings: Settings) -> Principal:
     header = request.headers.get("authorization", "")
     if not header.startswith("Bearer "):
         raise api_error(status.HTTP_401_UNAUTHORIZED, "UNAUTHENTICATED", "Missing bearer token")
     token = header.removeprefix("Bearer ").strip()
-    claims = _decode_oidc_token(token, settings)
+    claims = _decode_bearer_token(token, settings)
     tenant_id = str(claims.get("tenant_id", ""))
     subject = str(claims.get("sub", ""))
     if not tenant_id or not subject:
@@ -74,6 +141,42 @@ def authenticate_request(request: Request, db: Session, settings: Settings) -> P
         oidc_subject=subject,
         roles=frozenset(str(role) for role in claims.get("roles", [])),
     )
+
+
+def _decode_bearer_token(token: str, settings: Settings) -> dict[str, Any]:
+    issuer = _unverified_issuer(token)
+    if settings.local_auth_enabled and issuer == settings.local_auth_issuer:
+        return _decode_local_auth_token(token, settings)
+    return _decode_oidc_token(token, settings)
+
+
+def _unverified_issuer(token: str) -> str | None:
+    try:
+        claims = jwt.decode(
+            token,
+            options={"verify_signature": False, "verify_aud": False, "verify_exp": False},
+        )
+    except jwt.PyJWTError:
+        return None
+    return str(claims.get("iss", ""))
+
+
+def _decode_local_auth_token(token: str, settings: Settings) -> dict[str, Any]:
+    try:
+        return jwt.decode(
+            token,
+            settings.local_auth_secret,
+            algorithms=["HS256"],
+            issuer=settings.local_auth_issuer,
+            audience=settings.local_auth_audience,
+            options={"require": ["exp", "iat", "iss", "aud", "sub"]},
+        )
+    except jwt.PyJWTError as exc:
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            "UNAUTHENTICATED",
+            "Invalid local session",
+        ) from exc
 
 
 def _decode_oidc_token(token: str, settings: Settings) -> dict[str, Any]:

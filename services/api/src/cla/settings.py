@@ -17,6 +17,11 @@ class Settings:
     oidc_jwks_url: str | None = None
     oidc_jwks_json: str | None = None
     oidc_algorithms: tuple[str, ...] = ("RS256",)
+    local_auth_enabled: bool = True
+    local_auth_issuer: str = "cla-local-auth"
+    local_auth_audience: str = "cla-web"
+    local_auth_secret: str = "change-me-local-auth"
+    local_auth_token_minutes: int = 720
     terminal_ticket_secret: str = "change-me-terminal-ticket"
     oracle_shared_secret: str = "change-me-oracle"
     internal_service_token: str = "change-me-internal"
@@ -57,6 +62,18 @@ def load_settings() -> Settings:
             item.strip()
             for item in os.getenv("CLA_OIDC_ALGORITHMS", ",".join(Settings.oidc_algorithms)).split(",")
             if item.strip()
+        ),
+        local_auth_enabled=_bool(
+            os.getenv("CLA_LOCAL_AUTH_ENABLED"), Settings.local_auth_enabled
+        ),
+        local_auth_issuer=os.getenv("CLA_LOCAL_AUTH_ISSUER", Settings.local_auth_issuer),
+        local_auth_audience=os.getenv("CLA_LOCAL_AUTH_AUDIENCE", Settings.local_auth_audience),
+        local_auth_secret=os.getenv("CLA_LOCAL_AUTH_SECRET", Settings.local_auth_secret),
+        local_auth_token_minutes=int(
+            os.getenv(
+                "CLA_LOCAL_AUTH_TOKEN_MINUTES",
+                str(Settings.local_auth_token_minutes),
+            )
         ),
         terminal_ticket_secret=os.getenv(
             "CLA_TERMINAL_TICKET_SECRET", Settings.terminal_ticket_secret
