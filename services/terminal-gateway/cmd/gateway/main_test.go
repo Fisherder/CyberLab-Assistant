@@ -654,7 +654,7 @@ func waitForMetric(
 	t.Helper()
 	deadline := time.Now().Add(2 * time.Second)
 	for {
-		if got := metricValue(t, gatherer, name, labels); got == want {
+		if got, ok := findMetricValue(t, gatherer, name, labels); ok && got == want {
 			return
 		}
 		if time.Now().After(deadline) {
@@ -665,6 +665,20 @@ func waitForMetric(
 }
 
 func metricValue(t *testing.T, gatherer prometheus.Gatherer, name string, labels map[string]string) float64 {
+	t.Helper()
+	value, ok := findMetricValue(t, gatherer, name, labels)
+	if !ok {
+		t.Fatalf("metric %s with labels %#v not found", name, labels)
+	}
+	return value
+}
+
+func findMetricValue(
+	t *testing.T,
+	gatherer prometheus.Gatherer,
+	name string,
+	labels map[string]string,
+) (float64, bool) {
 	t.Helper()
 	families, err := gatherer.Gather()
 	if err != nil {
@@ -679,16 +693,15 @@ func metricValue(t *testing.T, gatherer prometheus.Gatherer, name string, labels
 				continue
 			}
 			if metric.GetGauge() != nil {
-				return metric.GetGauge().GetValue()
+				return metric.GetGauge().GetValue(), true
 			}
 			if metric.GetCounter() != nil {
-				return metric.GetCounter().GetValue()
+				return metric.GetCounter().GetValue(), true
 			}
 			t.Fatalf("metric %s is not gauge or counter", name)
 		}
 	}
-	t.Fatalf("metric %s with labels %#v not found", name, labels)
-	return 0
+	return 0, false
 }
 
 func metricLabelsMatch(pairs []*io_prometheus_client.LabelPair, labels map[string]string) bool {
