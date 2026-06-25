@@ -24,6 +24,11 @@ from cla.authoring import (
     search_challenge_candidates,
     validate_selected_challenge_package,
 )
+from cla.challenge_catalog import (
+    CUSTOM_CANDIDATE_ID,
+    generate_custom_challenge_package,
+    import_authoritative_blueprints,
+)
 from cla.database import init_db, make_engine, make_session_factory, session_scope
 from cla.events import append_event, latest_session_epoch
 from cla.grading import publish_grade_revision
@@ -405,6 +410,44 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return result
 
     @app.post(
+        "/api/v1/challenge-registry/import-blueprints",
+        response_model=ChallengeImportView,
+        status_code=202,
+    )
+    def import_blueprint_registry(
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        if not ({"teacher", "admin"} & set(principal.roles)):
+            raise api_error(403, "FORBIDDEN_SCOPE", "Only teachers or admins can import blueprints")
+        result = import_authoritative_blueprints(
+            db,
+            tenant_id=principal.tenant_id,
+            actor_id=principal.user_id,
+        )
+        _audit(
+            db,
+            principal,
+            "challenge.registry.import_blueprints",
+            "challenge_registry",
+            "content/challenge-blueprints/authoritative-catalog.yaml",
+            "ALLOW",
+            after_ref=f"imported={len(result['imported'])} skipped={len(result['skipped'])}",
+        )
+        _outbox(
+            db,
+            "challenge_registry",
+            principal.tenant_id,
+            "challenge.registry.blueprints_imported",
+            {
+                "imported": len(result["imported"]),
+                "skipped": len(result["skipped"]),
+                "summary": result.get("summary", {}),
+            },
+        )
+        return result
+
+    @app.post(
         "/api/v1/challenge-drafts",
         response_model=ChallengeDraftView,
         status_code=201,
@@ -585,6 +628,72 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ),
             "generatedBy": model_payload["generatedBy"],
             "modelDraft": model_payload["draft"],
+        }
+
+    @app.post(
+        "/api/v1/challenge-drafts/{draft_id}/generate-custom-package",
+        response_model=ChallengeGeneratedVersionView,
+    )
+    def generate_custom_challenge_version(
+        draft_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        draft = _get_challenge_draft_or_404(db, draft_id)
+        _require_challenge_draft_teacher(db, principal, draft)
+        existing_selection = draft.constraints_json.get("selectedCandidateId")
+        if draft.selected_version_id is not None:
+            if existing_selection and existing_selection != CUSTOM_CANDIDATE_ID:
+                raise api_error(
+                    409,
+                    "DRAFT_ALREADY_GENERATED",
+                    "Challenge draft has already been generated with another candidate",
+                )
+            version = db.get(models.ChallengeVersion, draft.selected_version_id)
+            if version is None:
+                raise api_error(404, "NOT_FOUND", "Generated ChallengeVersion not found")
+            validation_run = _latest_validation_run(db, version.id)
+            if validation_run is None:
+                raise api_error(404, "NOT_FOUND", "Validation report not found")
+            model_draft = version.manifest_json.get("authoring", {})
+            return {
+                **_challenge_materialize_view(draft, CUSTOM_CANDIDATE_ID, version, validation_run),
+                "generatedBy": model_draft.get("generatedBy", "agent-scaffold"),
+                "modelDraft": model_draft,
+            }
+        version, validation_run, payload = generate_custom_challenge_package(
+            db,
+            settings,
+            tenant_id=principal.tenant_id,
+            actor_id=principal.user_id,
+            draft=draft,
+        )
+        _audit(
+            db,
+            principal,
+            "challenge.draft.generate_custom_package",
+            "challenge_draft",
+            draft.id,
+            "ALLOW",
+            before_ref=CUSTOM_CANDIDATE_ID,
+            after_ref=version.id,
+        )
+        _outbox(
+            db,
+            "challenge_version",
+            version.id,
+            "challenge.version.custom_package_generated",
+            {
+                "draftId": draft.id,
+                "sourceCandidateId": CUSTOM_CANDIDATE_ID,
+                "challengeVersionId": version.id,
+                "generatedBy": payload["generatedBy"],
+            },
+        )
+        return {
+            **_challenge_materialize_view(draft, CUSTOM_CANDIDATE_ID, version, validation_run),
+            "generatedBy": payload["generatedBy"],
+            "modelDraft": payload["draft"],
         }
 
     @app.post(

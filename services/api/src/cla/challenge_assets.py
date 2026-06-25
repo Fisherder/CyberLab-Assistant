@@ -101,6 +101,37 @@ def store_generated_version_asset(
     )
 
 
+def store_generated_challenge_package(
+    settings: Settings,
+    *,
+    tenant_id: str,
+    slug: str,
+    semver: str,
+    files: dict[str, str],
+) -> StoredChallengeArtifact:
+    archive = _build_deterministic_tar_from_files(files)
+    sha256 = f"sha256:{hashlib.sha256(archive).hexdigest()}"
+    object_ref = _store_bytes(
+        settings,
+        tenant_id=tenant_id,
+        slug=slug,
+        semver=semver,
+        name=f"generated-package-{_digest_value(sha256)}.tar",
+        payload=archive,
+        content_type="application/x-tar",
+    )
+    return StoredChallengeArtifact(
+        object_ref=object_ref,
+        sha256=sha256,
+        byte_count=len(archive),
+        metadata={
+            "artifactKind": "generated-challenge-package",
+            "fileCount": len(files),
+            "files": sorted(files),
+        },
+    )
+
+
 def _build_deterministic_tar(package_dir: Path) -> bytes:
     buffer = BytesIO()
     with tarfile.open(fileobj=buffer, mode="w") as archive:
@@ -114,6 +145,27 @@ def _build_deterministic_tar(package_dir: Path) -> bytes:
             info.mtime = 0
             with path.open("rb") as file_obj:
                 archive.addfile(info, file_obj)
+    return buffer.getvalue()
+
+
+def _build_deterministic_tar_from_files(files: dict[str, str]) -> bytes:
+    buffer = BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w") as archive:
+        for relative in sorted(files):
+            if relative.startswith("/") or ".." in Path(relative).parts:
+                raise ChallengeArtifactStoreError(
+                    "GENERATED_PACKAGE_PATH_INVALID",
+                    f"Generated package path is invalid: {relative}",
+                )
+            data = files[relative].encode("utf-8")
+            info = tarfile.TarInfo(relative)
+            info.uid = 0
+            info.gid = 0
+            info.uname = ""
+            info.gname = ""
+            info.mtime = 0
+            info.size = len(data)
+            archive.addfile(info, BytesIO(data))
     return buffer.getvalue()
 
 

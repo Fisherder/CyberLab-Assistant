@@ -229,7 +229,8 @@ const ChallengeRegistryResponse = z.object({
 
 const ChallengeImportResponse = z.object({
   imported: z.array(ChallengeRegistryVersionResponse),
-  skipped: z.array(z.record(z.unknown()))
+  skipped: z.array(z.record(z.unknown())),
+  summary: z.record(z.unknown()).optional()
 });
 
 const CourseIntentResponse = z.object({
@@ -276,7 +277,8 @@ const ChallengeCandidateSearchResponse = z.object({
   status: z.string(),
   courseIntent: CourseIntentResponse,
   candidates: z.array(ChallengeCandidateResponse),
-  rejectedCandidates: z.array(ChallengeCandidateResponse)
+  rejectedCandidates: z.array(ChallengeCandidateResponse),
+  compositionPlan: z.record(z.unknown()).optional()
 });
 
 const ChallengeGeneratedVersionResponse = z.object({
@@ -554,6 +556,12 @@ export async function importLocalChallenges(): Promise<ChallengeImportResponse> 
   });
 }
 
+export async function importAuthoritativeBlueprints(): Promise<ChallengeImportResponse> {
+  return api("/api/v1/challenge-registry/import-blueprints", ChallengeImportResponse, {
+    method: "POST"
+  });
+}
+
 export async function createChallengeDraft(
   courseId: string,
   brief: string,
@@ -579,6 +587,13 @@ export async function generateChallengeVersion(
   return api(`/api/v1/challenge-drafts/${draftId}/generate-version`, ChallengeGeneratedVersionResponse, {
     method: "POST",
     body: JSON.stringify({ selectedCandidateId })
+  });
+}
+
+export async function generateCustomChallengePackage(draftId: string): Promise<ChallengeGeneratedVersionResponse> {
+  return api(`/api/v1/challenge-drafts/${draftId}/generate-custom-package`, ChallengeGeneratedVersionResponse, {
+    method: "POST",
+    body: JSON.stringify({})
   });
 }
 

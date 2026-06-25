@@ -146,6 +146,7 @@ class ChallengeCandidateSearchView(BaseModel):
     courseIntent: CourseIntentView
     candidates: list[ChallengeCandidateView]
     rejectedCandidates: list[ChallengeCandidateView]
+    compositionPlan: dict = Field(default_factory=dict)
 
 
 class ChallengeMaterializeView(BaseModel):
@@ -194,6 +195,7 @@ class ChallengeRegistryListView(BaseModel):
 class ChallengeImportView(BaseModel):
     imported: list[ChallengeRegistryVersionView]
     skipped: list[dict]
+    summary: dict = Field(default_factory=dict)
 
 
 class ChallengeGeneratedVersionView(ChallengeMaterializeView):

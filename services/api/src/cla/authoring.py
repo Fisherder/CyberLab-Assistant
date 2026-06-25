@@ -18,6 +18,7 @@ from cla.challenge_assets import (
     store_challenge_package,
     store_generated_version_asset,
 )
+from cla.challenge_catalog import composition_plan_for_candidates
 from cla.content_validation import (
     DEFAULT_CHALLENGE_DIR,
     validate_challenge,
@@ -52,8 +53,8 @@ def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -
     difficulty = int(constraints.get("difficulty") or _difficulty_from_text(text))
     expected_minutes = int(constraints.get("expectedMinutes") or _minutes_from_text(text) or 75)
     isolation_tier = int(constraints.get("isolationTier") or 1)
-    allowed_tools = [str(tool) for tool in constraints.get("allowedTools", _tools_from_text(text))]
-    learning_objectives = constraints.get("learningObjectives") or _objectives_from_text(text)
+    allowed_tools = [str(tool) for tool in constraints.get("allowedTools", _tools_from_text(text, category))]
+    learning_objectives = constraints.get("learningObjectives") or _objectives_from_text(text, category)
     confidence = 0.93 if not uncertain_fields else 0.62
     return {
         "category": category,
@@ -121,7 +122,7 @@ def parse_course_intent_for_draft(
         return fallback
 
 
-def search_challenge_candidates(db: Session, draft: models.ChallengeDraft) -> dict[str, list[dict]]:
+def search_challenge_candidates(db: Session, draft: models.ChallengeDraft) -> dict[str, Any]:
     accepted: list[dict] = []
     rejected: list[dict] = []
     rows = db.execute(
@@ -157,7 +158,13 @@ def search_challenge_candidates(db: Session, draft: models.ChallengeDraft) -> di
             rejected.append(candidate)
     accepted.sort(key=lambda item: item["score"], reverse=True)
     rejected.sort(key=lambda item: item["score"], reverse=True)
-    return {"candidates": accepted[:10], "rejectedCandidates": rejected[:10]}
+    accepted = accepted[:10]
+    rejected = rejected[:10]
+    return {
+        "candidates": accepted,
+        "rejectedCandidates": rejected,
+        "compositionPlan": composition_plan_for_candidates(draft.intent_json, accepted, rejected),
+    }
 
 
 def challenge_candidate_view(
@@ -192,6 +199,7 @@ def challenge_candidate_view(
             "metadata": round(0.4 + 0.15 * len(match_reasons), 3),
             "bm25": round(search_score, 3),
             "vector": 0.0,
+            **_blueprint_retrieval_signals(manifest),
         },
         "constraintsSatisfied": not conflicts,
         "matchReasons": match_reasons,
@@ -533,6 +541,10 @@ def _search_document(
             " ".join(str(item) for item in spec.get("learningObjectives", [])),
             " ".join(str(item) for item in spec.get("prerequisites", [])),
             " ".join(str(item) for item in spec.get("workspace", {}).get("capabilities", [])),
+            " ".join(str(item) for item in spec.get("catalogBlueprint", {}).get("tags", [])),
+            str(spec.get("catalogBlueprint", {}).get("archetype", "")),
+            str(spec.get("catalogBlueprint", {}).get("variant", "")),
+            str(spec.get("catalogBlueprint", {}).get("components", {}).get("vulnerability", "")),
         ]
     )
 
@@ -904,7 +916,9 @@ def _int(value: Any, fallback: Any) -> int:
 def _category_from_text(text: str) -> str:
     if any(token in text for token in ["web", "http", "sql", "sqli", "login", "auth", "登录"]):
         return "WEB"
-    if any(token in text for token in ["pwn", "binary", "reverse"]):
+    if any(token in text for token in ["reverse", "reversing", "逆向", "crackme", "firmware", "固件"]):
+        return "REVERSE"
+    if any(token in text for token in ["pwn", "overflow", "rop", "heap", "stack", "binary exploitation", "二进制利用"]):
         return "PWN"
     return "UNKNOWN"
 
@@ -922,6 +936,10 @@ def _target_from_text(text: str) -> str:
         return "AUTHENTICATION"
     if "sql" in text or "sqli" in text:
         return "INPUT_TRUST_BOUNDARY"
+    if any(token in text for token in ["reverse", "reversing", "逆向", "crackme", "firmware", "固件"]):
+        return "BINARY_ANALYSIS"
+    if any(token in text for token in ["pwn", "overflow", "rop", "heap", "stack", "二进制利用"]):
+        return "MEMORY_CORRUPTION"
     return "GENERAL_SECURITY_PRACTICE"
 
 
@@ -938,13 +956,24 @@ def _minutes_from_text(text: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def _tools_from_text(text: str) -> list[str]:
-    tools = [tool for tool in ["curl", "python"] if tool in text]
-    return tools or ["curl"]
+def _tools_from_text(text: str, category: str) -> list[str]:
+    if category == "REVERSE":
+        defaults = ["strings", "objdump", "readelf", "gdb", "python"]
+    elif category == "PWN":
+        defaults = ["gdb", "python", "pwntools"]
+    else:
+        defaults = ["curl", "python"]
+    mentioned = [tool for tool in defaults if tool in text]
+    return mentioned or defaults
 
 
-def _objectives_from_text(text: str) -> list[str]:
-    objectives = ["validate-authentication-impact"]
+def _objectives_from_text(text: str, category: str) -> list[str]:
+    if category == "REVERSE":
+        objectives = ["恢复关键控制流", "还原校验逻辑", "给出可复现实验证据"]
+    elif category == "PWN":
+        objectives = ["识别内存破坏原语", "构造稳定利用路径", "解释缓解机制影响"]
+    else:
+        objectives = ["validate-authentication-impact"]
     if "sql" in text or "sqli" in text:
         objectives.append("identify-input-trust-boundary")
     if "explain" in text or "解释" in text:
@@ -1001,8 +1030,27 @@ def _candidate_match_reasons(
     )
     if objective_overlap:
         reasons.append("learning-objectives")
+    if spec.get("catalogBlueprint"):
+        reasons.append("source-backed-blueprint")
+    if spec.get("catalogBlueprint", {}).get("generator", {}).get("template"):
+        reasons.append("generator-template")
     return reasons
 
 
 def _candidate_score(reasons: list[str], conflicts: list[str], search_score: float) -> float:
     return max(0.0, 0.35 + 0.12 * len(reasons) + 0.25 * search_score - 0.2 * len(conflicts))
+
+
+def _blueprint_retrieval_signals(manifest: dict[str, Any]) -> dict[str, Any]:
+    blueprint = manifest.get("spec", {}).get("catalogBlueprint", {})
+    if not isinstance(blueprint, dict):
+        return {}
+    composition = blueprint.get("composition", {})
+    generator = blueprint.get("generator", {})
+    return {
+        "sourceRefs": blueprint.get("sourceRefs", []),
+        "compositionGroup": composition.get("group"),
+        "compatibleGroups": composition.get("compatibleGroups", []),
+        "generatorTemplate": generator.get("template"),
+        "learningObjectives": blueprint.get("learningObjectives", []),
+    }

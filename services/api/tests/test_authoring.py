@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+import tarfile
+
 from sqlalchemy import func, select
 from fastapi.testclient import TestClient
 
@@ -208,6 +211,166 @@ def test_registry_import_searches_and_records_artifacts(
 
     with client.app.state.SessionLocal() as db:
         assert db.scalar(select(func.count(models.ChallengeArtifact.id))) >= 1
+
+
+def test_authoritative_blueprint_catalog_imports_large_database(
+    client: TestClient,
+    teacher_token: str,
+    student_token: str,
+) -> None:
+    forbidden = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(student_token))
+    assert forbidden.status_code == 403
+
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+    body = imported.json()
+    assert body["skipped"] == []
+    assert len(body["imported"]) == 150
+    assert body["summary"]["valid"] is True
+    assert body["summary"]["total"] == 150
+    assert body["summary"]["counts"] == {"WEB": 50, "REVERSE": 50, "PWN": 50}
+
+    validation = client.get(
+        f"/api/v1/challenge-versions/{body['imported'][0]['challengeVersionId']}/validation",
+        headers=auth(teacher_token),
+    )
+    assert validation.status_code == 200, validation.text
+    assert validation.json()["overallStatus"] == "WARN"
+
+    with client.app.state.SessionLocal() as db:
+        counts = dict(
+            db.execute(
+                select(models.Challenge.category, func.count(models.ChallengeVersion.id))
+                .join(models.ChallengeVersion, models.ChallengeVersion.challenge_id == models.Challenge.id)
+                .where(models.ChallengeVersion.status == "BLUEPRINT")
+                .group_by(models.Challenge.category)
+            ).all()
+        )
+        assert counts == {"PWN": 50, "REVERSE": 50, "WEB": 50}
+        assert (
+            db.scalar(
+                select(func.count(models.ChallengeArtifact.id)).where(
+                    models.ChallengeArtifact.artifact_type == "blueprint-catalog-entry"
+                )
+            )
+            == 150
+        )
+
+
+def test_authoring_retrieves_blueprints_and_builds_composition_plan(
+    client: TestClient,
+    teacher_token: str,
+) -> None:
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+
+    draft_response = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "blueprint-compose-draft"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": (
+                "需要一个终端 Web 组合题，覆盖访问控制、认证和 API 越权，"
+                "学生使用 curl 与 python 完成验证并解释业务影响，预计 90 分钟。"
+            ),
+            "constraints": {
+                "internet": False,
+                "maxDifficulty": 5,
+                "workspaceType": "TERMINAL",
+            },
+        },
+    )
+    assert draft_response.status_code == 201, draft_response.text
+    draft = draft_response.json()
+    assert draft["courseIntent"]["category"] == "WEB"
+
+    response = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidates"]
+    assert body["compositionPlan"]["mode"] in {"compose-existing-blueprints", "single-best-candidate"}
+    assert body["compositionPlan"]["candidateIds"]
+    assert any("source-backed-blueprint" in candidate["matchReasons"] for candidate in body["candidates"])
+    assert any(candidate["retrievalSignals"].get("sourceRefs") for candidate in body["candidates"])
+
+    reverse_draft = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "reverse-category-draft"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": "需要一个逆向 crackme 题，学生使用 strings、objdump、gdb 还原校验逻辑。",
+            "constraints": {"internet": False, "maxDifficulty": 5, "workspaceType": "TERMINAL"},
+        },
+    )
+    assert reverse_draft.status_code == 201, reverse_draft.text
+    assert reverse_draft.json()["courseIntent"]["category"] == "REVERSE"
+
+
+def test_custom_package_generation_when_no_candidate_matches(
+    client: TestClient,
+    teacher_token: str,
+    settings: Settings,
+) -> None:
+    draft_response = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "custom-package-draft"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": "需要一个终端 Web 定制题，但预计 1 分钟内完成，用于验证无候选时的定制靶场生成。",
+            "constraints": {
+                "internet": False,
+                "maxDifficulty": 1,
+                "maxExpectedMinutes": 1,
+                "workspaceType": "TERMINAL",
+            },
+        },
+    )
+    assert draft_response.status_code == 201, draft_response.text
+    draft = draft_response.json()
+
+    candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+    assert candidates.status_code == 200, candidates.text
+    candidate_body = candidates.json()
+    assert candidate_body["candidates"] == []
+    assert candidate_body["compositionPlan"]["mode"] == "custom-agent-scaffold"
+
+    generated = client.post(
+        f"/api/v1/challenge-drafts/{draft['draftId']}/generate-custom-package",
+        headers=auth(teacher_token),
+    )
+    assert generated.status_code == 200, generated.text
+    body = generated.json()
+    assert body["status"] == "GENERATED_CUSTOM"
+    assert body["sourceCandidateId"] == "custom-agent-scaffold"
+    assert body["generatedBy"] == "agent-scaffold"
+    assert body["versionStatus"] == "PENDING_APPROVAL"
+    assert body["validationStatus"] == "WARN"
+    assert "manifest.yaml" in body["modelDraft"]["generatedFiles"]
+    assert "target/server.py" in body["modelDraft"]["generatedFiles"]
+    assert "oracle/validator.py" in body["modelDraft"]["generatedFiles"]
+
+    validation = client.get(body["validationReportUrl"], headers=auth(teacher_token))
+    assert validation.status_code == 200, validation.text
+    assert validation.json()["overallStatus"] == "WARN"
+
+    with client.app.state.SessionLocal() as db:
+        version = db.get(models.ChallengeVersion, body["challengeVersionId"])
+        assert version is not None
+        assert version.status == "PENDING_APPROVAL"
+        artifact = db.scalar(
+            select(models.ChallengeArtifact).where(
+                models.ChallengeArtifact.version_id == version.id,
+                models.ChallengeArtifact.artifact_type == "generated-challenge-package",
+            )
+        )
+        assert artifact is not None
+        assert artifact.object_ref.startswith("local://challenge-artifacts/")
+        relative = artifact.object_ref.removeprefix("local://challenge-artifacts/")
+        archive_path = Path(settings.challenge_artifact_object_root) / relative
+        assert archive_path.is_file()
+        with tarfile.open(archive_path) as archive:
+            names = set(archive.getnames())
+        assert {"manifest.yaml", "workspace/Dockerfile", "target/server.py", "oracle/validator.py"} <= names
 
 
 def test_model_brief_parser_and_version_generation_are_audited(tmp_path, monkeypatch) -> None:

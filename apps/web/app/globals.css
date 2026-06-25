@@ -1133,6 +1133,27 @@ input {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
+.candidate-item small,
+.composition-plan small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.composition-plan {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--ink);
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.composition-plan span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .generated-head {
   margin-bottom: 6px;
 }

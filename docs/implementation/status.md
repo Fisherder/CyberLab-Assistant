@@ -4,6 +4,16 @@
 
 ## 本轮完成
 
+- 已新增权威题型蓝图库：`content/challenge-blueprints/authoritative-catalog.yaml` 当前由脚本生成 150 条蓝图，覆盖 Web 安全、逆向工程、Pwn 三类，每类 50 条。
+- 已新增蓝图库生成脚本 `tools/generate_authoritative_blueprint_catalog.py`，来源策略只提炼公开题型、知识点和训练方向，不复制外部平台题面、附件、flag、payload、writeup 或教师解法。
+- 已新增 `POST /api/v1/challenge-registry/import-blueprints`，教师可把 150 条蓝图导入 Challenge Registry；导入会创建稳定 ID 的 `Challenge`、`ChallengeVersion`、`ValidationRun` 和 `ChallengeArtifact`。
+- 已新增蓝图验证报告 `content/validation/authoritative-blueprint.validation.json`，教师打开蓝图验证报告时不会再尝试把 YAML 当 JSON 解析。
+- 已增强候选检索：蓝图标签、archetype、variant、vulnerability、sourceRefs、composition group、compatible groups 和 generator template 会进入 BM25 文档与 `retrievalSignals`。
+- 已新增 `compositionPlan`：有候选时优先给出单题或组合现有蓝图方案；无候选时返回 `custom-agent-scaffold`，明确建议生成定制靶场代码包草稿。
+- 已新增 `POST /api/v1/challenge-drafts/{id}/generate-custom-package`，无候选时生成包含 `manifest.yaml`、`README.md`、`rubric.yaml`、`topology.yaml`、workspace Dockerfile、Oracle 和 target 代码的 tar 包资产，并创建 `PENDING_APPROVAL` 版本。
+- 已修正 Brief 解析中的逆向/Pwn 分类：`reverse`、`逆向`、`crackme`、`firmware` 归入 `REVERSE`；Pwn、ROP、heap、stack、overflow 等归入 `PWN`；不同类别使用对应默认工具和学习目标。
+- 已更新教师端 Registry 页面：新增“导入权威蓝图”按钮、组合计划展示、候选匹配理由和“生成定制靶场草稿”按钮。
+- 已新增 [docs/development/authoritative-blueprint-catalog.md](/Users/fisherder/Desktop/研究生/Security_Class_Tool/docs/development/authoritative-blueprint-catalog.md)，说明蓝图库目标、来源策略、导入流程、检索组合、无候选生成和后续扩展规范。
 - 已实现 `.env` 自动加载：API 启动时读取仓库根目录 `.env`，已有进程环境变量优先；本地 tmux 重启脚本也会在启动前导入 `.env`。
 - 已接入 OpenAI-compatible 模型适配器，可通过 `CLA_AGENT_RUNTIME_ENABLED=true`、`CLA_MODEL_BASE_URL`、`CLA_MODEL_NAME=deepseek-v4-flash` 和 `CLA_MODEL_API_KEY` 控制 DeepSeek v4 Flash 兼容模型。
 - 已把模型真实接入教师 Brief 解析：启用模型时优先生成结构化 CourseIntent，输出写入 `AgentRun`；模型关闭、缺配置、超时或返回不合格 JSON 时自动回退规则解析。
@@ -66,6 +76,44 @@
 ## 本轮实际运行命令与结果
 
 ```bash
+.venv/bin/python -m compileall services/api/src/cla services/api/tests/test_authoring.py tools/generate_authoritative_blueprint_catalog.py
+# 结果：Python 编译检查通过
+
+.venv/bin/python tools/generate_authoritative_blueprint_catalog.py
+# 结果：count=150，counts={'WEB': 50, 'REVERSE': 50, 'PWN': 50}
+
+.venv/bin/pytest services/api/tests/test_authoring.py -q
+# 结果：8 passed in 1.53s，覆盖权威蓝图导入、每类 50 条数量门禁、蓝图验证报告、检索组合、逆向分类和无候选定制靶场 tar 包生成
+
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
+# 结果：tsc --noEmit 通过，覆盖教师端 Registry 页面新增入口和 API 类型契约
+
+.venv/bin/pytest services/api/tests -q
+# 结果：73 passed, 1 skipped in 5.55s，确认权威蓝图库改动没有破坏既有 API 纵向切片
+
+git diff --check
+# 结果：通过，无空白错误
+
+scripts/restart-local-dev.sh
+# 结果：本机 cla tmux 会话已重启，target、sessiond、API、Gateway 和 Web 均启动并加载最新代码
+
+PYTHONPATH=services/api/src .venv/bin/python - <<'PY'
+# 生成教师开发 token 后，通过本机 HTTP POST /api/v1/challenge-registry/import-blueprints
+PY
+# 结果：status=202，imported=150，skipped=0，summary={'WEB': 50, 'REVERSE': 50, 'PWN': 50}
+
+curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
+# 结果：{"ok":true,"agentRuntimeEnabled":true}
+
+curl --noproxy '*' -sS http://127.0.0.1:8081/healthz
+# 结果：ok
+
+curl --noproxy '*' -sS -I http://127.0.0.1:3000/teacher/challenges/registry
+# 结果：HTTP/1.1 200 OK
+
+curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/css/app/layout.css?v=1782394508802'
+# 结果：HTTP/1.1 200 OK，Content-Type: text/css
+
 .venv/bin/pytest services/api/tests/test_authoring.py services/api/tests/test_settings.py services/api/tests/test_alembic_migrations.py
 # 结果：8 passed, 1 skipped in 0.98s，覆盖模型 Brief Parser、模型生成版本草稿、Registry 导入、对象资产和 Alembic 迁移
 

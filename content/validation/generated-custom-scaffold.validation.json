@@ -1,0 +1,69 @@
+{
+  "challengeVersionId": "generated-custom-scaffold",
+  "challengeId": "generated-custom-scaffold",
+  "semver": "0.1.0",
+  "artifactDigest": "sha256:generated-at-runtime",
+  "overallStatus": "WARN",
+  "summary": {
+    "passed": 3,
+    "warnings": 2,
+    "blocked": 0
+  },
+  "checks": [
+    {
+      "id": "generated-package-shape",
+      "category": "CONTENT",
+      "status": "PASS",
+      "title": "已生成 Challenge-as-Code 包结构草稿",
+      "evidenceRefs": [
+        "generated-package:manifest",
+        "generated-package:rubric",
+        "generated-package:target",
+        "generated-package:oracle"
+      ]
+    },
+    {
+      "id": "terminal-only",
+      "category": "WORKSPACE",
+      "status": "PASS",
+      "title": "生成草稿仅使用 TERMINAL 工作区",
+      "evidenceRefs": [
+        "manifest.spec.workspace.type"
+      ]
+    },
+    {
+      "id": "agent-no-deploy",
+      "category": "SAFETY",
+      "status": "PASS",
+      "title": "Agent 只生成代码资产，不部署、不发布、不接触基础设施凭据",
+      "evidenceRefs": [
+        "authoring.generatedBy=agent-scaffold"
+      ]
+    },
+    {
+      "id": "needs-content-ci",
+      "category": "CONTENT",
+      "status": "WARN",
+      "title": "发布前必须运行内容 CI、构建扫描和参考求解",
+      "evidenceRefs": [
+        "runbook:content-validation"
+      ]
+    },
+    {
+      "id": "needs-teacher-review",
+      "category": "APPROVAL",
+      "status": "WARN",
+      "title": "发布前必须由教师审核题面、Rubric、Oracle 和禁止泄露项",
+      "evidenceRefs": [
+        "teacher-review-checklist"
+      ]
+    }
+  ],
+  "forbiddenDisclosuresChecked": [
+    "final_payload",
+    "dynamic_secret",
+    "teacher_solution",
+    "model_api_key",
+    "authorization_header"
+  ]
+}

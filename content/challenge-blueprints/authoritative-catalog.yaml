@@ -1,0 +1,8297 @@
+# 该文件由 tools/generate_authoritative_blueprint_catalog.py 生成。
+# 请修改生成脚本后重新生成，不要手工维护 150 条条目。
+catalogVersion: 2026.06-authoritative-blueprints
+description: CLA 权威来源题型蓝图库。该文件记录题型、知识点、组合关系和生成模板，不复制外部平台题面、附件、flag 或题解。
+sources:
+- id: portswigger-web-security-academy
+  name: PortSwigger Web Security Academy
+  url: https://portswigger.net/web-security/all-labs
+  domains:
+  - WEB
+  usageNote: 只引用公开知识点分类和实验主题，不复制题面、答案、payload 或平台素材。
+- id: owasp-webgoat
+  name: OWASP WebGoat
+  url: https://owasp.org/www-project-webgoat/
+  domains:
+  - WEB
+  usageNote: 只提炼课程型漏洞主题和教学目标，不复制具体课程文本。
+- id: picoctf-practice
+  name: picoCTF Practice / picoGym
+  url: https://picoctf.org/
+  domains:
+  - WEB
+  - REVERSE
+  - PWN
+  usageNote: 只引用公开分类体系和题型覆盖方向，不复制题目材料。
+- id: pwn-college
+  name: pwn.college
+  url: https://pwn.college/
+  domains:
+  - PWN
+  - REVERSE
+  usageNote: 只引用模块化训练主题，不复制关卡内容或远端环境。
+- id: rop-emporium
+  name: ROP Emporium
+  url: https://ropemporium.com/
+  domains:
+  - PWN
+  usageNote: 只引用 ROP 技术阶梯，不复制二进制或题面。
+- id: microcorruption
+  name: Microcorruption
+  url: https://microcorruption.com/
+  domains:
+  - REVERSE
+  usageNote: 只引用嵌入式逆向训练方向，不复制关卡文本或固件。
+- id: crackmes-one
+  name: crackmes.one
+  url: https://crackmes.one/
+  domains:
+  - REVERSE
+  usageNote: 只引用 crackme 题型和难度覆盖方向，不复制样本。
+- id: overthewire-wargames
+  name: OverTheWire Wargames
+  url: https://overthewire.org/wargames/
+  domains:
+  - PWN
+  - REVERSE
+  - WEB
+  usageNote: 只引用 wargame 训练类别，不复制关卡口令、题面或服务器内容。
+- id: pwnable-kr
+  name: pwnable.kr
+  url: https://pwnable.kr/
+  domains:
+  - PWN
+  usageNote: 只引用二进制利用训练主题，不复制题目二进制或解法。
+qualityGate:
+  minimumPerCategory:
+    WEB: 50
+    REVERSE: 50
+    PWN: 50
+  copyPolicy: no-statement-no-flag-no-attachment-no-solution
+  workspaceType: TERMINAL
+entries:
+- id: web-sqli-01
+  title: SQL 注入：联合查询枚举
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: sqli
+  variant: 联合查询枚举
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - sqli
+  - 联合查询枚举
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 sqli 题型中的 联合查询枚举 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: sqli:联合查询枚举
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-sqli
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: sqli
+      variant: 联合查询枚举
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-sqli-02
+  title: SQL 注入：布尔盲注
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: sqli
+  variant: 布尔盲注
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - sqli
+  - 布尔盲注
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 sqli 题型中的 布尔盲注 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: sqli:布尔盲注
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-sqli
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: sqli
+      variant: 布尔盲注
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-sqli-03
+  title: SQL 注入：时间盲注
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: sqli
+  variant: 时间盲注
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - sqli
+  - 时间盲注
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 sqli 题型中的 时间盲注 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: sqli:时间盲注
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-sqli
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: sqli
+      variant: 时间盲注
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-sqli-04
+  title: SQL 注入：登录绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: sqli
+  variant: 登录绕过
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - sqli
+  - 登录绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 sqli 题型中的 登录绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: sqli:登录绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-sqli
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: sqli
+      variant: 登录绕过
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-sqli-05
+  title: SQL 注入：二阶注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: sqli
+  variant: 二阶注入
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - sqli
+  - 二阶注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 sqli 题型中的 二阶注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: sqli:二阶注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-sqli
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: sqli
+      variant: 二阶注入
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xss-01
+  title: 跨站脚本：反射型上下文
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xss
+  variant: 反射型上下文
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - xss
+  - 反射型上下文
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xss 题型中的 反射型上下文 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xss:反射型上下文
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xss
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xss
+      variant: 反射型上下文
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xss-02
+  title: 跨站脚本：存储型评论
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xss
+  variant: 存储型评论
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - xss
+  - 存储型评论
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xss 题型中的 存储型评论 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xss:存储型评论
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xss
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xss
+      variant: 存储型评论
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xss-03
+  title: 跨站脚本：DOM Source/Sink
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xss
+  variant: DOM Source/Sink
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - xss
+  - dom-source/sink
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xss 题型中的 DOM Source/Sink 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xss:DOM Source/Sink
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xss
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xss
+      variant: DOM Source/Sink
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xss-04
+  title: 跨站脚本：CSP 约束绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xss
+  variant: CSP 约束绕过
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - xss
+  - csp-约束绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xss 题型中的 CSP 约束绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xss:CSP 约束绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xss
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xss
+      variant: CSP 约束绕过
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xss-05
+  title: 跨站脚本：模板拼接注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xss
+  variant: 模板拼接注入
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - xss
+  - 模板拼接注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xss 题型中的 模板拼接注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xss:模板拼接注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xss
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xss
+      variant: 模板拼接注入
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-auth-01
+  title: 认证与会话逻辑：弱重置令牌
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: auth
+  variant: 弱重置令牌
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - auth
+  - 弱重置令牌
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 auth 题型中的 弱重置令牌 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: auth:弱重置令牌
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-auth
+    complexity: 3
+    compatibleGroups:
+    - web-sqli
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: auth
+      variant: 弱重置令牌
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-auth-02
+  title: 认证与会话逻辑：MFA 流程缺陷
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: auth
+  variant: MFA 流程缺陷
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - auth
+  - mfa-流程缺陷
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 auth 题型中的 MFA 流程缺陷 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: auth:MFA 流程缺陷
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-auth
+    complexity: 4
+    compatibleGroups:
+    - web-sqli
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: auth
+      variant: MFA 流程缺陷
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-auth-03
+  title: 认证与会话逻辑：JWT 算法混淆
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: auth
+  variant: JWT 算法混淆
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - auth
+  - jwt-算法混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 auth 题型中的 JWT 算法混淆 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: auth:JWT 算法混淆
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-auth
+    complexity: 5
+    compatibleGroups:
+    - web-sqli
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: auth
+      variant: JWT 算法混淆
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-auth-04
+  title: 认证与会话逻辑：Session Fixation
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: auth
+  variant: Session Fixation
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - auth
+  - session-fixation
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 auth 题型中的 Session Fixation 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: auth:Session Fixation
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-auth
+    complexity: 1
+    compatibleGroups:
+    - web-sqli
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: auth
+      variant: Session Fixation
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-auth-05
+  title: 认证与会话逻辑：OAuth 回调滥用
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: auth
+  variant: OAuth 回调滥用
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - auth
+  - oauth-回调滥用
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 auth 题型中的 OAuth 回调滥用 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: auth:OAuth 回调滥用
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-auth
+    complexity: 2
+    compatibleGroups:
+    - web-sqli
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: auth
+      variant: OAuth 回调滥用
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-access-01
+  title: 访问控制：IDOR 横向越权
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: access
+  variant: IDOR 横向越权
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - access
+  - idor-横向越权
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 access 题型中的 IDOR 横向越权 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: access:IDOR 横向越权
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-access
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-file
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: access
+      variant: IDOR 横向越权
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-access-02
+  title: 访问控制：垂直权限绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: access
+  variant: 垂直权限绕过
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - access
+  - 垂直权限绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 access 题型中的 垂直权限绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: access:垂直权限绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-access
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-file
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: access
+      variant: 垂直权限绕过
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-access-03
+  title: 访问控制：方法级鉴权缺失
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: access
+  variant: 方法级鉴权缺失
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - access
+  - 方法级鉴权缺失
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 access 题型中的 方法级鉴权缺失 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: access:方法级鉴权缺失
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-access
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-file
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: access
+      variant: 方法级鉴权缺失
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-access-04
+  title: 访问控制：多租户对象越界
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: access
+  variant: 多租户对象越界
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - access
+  - 多租户对象越界
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 access 题型中的 多租户对象越界 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: access:多租户对象越界
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-access
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-file
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: access
+      variant: 多租户对象越界
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-access-05
+  title: 访问控制：未公开接口遍历
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: access
+  variant: 未公开接口遍历
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - access
+  - 未公开接口遍历
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 access 题型中的 未公开接口遍历 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: access:未公开接口遍历
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-access
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-file
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: access
+      variant: 未公开接口遍历
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssrf-01
+  title: SSRF 与内网边界：云元数据探测
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: ssrf
+  variant: 云元数据探测
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssrf
+  - 云元数据探测
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssrf 题型中的 云元数据探测 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssrf:云元数据探测
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssrf
+    complexity: 5
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-xxe
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssrf
+      variant: 云元数据探测
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssrf-02
+  title: SSRF 与内网边界：URL 白名单绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: ssrf
+  variant: URL 白名单绕过
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssrf
+  - url-白名单绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssrf 题型中的 URL 白名单绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssrf:URL 白名单绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssrf
+    complexity: 1
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-xxe
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssrf
+      variant: URL 白名单绕过
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssrf-03
+  title: SSRF 与内网边界：重定向链绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: ssrf
+  variant: 重定向链绕过
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssrf
+  - 重定向链绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssrf 题型中的 重定向链绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssrf:重定向链绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssrf
+    complexity: 2
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-xxe
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssrf
+      variant: 重定向链绕过
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssrf-04
+  title: SSRF 与内网边界：协议混淆
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: ssrf
+  variant: 协议混淆
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssrf
+  - 协议混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssrf 题型中的 协议混淆 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssrf:协议混淆
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssrf
+    complexity: 3
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-xxe
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssrf
+      variant: 协议混淆
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssrf-05
+  title: SSRF 与内网边界：内部管理面访问
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: ssrf
+  variant: 内部管理面访问
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssrf
+  - 内部管理面访问
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssrf 题型中的 内部管理面访问 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssrf:内部管理面访问
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssrf
+    complexity: 4
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-xxe
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssrf
+      variant: 内部管理面访问
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-file-01
+  title: 文件上传与路径遍历：相对路径穿越
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: file
+  variant: 相对路径穿越
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - file
+  - 相对路径穿越
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 file 题型中的 相对路径穿越 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: file:相对路径穿越
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-file
+    complexity: 1
+    compatibleGroups:
+    - web-ssrf
+    - web-access
+    - web-ssti
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: file
+      variant: 相对路径穿越
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-file-02
+  title: 文件上传与路径遍历：扩展名绕过上传
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: file
+  variant: 扩展名绕过上传
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - file
+  - 扩展名绕过上传
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 file 题型中的 扩展名绕过上传 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: file:扩展名绕过上传
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-file
+    complexity: 2
+    compatibleGroups:
+    - web-ssrf
+    - web-access
+    - web-ssti
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: file
+      variant: 扩展名绕过上传
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-file-03
+  title: 文件上传与路径遍历：MIME 校验绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: file
+  variant: MIME 校验绕过
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - file
+  - mime-校验绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 file 题型中的 MIME 校验绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: file:MIME 校验绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-file
+    complexity: 3
+    compatibleGroups:
+    - web-ssrf
+    - web-access
+    - web-ssti
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: file
+      variant: MIME 校验绕过
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-file-04
+  title: 文件上传与路径遍历：多态图片脚本
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: file
+  variant: 多态图片脚本
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - file
+  - 多态图片脚本
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 file 题型中的 多态图片脚本 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: file:多态图片脚本
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-file
+    complexity: 4
+    compatibleGroups:
+    - web-ssrf
+    - web-access
+    - web-ssti
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: file
+      variant: 多态图片脚本
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-file-05
+  title: 文件上传与路径遍历：日志投毒到包含
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: file
+  variant: 日志投毒到包含
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - file
+  - 日志投毒到包含
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 file 题型中的 日志投毒到包含 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: file:日志投毒到包含
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-file
+    complexity: 5
+    compatibleGroups:
+    - web-ssrf
+    - web-access
+    - web-ssti
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: file
+      variant: 日志投毒到包含
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssti-01
+  title: 模板与反序列化：Jinja 表达式注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: ssti
+  variant: Jinja 表达式注入
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssti
+  - jinja-表达式注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssti 题型中的 Jinja 表达式注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssti:Jinja 表达式注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssti
+    complexity: 2
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssti
+      variant: Jinja 表达式注入
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssti-02
+  title: 模板与反序列化：Java 反序列化
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: ssti
+  variant: Java 反序列化
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssti
+  - java-反序列化
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssti 题型中的 Java 反序列化 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssti:Java 反序列化
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssti
+    complexity: 3
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssti
+      variant: Java 反序列化
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssti-03
+  title: 模板与反序列化：Node 原型污染
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: ssti
+  variant: Node 原型污染
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssti
+  - node-原型污染
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssti 题型中的 Node 原型污染 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssti:Node 原型污染
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssti
+    complexity: 4
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssti
+      variant: Node 原型污染
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssti-04
+  title: 模板与反序列化：YAML 不安全加载
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: ssti
+  variant: YAML 不安全加载
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssti
+  - yaml-不安全加载
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssti 题型中的 YAML 不安全加载 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssti:YAML 不安全加载
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssti
+    complexity: 5
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssti
+      variant: YAML 不安全加载
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-ssti-05
+  title: 模板与反序列化：模板沙箱逃逸
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: ssti
+  variant: 模板沙箱逃逸
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - ssti
+  - 模板沙箱逃逸
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 ssti 题型中的 模板沙箱逃逸 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: ssti:模板沙箱逃逸
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-ssti
+    complexity: 1
+    compatibleGroups:
+    - web-file
+    - web-api
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: ssti
+      variant: 模板沙箱逃逸
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xxe-01
+  title: XML 与解析器安全：本地文件读取
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xxe
+  variant: 本地文件读取
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - xxe
+  - 本地文件读取
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xxe 题型中的 本地文件读取 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xxe:本地文件读取
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xxe
+    complexity: 3
+    compatibleGroups:
+    - web-ssrf
+    - web-file
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xxe
+      variant: 本地文件读取
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xxe-02
+  title: XML 与解析器安全：盲 XXE 回连
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xxe
+  variant: 盲 XXE 回连
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - xxe
+  - 盲-xxe-回连
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xxe 题型中的 盲 XXE 回连 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xxe:盲 XXE 回连
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xxe
+    complexity: 4
+    compatibleGroups:
+    - web-ssrf
+    - web-file
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xxe
+      variant: 盲 XXE 回连
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xxe-03
+  title: XML 与解析器安全：XInclude 注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xxe
+  variant: XInclude 注入
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - xxe
+  - xinclude-注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xxe 题型中的 XInclude 注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xxe:XInclude 注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xxe
+    complexity: 5
+    compatibleGroups:
+    - web-ssrf
+    - web-file
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xxe
+      variant: XInclude 注入
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xxe-04
+  title: XML 与解析器安全：JSON/XML 差异解析
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xxe
+  variant: JSON/XML 差异解析
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - xxe
+  - json/xml-差异解析
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xxe 题型中的 JSON/XML 差异解析 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xxe:JSON/XML 差异解析
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xxe
+    complexity: 1
+    compatibleGroups:
+    - web-ssrf
+    - web-file
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xxe
+      variant: JSON/XML 差异解析
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-xxe-05
+  title: XML 与解析器安全：实体膨胀防护
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-webgoat
+  archetype: xxe
+  variant: 实体膨胀防护
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - xxe
+  - 实体膨胀防护
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 xxe 题型中的 实体膨胀防护 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: xxe:实体膨胀防护
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-xxe
+    complexity: 2
+    compatibleGroups:
+    - web-ssrf
+    - web-file
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: xxe
+      variant: 实体膨胀防护
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-race-01
+  title: 竞态、缓存与业务逻辑：优惠券竞态
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: race
+  variant: 优惠券竞态
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - race
+  - 优惠券竞态
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 race 题型中的 优惠券竞态 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: race:优惠券竞态
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-race
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: race
+      variant: 优惠券竞态
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-race-02
+  title: 竞态、缓存与业务逻辑：库存扣减竞态
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: race
+  variant: 库存扣减竞态
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - race
+  - 库存扣减竞态
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 race 题型中的 库存扣减竞态 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: race:库存扣减竞态
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-race
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: race
+      variant: 库存扣减竞态
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-race-03
+  title: 竞态、缓存与业务逻辑：Web Cache Poisoning
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: race
+  variant: Web Cache Poisoning
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - race
+  - web-cache-poisoning
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 race 题型中的 Web Cache Poisoning 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: race:Web Cache Poisoning
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-race
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: race
+      variant: Web Cache Poisoning
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-race-04
+  title: 竞态、缓存与业务逻辑：Cache Deception
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: race
+  variant: Cache Deception
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - race
+  - cache-deception
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 race 题型中的 Cache Deception 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: race:Cache Deception
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-race
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: race
+      variant: Cache Deception
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-race-05
+  title: 竞态、缓存与业务逻辑：状态机跳步
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  archetype: race
+  variant: 状态机跳步
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - race
+  - 状态机跳步
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 race 题型中的 状态机跳步 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: race:状态机跳步
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-race
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: race
+      variant: 状态机跳步
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-api-01
+  title: API 与云原生 Web 安全：GraphQL 过度暴露
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - picoctf-practice
+  archetype: api
+  variant: GraphQL 过度暴露
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - api
+  - graphql-过度暴露
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 api 题型中的 GraphQL 过度暴露 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: api:GraphQL 过度暴露
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-api
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: api
+      variant: GraphQL 过度暴露
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-api-02
+  title: API 与云原生 Web 安全：Mass Assignment
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - picoctf-practice
+  archetype: api
+  variant: Mass Assignment
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - api
+  - mass-assignment
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 api 题型中的 Mass Assignment 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: api:Mass Assignment
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-api
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: api
+      variant: Mass Assignment
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-api-03
+  title: API 与云原生 Web 安全：CORS 错配
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - picoctf-practice
+  archetype: api
+  variant: CORS 错配
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - api
+  - cors-错配
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 api 题型中的 CORS 错配 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: api:CORS 错配
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-api
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: api
+      variant: CORS 错配
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-api-04
+  title: API 与云原生 Web 安全：速率限制绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - picoctf-practice
+  archetype: api
+  variant: 速率限制绕过
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - api
+  - 速率限制绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 api 题型中的 速率限制绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: api:速率限制绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-api
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: api
+      variant: 速率限制绕过
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-api-05
+  title: API 与云原生 Web 安全：Webhook 签名缺陷
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - picoctf-practice
+  archetype: api
+  variant: Webhook 签名缺陷
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - api
+  - webhook-签名缺陷
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 api 题型中的 Webhook 签名缺陷 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: api:Webhook 签名缺陷
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-api
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-access
+    - web-race
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: api
+      variant: Webhook 签名缺陷
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-strings-01
+  title: 字符串与常量恢复：XOR 字符串
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: strings
+  variant: XOR 字符串
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - strings
+  - xor-字符串
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 strings 题型中的 XOR 字符串 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: strings:XOR 字符串
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-strings
+    complexity: 1
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: strings
+      variant: XOR 字符串
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-strings-02
+  title: 字符串与常量恢复：表驱动解码
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: strings
+  variant: 表驱动解码
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - strings
+  - 表驱动解码
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 strings 题型中的 表驱动解码 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: strings:表驱动解码
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-strings
+    complexity: 2
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: strings
+      variant: 表驱动解码
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-strings-03
+  title: 字符串与常量恢复：宽字符混淆
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: strings
+  variant: 宽字符混淆
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - strings
+  - 宽字符混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 strings 题型中的 宽字符混淆 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: strings:宽字符混淆
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-strings
+    complexity: 3
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: strings
+      variant: 宽字符混淆
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-strings-04
+  title: 字符串与常量恢复：运行时拼接
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: strings
+  variant: 运行时拼接
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - strings
+  - 运行时拼接
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 strings 题型中的 运行时拼接 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: strings:运行时拼接
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-strings
+    complexity: 4
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: strings
+      variant: 运行时拼接
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-strings-05
+  title: 字符串与常量恢复：资源节提取
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: strings
+  variant: 资源节提取
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - strings
+  - 资源节提取
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 strings 题型中的 资源节提取 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: strings:资源节提取
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-strings
+    complexity: 5
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: strings
+      variant: 资源节提取
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-keygen-01
+  title: 注册码与 Keygen：线性校验
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: keygen
+  variant: 线性校验
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - keygen
+  - 线性校验
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 keygen 题型中的 线性校验 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: keygen:线性校验
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-keygen
+    complexity: 2
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: keygen
+      variant: 线性校验
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-keygen-02
+  title: 注册码与 Keygen：CRC 派生
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: keygen
+  variant: CRC 派生
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - keygen
+  - crc-派生
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 keygen 题型中的 CRC 派生 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: keygen:CRC 派生
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-keygen
+    complexity: 3
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: keygen
+      variant: CRC 派生
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-keygen-03
+  title: 注册码与 Keygen：多段约束
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: keygen
+  variant: 多段约束
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - keygen
+  - 多段约束
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 keygen 题型中的 多段约束 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: keygen:多段约束
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-keygen
+    complexity: 4
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: keygen
+      variant: 多段约束
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-keygen-04
+  title: 注册码与 Keygen：日期绑定
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: keygen
+  variant: 日期绑定
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - keygen
+  - 日期绑定
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 keygen 题型中的 日期绑定 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: keygen:日期绑定
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-keygen
+    complexity: 5
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: keygen
+      variant: 日期绑定
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-keygen-05
+  title: 注册码与 Keygen：离线许可证
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: keygen
+  variant: 离线许可证
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - keygen
+  - 离线许可证
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 keygen 题型中的 离线许可证 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: keygen:离线许可证
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-keygen
+    complexity: 1
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: keygen
+      variant: 离线许可证
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-antidebug-01
+  title: 反调试与反分析：ptrace 检测
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: antidebug
+  variant: ptrace 检测
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - antidebug
+  - ptrace-检测
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 antidebug 题型中的 ptrace 检测 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: antidebug:ptrace 检测
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-antidebug
+    complexity: 3
+    compatibleGroups:
+    - reverse-packing
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: antidebug
+      variant: ptrace 检测
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-antidebug-02
+  title: 反调试与反分析：时间差检测
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: antidebug
+  variant: 时间差检测
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - antidebug
+  - 时间差检测
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 antidebug 题型中的 时间差检测 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: antidebug:时间差检测
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-antidebug
+    complexity: 4
+    compatibleGroups:
+    - reverse-packing
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: antidebug
+      variant: 时间差检测
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-antidebug-03
+  title: 反调试与反分析：断点扫描
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: antidebug
+  variant: 断点扫描
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - antidebug
+  - 断点扫描
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 antidebug 题型中的 断点扫描 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: antidebug:断点扫描
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-antidebug
+    complexity: 5
+    compatibleGroups:
+    - reverse-packing
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: antidebug
+      variant: 断点扫描
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-antidebug-04
+  title: 反调试与反分析：父进程检查
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: antidebug
+  variant: 父进程检查
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - antidebug
+  - 父进程检查
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 antidebug 题型中的 父进程检查 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: antidebug:父进程检查
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-antidebug
+    complexity: 1
+    compatibleGroups:
+    - reverse-packing
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: antidebug
+      variant: 父进程检查
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-antidebug-05
+  title: 反调试与反分析：异常处理陷阱
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: antidebug
+  variant: 异常处理陷阱
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - antidebug
+  - 异常处理陷阱
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 antidebug 题型中的 异常处理陷阱 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: antidebug:异常处理陷阱
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-antidebug
+    complexity: 2
+    compatibleGroups:
+    - reverse-packing
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: antidebug
+      variant: 异常处理陷阱
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-packing-01
+  title: 壳与自解密：UPX 变体
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: packing
+  variant: UPX 变体
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - packing
+  - upx-变体
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 packing 题型中的 UPX 变体 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: packing:UPX 变体
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-packing
+    complexity: 4
+    compatibleGroups:
+    - reverse-antidebug
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: packing
+      variant: UPX 变体
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-packing-02
+  title: 壳与自解密：自解密段
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: packing
+  variant: 自解密段
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - packing
+  - 自解密段
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 packing 题型中的 自解密段 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: packing:自解密段
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-packing
+    complexity: 5
+    compatibleGroups:
+    - reverse-antidebug
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: packing
+      variant: 自解密段
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-packing-03
+  title: 壳与自解密：压缩资源
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: packing
+  variant: 压缩资源
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - packing
+  - 压缩资源
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 packing 题型中的 压缩资源 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: packing:压缩资源
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-packing
+    complexity: 1
+    compatibleGroups:
+    - reverse-antidebug
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: packing
+      variant: 压缩资源
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-packing-04
+  title: 壳与自解密：分段加载
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: packing
+  variant: 分段加载
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - packing
+  - 分段加载
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 packing 题型中的 分段加载 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: packing:分段加载
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-packing
+    complexity: 2
+    compatibleGroups:
+    - reverse-antidebug
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: packing
+      variant: 分段加载
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-packing-05
+  title: 壳与自解密：导入表重建
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: packing
+  variant: 导入表重建
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - packing
+  - 导入表重建
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 packing 题型中的 导入表重建 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: packing:导入表重建
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-packing
+    complexity: 3
+    compatibleGroups:
+    - reverse-antidebug
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: packing
+      variant: 导入表重建
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-cff-01
+  title: 控制流混淆：Flattening 状态机
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: cff
+  variant: Flattening 状态机
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - cff
+  - flattening-状态机
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 cff 题型中的 Flattening 状态机 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: cff:Flattening 状态机
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-cff
+    complexity: 5
+    compatibleGroups:
+    - reverse-vm
+    - reverse-antidebug
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: cff
+      variant: Flattening 状态机
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-cff-02
+  title: 控制流混淆：Opaque Predicate
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: cff
+  variant: Opaque Predicate
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - cff
+  - opaque-predicate
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 cff 题型中的 Opaque Predicate 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: cff:Opaque Predicate
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-cff
+    complexity: 1
+    compatibleGroups:
+    - reverse-vm
+    - reverse-antidebug
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: cff
+      variant: Opaque Predicate
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-cff-03
+  title: 控制流混淆：跳表混淆
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: cff
+  variant: 跳表混淆
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - cff
+  - 跳表混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 cff 题型中的 跳表混淆 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: cff:跳表混淆
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-cff
+    complexity: 2
+    compatibleGroups:
+    - reverse-vm
+    - reverse-antidebug
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: cff
+      variant: 跳表混淆
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-cff-04
+  title: 控制流混淆：异常流控制
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: cff
+  variant: 异常流控制
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - cff
+  - 异常流控制
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 cff 题型中的 异常流控制 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: cff:异常流控制
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-cff
+    complexity: 3
+    compatibleGroups:
+    - reverse-vm
+    - reverse-antidebug
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: cff
+      variant: 异常流控制
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-cff-05
+  title: 控制流混淆：间接调用链
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  archetype: cff
+  variant: 间接调用链
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - cff
+  - 间接调用链
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 cff 题型中的 间接调用链 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: cff:间接调用链
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-cff
+    complexity: 4
+    compatibleGroups:
+    - reverse-vm
+    - reverse-antidebug
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: cff
+      variant: 间接调用链
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-vm-01
+  title: 虚拟机与字节码：栈式 VM
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: vm
+  variant: 栈式 VM
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - vm
+  - 栈式-vm
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 vm 题型中的 栈式 VM 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: vm:栈式 VM
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-vm
+    complexity: 1
+    compatibleGroups:
+    - reverse-cff
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: vm
+      variant: 栈式 VM
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-vm-02
+  title: 虚拟机与字节码：寄存器式 VM
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: vm
+  variant: 寄存器式 VM
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - vm
+  - 寄存器式-vm
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 vm 题型中的 寄存器式 VM 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: vm:寄存器式 VM
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-vm
+    complexity: 2
+    compatibleGroups:
+    - reverse-cff
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: vm
+      variant: 寄存器式 VM
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-vm-03
+  title: 虚拟机与字节码：混合指令 VM
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: vm
+  variant: 混合指令 VM
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - vm
+  - 混合指令-vm
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 vm 题型中的 混合指令 VM 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: vm:混合指令 VM
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-vm
+    complexity: 3
+    compatibleGroups:
+    - reverse-cff
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: vm
+      variant: 混合指令 VM
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-vm-04
+  title: 虚拟机与字节码：字节码 Patch
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: vm
+  variant: 字节码 Patch
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - vm
+  - 字节码-patch
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 vm 题型中的 字节码 Patch 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: vm:字节码 Patch
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-vm
+    complexity: 4
+    compatibleGroups:
+    - reverse-cff
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: vm
+      variant: 字节码 Patch
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-vm-05
+  title: 虚拟机与字节码：解释器还原
+  category: REVERSE
+  sourceRefs:
+  - crackmes-one
+  - picoctf-practice
+  archetype: vm
+  variant: 解释器还原
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - vm
+  - 解释器还原
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 vm 题型中的 解释器还原 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: vm:解释器还原
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-vm
+    complexity: 5
+    compatibleGroups:
+    - reverse-cff
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: vm
+      variant: 解释器还原
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-crypto-01
+  title: 逆向中的密码误用：硬编码密钥
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: crypto
+  variant: 硬编码密钥
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - crypto
+  - 硬编码密钥
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 crypto 题型中的 硬编码密钥 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: crypto:硬编码密钥
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-crypto
+    complexity: 2
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-vm
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: crypto
+      variant: 硬编码密钥
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-crypto-02
+  title: 逆向中的密码误用：ECB 模式误用
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: crypto
+  variant: ECB 模式误用
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - crypto
+  - ecb-模式误用
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 crypto 题型中的 ECB 模式误用 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: crypto:ECB 模式误用
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-crypto
+    complexity: 3
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-vm
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: crypto
+      variant: ECB 模式误用
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-crypto-03
+  title: 逆向中的密码误用：自定义 Base 编码
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: crypto
+  variant: 自定义 Base 编码
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - crypto
+  - 自定义-base-编码
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 crypto 题型中的 自定义 Base 编码 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: crypto:自定义 Base 编码
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-crypto
+    complexity: 4
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-vm
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: crypto
+      variant: 自定义 Base 编码
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-crypto-04
+  title: 逆向中的密码误用：弱 PRNG
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: crypto
+  variant: 弱 PRNG
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - crypto
+  - 弱-prng
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 crypto 题型中的 弱 PRNG 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: crypto:弱 PRNG
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-crypto
+    complexity: 5
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-vm
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: crypto
+      variant: 弱 PRNG
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-crypto-05
+  title: 逆向中的密码误用：校验和碰撞
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: crypto
+  variant: 校验和碰撞
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - crypto
+  - 校验和碰撞
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 crypto 题型中的 校验和碰撞 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: crypto:校验和碰撞
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-crypto
+    complexity: 1
+    compatibleGroups:
+    - reverse-keygen
+    - reverse-vm
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: crypto
+      variant: 校验和碰撞
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-mobile-01
+  title: 移动端逆向：APK 字符串恢复
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: mobile
+  variant: APK 字符串恢复
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - mobile
+  - apk-字符串恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 mobile 题型中的 APK 字符串恢复 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: mobile:APK 字符串恢复
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-mobile
+    complexity: 3
+    compatibleGroups:
+    - reverse-crypto
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: mobile
+      variant: APK 字符串恢复
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-mobile-02
+  title: 移动端逆向：JNI 断点
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: mobile
+  variant: JNI 断点
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - mobile
+  - jni-断点
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 mobile 题型中的 JNI 断点 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: mobile:JNI 断点
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-mobile
+    complexity: 4
+    compatibleGroups:
+    - reverse-crypto
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: mobile
+      variant: JNI 断点
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-mobile-03
+  title: 移动端逆向：证书 Pinning 绕过
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: mobile
+  variant: 证书 Pinning 绕过
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - mobile
+  - 证书-pinning-绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 mobile 题型中的 证书 Pinning 绕过 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: mobile:证书 Pinning 绕过
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-mobile
+    complexity: 5
+    compatibleGroups:
+    - reverse-crypto
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: mobile
+      variant: 证书 Pinning 绕过
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-mobile-04
+  title: 移动端逆向：资源混淆
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: mobile
+  variant: 资源混淆
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - mobile
+  - 资源混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 mobile 题型中的 资源混淆 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: mobile:资源混淆
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-mobile
+    complexity: 1
+    compatibleGroups:
+    - reverse-crypto
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: mobile
+      variant: 资源混淆
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-mobile-05
+  title: 移动端逆向：DEX 控制流
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: mobile
+  variant: DEX 控制流
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - mobile
+  - dex-控制流
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 mobile 题型中的 DEX 控制流 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: mobile:DEX 控制流
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-mobile
+    complexity: 2
+    compatibleGroups:
+    - reverse-crypto
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: mobile
+      variant: DEX 控制流
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-stripped-01
+  title: Go/Rust/静态链接逆向：Go 符号恢复
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: stripped
+  variant: Go 符号恢复
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - stripped
+  - go-符号恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 stripped 题型中的 Go 符号恢复 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: stripped:Go 符号恢复
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-stripped
+    complexity: 4
+    compatibleGroups:
+    - reverse-strings
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: stripped
+      variant: Go 符号恢复
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-stripped-02
+  title: Go/Rust/静态链接逆向：Rust panic 线索
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: stripped
+  variant: Rust panic 线索
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - stripped
+  - rust-panic-线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 stripped 题型中的 Rust panic 线索 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: stripped:Rust panic 线索
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-stripped
+    complexity: 5
+    compatibleGroups:
+    - reverse-strings
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: stripped
+      variant: Rust panic 线索
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-stripped-03
+  title: Go/Rust/静态链接逆向：静态链接 libc
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: stripped
+  variant: 静态链接 libc
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - stripped
+  - 静态链接-libc
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 stripped 题型中的 静态链接 libc 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: stripped:静态链接 libc
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-stripped
+    complexity: 1
+    compatibleGroups:
+    - reverse-strings
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: stripped
+      variant: 静态链接 libc
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-stripped-04
+  title: Go/Rust/静态链接逆向：无符号 C++
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: stripped
+  variant: 无符号 C++
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - stripped
+  - 无符号-c++
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 stripped 题型中的 无符号 C++ 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: stripped:无符号 C++
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-stripped
+    complexity: 2
+    compatibleGroups:
+    - reverse-strings
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: stripped
+      variant: 无符号 C++
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-stripped-05
+  title: Go/Rust/静态链接逆向：交叉引用恢复
+  category: REVERSE
+  sourceRefs:
+  - picoctf-practice
+  - crackmes-one
+  archetype: stripped
+  variant: 交叉引用恢复
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - stripped
+  - 交叉引用恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 stripped 题型中的 交叉引用恢复 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: stripped:交叉引用恢复
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-stripped
+    complexity: 3
+    compatibleGroups:
+    - reverse-strings
+    - reverse-cff
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: stripped
+      variant: 交叉引用恢复
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-embedded-01
+  title: 嵌入式与微控制器逆向：MSP430 固件
+  category: REVERSE
+  sourceRefs:
+  - microcorruption
+  - picoctf-practice
+  archetype: embedded
+  variant: MSP430 固件
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - embedded
+  - msp430-固件
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 embedded 题型中的 MSP430 固件 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: embedded:MSP430 固件
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-embedded
+    complexity: 5
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: embedded
+      variant: MSP430 固件
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-embedded-02
+  title: 嵌入式与微控制器逆向：内存映射寄存器
+  category: REVERSE
+  sourceRefs:
+  - microcorruption
+  - picoctf-practice
+  archetype: embedded
+  variant: 内存映射寄存器
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - embedded
+  - 内存映射寄存器
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 embedded 题型中的 内存映射寄存器 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: embedded:内存映射寄存器
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-embedded
+    complexity: 1
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: embedded
+      variant: 内存映射寄存器
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-embedded-03
+  title: 嵌入式与微控制器逆向：串口协议
+  category: REVERSE
+  sourceRefs:
+  - microcorruption
+  - picoctf-practice
+  archetype: embedded
+  variant: 串口协议
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - embedded
+  - 串口协议
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 embedded 题型中的 串口协议 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: embedded:串口协议
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-embedded
+    complexity: 2
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: embedded
+      variant: 串口协议
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-embedded-04
+  title: 嵌入式与微控制器逆向：Bootloader 检查
+  category: REVERSE
+  sourceRefs:
+  - microcorruption
+  - picoctf-practice
+  archetype: embedded
+  variant: Bootloader 检查
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - embedded
+  - bootloader-检查
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 embedded 题型中的 Bootloader 检查 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: embedded:Bootloader 检查
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-embedded
+    complexity: 3
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: embedded
+      variant: Bootloader 检查
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: reverse-embedded-05
+  title: 嵌入式与微控制器逆向：固件差分
+  category: REVERSE
+  sourceRefs:
+  - microcorruption
+  - picoctf-practice
+  archetype: embedded
+  variant: 固件差分
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - REVERSE
+  - embedded
+  - 固件差分
+  - authoritative-blueprint
+  learningObjectives:
+  - 恢复关键控制流
+  - 还原校验逻辑
+  - 给出可复现实验证据
+  - 掌握 embedded 题型中的 固件差分 变体
+  prerequisites:
+  - ELF/PE 基础
+  - 汇编阅读
+  - 调试器基础
+  workspaceCapabilities:
+  - gdb
+  - objdump
+  - python
+  - readelf
+  - strings
+  components:
+    target: 本地 CLI 二进制或固件样本
+    vulnerability: embedded:固件差分
+    oracle: 提交解释 + 校验输出/提取值验证
+    workspace: 逆向 CLI 工具容器
+  composition:
+    group: reverse-embedded
+    complexity: 4
+    compatibleGroups:
+    - reverse-strings
+    - reverse-crypto
+    canBeSubChallenge: true
+    combinationNotes: 可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。
+  generator:
+    kind: parameterized-template
+    template: reverse-cli-binary
+    parameters:
+      archetype: embedded
+      variant: 固件差分
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-stack-01
+  title: 栈溢出与 ret2win：ret2win 基础
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  - picoctf-practice
+  archetype: stack
+  variant: ret2win 基础
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - stack
+  - ret2win-基础
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 stack 题型中的 ret2win 基础 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: stack:ret2win 基础
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-stack
+    complexity: 1
+    compatibleGroups:
+    - pwn-rop
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: stack
+      variant: ret2win 基础
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-stack-02
+  title: 栈溢出与 ret2win：偏移测量
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  - picoctf-practice
+  archetype: stack
+  variant: 偏移测量
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - stack
+  - 偏移测量
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 stack 题型中的 偏移测量 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: stack:偏移测量
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-stack
+    complexity: 2
+    compatibleGroups:
+    - pwn-rop
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: stack
+      variant: 偏移测量
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-stack-03
+  title: 栈溢出与 ret2win：栈迁移前置
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  - picoctf-practice
+  archetype: stack
+  variant: 栈迁移前置
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - stack
+  - 栈迁移前置
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 stack 题型中的 栈迁移前置 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: stack:栈迁移前置
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-stack
+    complexity: 3
+    compatibleGroups:
+    - pwn-rop
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: stack
+      variant: 栈迁移前置
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-stack-04
+  title: 栈溢出与 ret2win：部分覆盖返回地址
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  - picoctf-practice
+  archetype: stack
+  variant: 部分覆盖返回地址
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - stack
+  - 部分覆盖返回地址
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 stack 题型中的 部分覆盖返回地址 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: stack:部分覆盖返回地址
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-stack
+    complexity: 4
+    compatibleGroups:
+    - pwn-rop
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: stack
+      variant: 部分覆盖返回地址
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-stack-05
+  title: 栈溢出与 ret2win：环境变量影响
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  - picoctf-practice
+  archetype: stack
+  variant: 环境变量影响
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - stack
+  - 环境变量影响
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 stack 题型中的 环境变量影响 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: stack:环境变量影响
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-stack
+    complexity: 5
+    compatibleGroups:
+    - pwn-rop
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: stack
+      variant: 环境变量影响
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-rop-01
+  title: ROP 与 ret2libc：ret2plt 泄露
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  archetype: rop
+  variant: ret2plt 泄露
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - rop
+  - ret2plt-泄露
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 rop 题型中的 ret2plt 泄露 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: rop:ret2plt 泄露
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-rop
+    complexity: 2
+    compatibleGroups:
+    - pwn-stack
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: rop
+      variant: ret2plt 泄露
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-rop-02
+  title: ROP 与 ret2libc：ret2libc system
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  archetype: rop
+  variant: ret2libc system
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - rop
+  - ret2libc-system
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 rop 题型中的 ret2libc system 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: rop:ret2libc system
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-rop
+    complexity: 3
+    compatibleGroups:
+    - pwn-stack
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: rop
+      variant: ret2libc system
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-rop-03
+  title: ROP 与 ret2libc：CSU Gadget
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  archetype: rop
+  variant: CSU Gadget
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - rop
+  - csu-gadget
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 rop 题型中的 CSU Gadget 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: rop:CSU Gadget
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-rop
+    complexity: 4
+    compatibleGroups:
+    - pwn-stack
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: rop
+      variant: CSU Gadget
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-rop-04
+  title: ROP 与 ret2libc：栈对齐
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  archetype: rop
+  variant: 栈对齐
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - rop
+  - 栈对齐
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 rop 题型中的 栈对齐 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: rop:栈对齐
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-rop
+    complexity: 5
+    compatibleGroups:
+    - pwn-stack
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: rop
+      variant: 栈对齐
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-rop-05
+  title: ROP 与 ret2libc：ROP Pivot
+  category: PWN
+  sourceRefs:
+  - rop-emporium
+  - pwn-college
+  archetype: rop
+  variant: ROP Pivot
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - rop
+  - rop-pivot
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 rop 题型中的 ROP Pivot 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: rop:ROP Pivot
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-rop
+    complexity: 1
+    compatibleGroups:
+    - pwn-stack
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: rop
+      variant: ROP Pivot
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-format-01
+  title: 格式化字符串：栈泄露
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  - pwnable-kr
+  archetype: format
+  variant: 栈泄露
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - format
+  - 栈泄露
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 format 题型中的 栈泄露 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: format:栈泄露
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-format
+    complexity: 3
+    compatibleGroups:
+    - pwn-pie
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: format
+      variant: 栈泄露
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-format-02
+  title: 格式化字符串：任意地址写
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  - pwnable-kr
+  archetype: format
+  variant: 任意地址写
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - format
+  - 任意地址写
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 format 题型中的 任意地址写 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: format:任意地址写
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-format
+    complexity: 4
+    compatibleGroups:
+    - pwn-pie
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: format
+      variant: 任意地址写
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-format-03
+  title: 格式化字符串：GOT 改写
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  - pwnable-kr
+  archetype: format
+  variant: GOT 改写
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - format
+  - got-改写
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 format 题型中的 GOT 改写 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: format:GOT 改写
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-format
+    complexity: 5
+    compatibleGroups:
+    - pwn-pie
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: format
+      variant: GOT 改写
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-format-04
+  title: 格式化字符串：Blind Format
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  - pwnable-kr
+  archetype: format
+  variant: Blind Format
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - format
+  - blind-format
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 format 题型中的 Blind Format 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: format:Blind Format
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-format
+    complexity: 1
+    compatibleGroups:
+    - pwn-pie
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: format
+      variant: Blind Format
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-format-05
+  title: 格式化字符串：宽字符格式化
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  - pwnable-kr
+  archetype: format
+  variant: 宽字符格式化
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - format
+  - 宽字符格式化
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 format 题型中的 宽字符格式化 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: format:宽字符格式化
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-format
+    complexity: 2
+    compatibleGroups:
+    - pwn-pie
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: format
+      variant: 宽字符格式化
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-heap-01
+  title: 堆利用与 tcache：tcache poisoning
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: heap
+  variant: tcache poisoning
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - heap
+  - tcache-poisoning
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 heap 题型中的 tcache poisoning 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: heap:tcache poisoning
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-heap
+    complexity: 4
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: heap
+      variant: tcache poisoning
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-heap-02
+  title: 堆利用与 tcache：fastbin dup
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: heap
+  variant: fastbin dup
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - heap
+  - fastbin-dup
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 heap 题型中的 fastbin dup 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: heap:fastbin dup
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-heap
+    complexity: 5
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: heap
+      variant: fastbin dup
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-heap-03
+  title: 堆利用与 tcache：unsorted bin leak
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: heap
+  variant: unsorted bin leak
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - heap
+  - unsorted-bin-leak
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 heap 题型中的 unsorted bin leak 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: heap:unsorted bin leak
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-heap
+    complexity: 1
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: heap
+      variant: unsorted bin leak
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-heap-04
+  title: 堆利用与 tcache：house of spirit
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: heap
+  variant: house of spirit
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - heap
+  - house-of-spirit
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 heap 题型中的 house of spirit 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: heap:house of spirit
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-heap
+    complexity: 2
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: heap
+      variant: house of spirit
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-heap-05
+  title: 堆利用与 tcache：chunk overlap
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: heap
+  variant: chunk overlap
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - heap
+  - chunk-overlap
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 heap 题型中的 chunk overlap 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: heap:chunk overlap
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-heap
+    complexity: 3
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: heap
+      variant: chunk overlap
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-uaf-01
+  title: Use-After-Free：函数指针复用
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: uaf
+  variant: 函数指针复用
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - uaf
+  - 函数指针复用
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 uaf 题型中的 函数指针复用 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: uaf:函数指针复用
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-uaf
+    complexity: 5
+    compatibleGroups:
+    - pwn-heap
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: uaf
+      variant: 函数指针复用
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-uaf-02
+  title: Use-After-Free：vtable 劫持
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: uaf
+  variant: vtable 劫持
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - uaf
+  - vtable-劫持
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 uaf 题型中的 vtable 劫持 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: uaf:vtable 劫持
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-uaf
+    complexity: 1
+    compatibleGroups:
+    - pwn-heap
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: uaf
+      variant: vtable 劫持
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-uaf-03
+  title: Use-After-Free：double free
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: uaf
+  variant: double free
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - uaf
+  - double-free
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 uaf 题型中的 double free 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: uaf:double free
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-uaf
+    complexity: 2
+    compatibleGroups:
+    - pwn-heap
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: uaf
+      variant: double free
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-uaf-04
+  title: Use-After-Free：引用计数错误
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: uaf
+  variant: 引用计数错误
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - uaf
+  - 引用计数错误
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 uaf 题型中的 引用计数错误 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: uaf:引用计数错误
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-uaf
+    complexity: 3
+    compatibleGroups:
+    - pwn-heap
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: uaf
+      variant: 引用计数错误
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-uaf-05
+  title: Use-After-Free：对象类型混淆
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: uaf
+  variant: 对象类型混淆
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - uaf
+  - 对象类型混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 uaf 题型中的 对象类型混淆 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: uaf:对象类型混淆
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-uaf
+    complexity: 4
+    compatibleGroups:
+    - pwn-heap
+    - pwn-pie
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: uaf
+      variant: 对象类型混淆
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-integer-01
+  title: 整数与边界错误：长度截断
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  archetype: integer
+  variant: 长度截断
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - integer
+  - 长度截断
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 integer 题型中的 长度截断 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: integer:长度截断
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-integer
+    complexity: 1
+    compatibleGroups:
+    - pwn-stack
+    - pwn-heap
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: integer
+      variant: 长度截断
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-integer-02
+  title: 整数与边界错误：符号转换
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  archetype: integer
+  variant: 符号转换
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - integer
+  - 符号转换
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 integer 题型中的 符号转换 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: integer:符号转换
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-integer
+    complexity: 2
+    compatibleGroups:
+    - pwn-stack
+    - pwn-heap
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: integer
+      variant: 符号转换
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-integer-03
+  title: 整数与边界错误：乘法溢出
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  archetype: integer
+  variant: 乘法溢出
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - integer
+  - 乘法溢出
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 integer 题型中的 乘法溢出 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: integer:乘法溢出
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-integer
+    complexity: 3
+    compatibleGroups:
+    - pwn-stack
+    - pwn-heap
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: integer
+      variant: 乘法溢出
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-integer-04
+  title: 整数与边界错误：数组索引越界
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  archetype: integer
+  variant: 数组索引越界
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - integer
+  - 数组索引越界
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 integer 题型中的 数组索引越界 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: integer:数组索引越界
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-integer
+    complexity: 4
+    compatibleGroups:
+    - pwn-stack
+    - pwn-heap
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: integer
+      variant: 数组索引越界
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-integer-05
+  title: 整数与边界错误：负数尺寸
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - picoctf-practice
+  archetype: integer
+  variant: 负数尺寸
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - integer
+  - 负数尺寸
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 integer 题型中的 负数尺寸 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: integer:负数尺寸
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-integer
+    complexity: 5
+    compatibleGroups:
+    - pwn-stack
+    - pwn-heap
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: integer
+      variant: 负数尺寸
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-shellcode-01
+  title: Shellcode 与 Seccomp：栈可执行
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: shellcode
+  variant: 栈可执行
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - shellcode
+  - 栈可执行
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 shellcode 题型中的 栈可执行 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shellcode:栈可执行
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-shellcode
+    complexity: 2
+    compatibleGroups:
+    - pwn-sandbox
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: shellcode
+      variant: 栈可执行
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-shellcode-02
+  title: Shellcode 与 Seccomp：NX 下 mprotect
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: shellcode
+  variant: NX 下 mprotect
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - shellcode
+  - nx-下-mprotect
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 shellcode 题型中的 NX 下 mprotect 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shellcode:NX 下 mprotect
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-shellcode
+    complexity: 3
+    compatibleGroups:
+    - pwn-sandbox
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: shellcode
+      variant: NX 下 mprotect
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-shellcode-03
+  title: Shellcode 与 Seccomp：seccomp 允许集
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: shellcode
+  variant: seccomp 允许集
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - shellcode
+  - seccomp-允许集
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 shellcode 题型中的 seccomp 允许集 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shellcode:seccomp 允许集
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-shellcode
+    complexity: 4
+    compatibleGroups:
+    - pwn-sandbox
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: shellcode
+      variant: seccomp 允许集
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-shellcode-04
+  title: Shellcode 与 Seccomp：ORW Shellcode
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: shellcode
+  variant: ORW Shellcode
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - shellcode
+  - orw-shellcode
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 shellcode 题型中的 ORW Shellcode 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shellcode:ORW Shellcode
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-shellcode
+    complexity: 5
+    compatibleGroups:
+    - pwn-sandbox
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: shellcode
+      variant: ORW Shellcode
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-shellcode-05
+  title: Shellcode 与 Seccomp：多架构 Shellcode
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: shellcode
+  variant: 多架构 Shellcode
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - shellcode
+  - 多架构-shellcode
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 shellcode 题型中的 多架构 Shellcode 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shellcode:多架构 Shellcode
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-shellcode
+    complexity: 1
+    compatibleGroups:
+    - pwn-sandbox
+    - pwn-stack
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: shellcode
+      variant: 多架构 Shellcode
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-pie-01
+  title: PIE/Canary/NX 绕过：Canary 泄露
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - rop-emporium
+  archetype: pie
+  variant: Canary 泄露
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - pie
+  - canary-泄露
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 pie 题型中的 Canary 泄露 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: pie:Canary 泄露
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-pie
+    complexity: 3
+    compatibleGroups:
+    - pwn-rop
+    - pwn-format
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: pie
+      variant: Canary 泄露
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-pie-02
+  title: PIE/Canary/NX 绕过：PIE 基址恢复
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - rop-emporium
+  archetype: pie
+  variant: PIE 基址恢复
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - pie
+  - pie-基址恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 pie 题型中的 PIE 基址恢复 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: pie:PIE 基址恢复
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-pie
+    complexity: 4
+    compatibleGroups:
+    - pwn-rop
+    - pwn-format
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: pie
+      variant: PIE 基址恢复
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-pie-03
+  title: PIE/Canary/NX 绕过：RELRO 约束
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - rop-emporium
+  archetype: pie
+  variant: RELRO 约束
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - pie
+  - relro-约束
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 pie 题型中的 RELRO 约束 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: pie:RELRO 约束
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-pie
+    complexity: 5
+    compatibleGroups:
+    - pwn-rop
+    - pwn-format
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: pie
+      variant: RELRO 约束
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-pie-04
+  title: PIE/Canary/NX 绕过：Partial RELRO GOT
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - rop-emporium
+  archetype: pie
+  variant: Partial RELRO GOT
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - pie
+  - partial-relro-got
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 pie 题型中的 Partial RELRO GOT 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: pie:Partial RELRO GOT
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-pie
+    complexity: 1
+    compatibleGroups:
+    - pwn-rop
+    - pwn-format
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: pie
+      variant: Partial RELRO GOT
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-pie-05
+  title: PIE/Canary/NX 绕过：ASLR 暴力窗口
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - rop-emporium
+  archetype: pie
+  variant: ASLR 暴力窗口
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - pie
+  - aslr-暴力窗口
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 pie 题型中的 ASLR 暴力窗口 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: pie:ASLR 暴力窗口
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-pie
+    complexity: 2
+    compatibleGroups:
+    - pwn-rop
+    - pwn-format
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: pie
+      variant: ASLR 暴力窗口
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-sandbox-01
+  title: 沙箱逃逸与文件能力：chroot 误用
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - overthewire-wargames
+  archetype: sandbox
+  variant: chroot 误用
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - sandbox
+  - chroot-误用
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 sandbox 题型中的 chroot 误用 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: sandbox:chroot 误用
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-sandbox
+    complexity: 4
+    compatibleGroups:
+    - pwn-shellcode
+    - pwn-integer
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: sandbox
+      variant: chroot 误用
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-sandbox-02
+  title: 沙箱逃逸与文件能力：路径竞态
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - overthewire-wargames
+  archetype: sandbox
+  variant: 路径竞态
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - sandbox
+  - 路径竞态
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 sandbox 题型中的 路径竞态 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: sandbox:路径竞态
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-sandbox
+    complexity: 5
+    compatibleGroups:
+    - pwn-shellcode
+    - pwn-integer
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: sandbox
+      variant: 路径竞态
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-sandbox-03
+  title: 沙箱逃逸与文件能力：软链接 TOCTOU
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - overthewire-wargames
+  archetype: sandbox
+  variant: 软链接 TOCTOU
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - sandbox
+  - 软链接-toctou
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 sandbox 题型中的 软链接 TOCTOU 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: sandbox:软链接 TOCTOU
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-sandbox
+    complexity: 1
+    compatibleGroups:
+    - pwn-shellcode
+    - pwn-integer
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: sandbox
+      variant: 软链接 TOCTOU
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-sandbox-04
+  title: 沙箱逃逸与文件能力：文件描述符泄露
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - overthewire-wargames
+  archetype: sandbox
+  variant: 文件描述符泄露
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - sandbox
+  - 文件描述符泄露
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 sandbox 题型中的 文件描述符泄露 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: sandbox:文件描述符泄露
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-sandbox
+    complexity: 2
+    compatibleGroups:
+    - pwn-shellcode
+    - pwn-integer
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: sandbox
+      variant: 文件描述符泄露
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-sandbox-05
+  title: 沙箱逃逸与文件能力：capability 误配
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - overthewire-wargames
+  archetype: sandbox
+  variant: capability 误配
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - sandbox
+  - capability-误配
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 sandbox 题型中的 capability 误配 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: sandbox:capability 误配
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-sandbox
+    complexity: 3
+    compatibleGroups:
+    - pwn-shellcode
+    - pwn-integer
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: sandbox
+      variant: capability 误配
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-kernelish-01
+  title: 内核风格用户态模型：ioctl 模型
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: kernelish
+  variant: ioctl 模型
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - kernelish
+  - ioctl-模型
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 kernelish 题型中的 ioctl 模型 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: kernelish:ioctl 模型
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-kernelish
+    complexity: 5
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: kernelish
+      variant: ioctl 模型
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-kernelish-02
+  title: 内核风格用户态模型：copy_from_user 模拟
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: kernelish
+  variant: copy_from_user 模拟
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - PWN
+  - kernelish
+  - copy_from_user-模拟
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 kernelish 题型中的 copy_from_user 模拟 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: kernelish:copy_from_user 模拟
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-kernelish
+    complexity: 1
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: kernelish
+      variant: copy_from_user 模拟
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-kernelish-03
+  title: 内核风格用户态模型：slab 风格对象
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: kernelish
+  variant: slab 风格对象
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - PWN
+  - kernelish
+  - slab-风格对象
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 kernelish 题型中的 slab 风格对象 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: kernelish:slab 风格对象
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-kernelish
+    complexity: 2
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: kernelish
+      variant: slab 风格对象
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-kernelish-04
+  title: 内核风格用户态模型：竞态锁缺失
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: kernelish
+  variant: 竞态锁缺失
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - PWN
+  - kernelish
+  - 竞态锁缺失
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 kernelish 题型中的 竞态锁缺失 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: kernelish:竞态锁缺失
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-kernelish
+    complexity: 3
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: kernelish
+      variant: 竞态锁缺失
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: pwn-kernelish-05
+  title: 内核风格用户态模型：引用生命周期
+  category: PWN
+  sourceRefs:
+  - pwn-college
+  - pwnable-kr
+  archetype: kernelish
+  variant: 引用生命周期
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 2
+  tags:
+  - PWN
+  - kernelish
+  - 引用生命周期
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别内存破坏原语
+  - 构造稳定利用路径
+  - 解释缓解机制影响
+  - 掌握 kernelish 题型中的 引用生命周期 变体
+  prerequisites:
+  - C 语言内存模型
+  - Linux 进程与 ABI
+  - 基础调试
+  workspaceCapabilities:
+  - checksec
+  - gdb
+  - pwntools
+  - python
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: kernelish:引用生命周期
+    oracle: 外部利用成功信号与进程边界检查
+    workspace: pwn CLI 工具容器
+  composition:
+    group: pwn-kernelish
+    complexity: 4
+    compatibleGroups:
+    - pwn-uaf
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。
+  generator:
+    kind: parameterized-template
+    template: pwn-cli-service
+    parameters:
+      archetype: kernelish
+      variant: 引用生命周期
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true

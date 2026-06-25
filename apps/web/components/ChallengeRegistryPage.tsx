@@ -18,8 +18,10 @@ import {
   createChallengeDraft,
   fetchChallengeCandidates,
   fetchChallengeRegistry,
+  generateCustomChallengePackage,
   generateChallengeVersion,
   hasAuthToken,
+  importAuthoritativeBlueprints,
   importLocalChallenges,
   type ChallengeCandidateSearchResponse,
   type ChallengeDraftResponse,
@@ -87,6 +89,24 @@ export function ChallengeRegistryPage() {
     }
   }
 
+  async function importBlueprints() {
+    setError("");
+    setMessage("");
+    setLoading("blueprints");
+    try {
+      const result = await importAuthoritativeBlueprints();
+      const summary = result.summary ?? {};
+      setMessage(
+        `权威蓝图导入完成：${result.imported.length} 个版本，跳过 ${result.skipped.length} 个条目。${formatBlueprintCounts(summary)}`
+      );
+      await loadRegistry();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+    } finally {
+      setLoading("");
+    }
+  }
+
   async function createDraft() {
     setError("");
     setMessage("");
@@ -126,6 +146,24 @@ export function ChallengeRegistryPage() {
     }
   }
 
+  async function generateCustomPackage() {
+    if (!draft) return;
+    setError("");
+    setMessage("");
+    setLoading("custom");
+    try {
+      const result = await generateCustomChallengePackage(draft.draftId);
+      setGenerated(result);
+      setSelectedCandidateId(result.sourceCandidateId);
+      setMessage(`已生成定制靶场代码包草稿：${result.challengeVersionId}`);
+      await loadRegistry();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "UNKNOWN_ERROR");
+    } finally {
+      setLoading("");
+    }
+  }
+
   async function approveGenerated() {
     if (!generated) return;
     setError("");
@@ -157,6 +195,9 @@ export function ChallengeRegistryPage() {
           </button>
           <button className="iconbutton primary" type="button" onClick={importChallenges} disabled={loading !== ""}>
             <Database size={16} /> 导入本地题目
+          </button>
+          <button className="iconbutton primary" type="button" onClick={importBlueprints} disabled={loading !== ""}>
+            <Database size={16} /> 导入权威蓝图
           </button>
         </div>
       </header>
@@ -265,6 +306,7 @@ export function ChallengeRegistryPage() {
           {candidateSearch ? (
             <div className="authoring-section">
               <h3>候选题目</h3>
+              <CompositionPlan plan={candidateSearch.compositionPlan} />
               <div className="candidate-list">
                 {candidateSearch.candidates.map((candidate) => (
                   <button
@@ -275,8 +317,14 @@ export function ChallengeRegistryPage() {
                   >
                     <strong>{candidate.title}</strong>
                     <span>{candidate.semver} · 匹配 {Math.round(candidate.score * 100)}%</span>
+                    {candidate.matchReasons.length ? (
+                      <small>{candidate.matchReasons.join(" / ")}</small>
+                    ) : null}
                   </button>
                 ))}
+                {candidateSearch.candidates.length === 0 ? (
+                  <div className="empty-state">没有满足硬约束的候选题目。</div>
+                ) : null}
               </div>
               <button
                 className="iconbutton primary"
@@ -285,6 +333,14 @@ export function ChallengeRegistryPage() {
                 disabled={!selectedCandidate || loading !== ""}
               >
                 <Rocket size={16} /> 生成版本草稿
+              </button>
+              <button
+                className="iconbutton"
+                type="button"
+                onClick={generateCustomPackage}
+                disabled={!draft || candidateSearch.candidates.length > 0 || loading !== ""}
+              >
+                <Bot size={16} /> 生成定制靶场草稿
               </button>
             </div>
           ) : null}
@@ -311,4 +367,39 @@ export function ChallengeRegistryPage() {
       </section>
     </main>
   );
+}
+
+function formatBlueprintCounts(summary: Record<string, unknown>): string {
+  const counts = summary.counts;
+  if (!counts || typeof counts !== "object") return "";
+  const typed = counts as Record<string, unknown>;
+  return `覆盖 Web ${String(typed.WEB ?? 0)}、逆向 ${String(typed.REVERSE ?? 0)}、Pwn ${String(typed.PWN ?? 0)}。`;
+}
+
+function CompositionPlan({ plan }: { plan?: Record<string, unknown> }) {
+  if (!plan) return null;
+  const mode = String(plan.mode ?? "");
+  const ids = Array.isArray(plan.candidateIds) ? plan.candidateIds.map(String) : [];
+  const coverage = plan.coverage && typeof plan.coverage === "object" ? (plan.coverage as Record<string, unknown>) : {};
+  const objectives = Array.isArray(coverage.learningObjectives)
+    ? coverage.learningObjectives.map(String).slice(0, 5)
+    : [];
+  const notes = Array.isArray(plan.notes) ? plan.notes.map(String).slice(0, 3) : [];
+  return (
+    <div className="composition-plan">
+      <strong>{compositionModeText(mode)}</strong>
+      {ids.length ? <span>候选：{ids.join("、")}</span> : null}
+      {objectives.length ? <span>覆盖目标：{objectives.join("、")}</span> : null}
+      {notes.map((note) => (
+        <small key={note}>{note}</small>
+      ))}
+    </div>
+  );
+}
+
+function compositionModeText(mode: string): string {
+  if (mode === "compose-existing-blueprints") return "组合现有题型蓝图";
+  if (mode === "single-best-candidate") return "使用单个最佳候选";
+  if (mode === "custom-agent-scaffold") return "需要生成定制靶场草稿";
+  return mode || "组合计划";
 }

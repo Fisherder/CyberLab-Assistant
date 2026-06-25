@@ -1,0 +1,73 @@
+{
+  "overallStatus": "WARN",
+  "summary": {
+    "passed": 4,
+    "warnings": 2,
+    "blocked": 0
+  },
+  "checks": [
+    {
+      "id": "blueprint-catalog-shape",
+      "category": "SCHEMA",
+      "status": "PASS",
+      "title": "权威题型蓝图库结构完整",
+      "evidenceRefs": [
+        "content/challenge-blueprints/authoritative-catalog.yaml"
+      ]
+    },
+    {
+      "id": "minimum-domain-coverage",
+      "category": "CONTENT",
+      "status": "PASS",
+      "title": "Web、逆向、Pwn 三类均不少于 50 个题型蓝图",
+      "evidenceRefs": [
+        "tools/generate_authoritative_blueprint_catalog.py"
+      ]
+    },
+    {
+      "id": "copy-policy",
+      "category": "SUPPLY_CHAIN",
+      "status": "PASS",
+      "title": "蓝图只记录题型、知识点和生成参数，不复制外部题面、附件、flag 或题解",
+      "evidenceRefs": [
+        "content/challenge-blueprints/authoritative-catalog.yaml#qualityGate.copyPolicy"
+      ]
+    },
+    {
+      "id": "terminal-only",
+      "category": "RUNTIME",
+      "status": "PASS",
+      "title": "蓝图工作区限定为 TERMINAL，符合一期终端实践范围",
+      "evidenceRefs": [
+        "cla_terminal_first_complete_development_spec.html#FR-EXT-001"
+      ]
+    },
+    {
+      "id": "needs-materialized-package",
+      "category": "CONTENT_CI",
+      "status": "WARN",
+      "title": "蓝图不是可直接发布的完整题目包，发布前需要物化代码、Oracle、Rubric 和题面",
+      "evidenceRefs": [
+        "services/api/src/cla/challenge_catalog.py#import_authoritative_blueprints"
+      ]
+    },
+    {
+      "id": "needs-teacher-review",
+      "category": "APPROVAL",
+      "status": "WARN",
+      "title": "组合题和定制题必须经过教师审核、验证和发布门禁",
+      "evidenceRefs": [
+        "cla_terminal_first_complete_development_spec.html#P3"
+      ]
+    }
+  ],
+  "forbiddenDisclosuresChecked": [
+    "动态 Flag",
+    "Token",
+    "Cookie",
+    "Authorization",
+    "教师解法",
+    "最终 payload",
+    "外部平台题面原文"
+  ]
+}
