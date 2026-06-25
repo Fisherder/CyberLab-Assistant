@@ -136,6 +136,7 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     client: TestClient,
     teacher_token: str,
     student_token: str,
+    other_student_token: str,
 ) -> None:
     open_at = datetime.now(timezone.utc) - timedelta(minutes=5)
     due_at = datetime.now(timezone.utc) + timedelta(hours=2)
@@ -172,6 +173,15 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     assert "route" not in first
     assert "sessiond" not in str(first).lower()
 
+    other_student_start = client.post(
+        f"/api/v1/student/challenge-bank/{item_one['itemId']}/start",
+        headers=auth(other_student_token),
+    )
+    assert other_student_start.status_code == 202, other_student_start.text
+    other = other_student_start.json()
+    assert other["attemptId"] != first["attemptId"]
+    assert other["sessionId"] != first["sessionId"]
+
     repeated_start = client.post(
         f"/api/v1/student/challenge-bank/{item_one['itemId']}/start",
         headers=auth(student_token),
@@ -191,17 +201,75 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     assert second["attemptId"] != first["attemptId"]
     assert second["assignmentId"] != first["assignmentId"]
 
+    ticket = client.post(
+        f"/api/v1/attempts/{first['attemptId']}/terminal-ticket",
+        headers=auth(student_token),
+    )
+    assert ticket.status_code == 200, ticket.text
+    destroy = client.delete(
+        f"/api/v1/student/challenge-bank/{item_one['itemId']}/environment",
+        headers=auth(student_token),
+    )
+    assert destroy.status_code == 200, destroy.text
+    destroyed = destroy.json()
+    assert destroyed["destroyed"] is True
+    assert destroyed["attemptId"] == first["attemptId"]
+    assert destroyed["sessionId"] == first["sessionId"]
+    assert destroyed["sessionStatus"] == "DESTROYED"
+
+    after_destroy = client.get("/api/v1/student/challenge-bank", headers=auth(student_token))
+    assert after_destroy.status_code == 200, after_destroy.text
+    destroyed_item = next(
+        item for item in after_destroy.json()["items"] if item["itemId"] == item_one["itemId"]
+    )
+    assert destroyed_item["attemptId"] == first["attemptId"]
+    assert destroyed_item["hasEnvironment"] is False
+    assert destroyed_item["sessionId"] is None
+    assert destroyed_item["targetUrl"] is None
+    assert destroyed_item["terminalUrl"] is None
+
+    restart_after_destroy = client.post(
+        f"/api/v1/student/challenge-bank/{item_one['itemId']}/start",
+        headers=auth(student_token),
+    )
+    assert restart_after_destroy.status_code == 202, restart_after_destroy.text
+    restarted = restart_after_destroy.json()
+    assert restarted["attemptId"] == first["attemptId"]
+    assert restarted["sessionId"] != first["sessionId"]
+    assert restarted["sessionEpoch"] == first["sessionEpoch"] + 1
+
     with client.app.state.SessionLocal() as db:
         attempts = db.scalars(
-            select(models.Attempt).where(models.Attempt.student_id == DEV_IDS["student"])
+            select(models.Attempt).where(
+                models.Attempt.student_id.in_([DEV_IDS["student"], DEV_IDS["other_student"]])
+            )
         ).all()
-        bank_attempts = [attempt for attempt in attempts if attempt.assignment_id in {first["assignmentId"], second["assignmentId"]}]
-        assert len(bank_attempts) == 2
+        bank_attempts = [
+            attempt
+            for attempt in attempts
+            if attempt.assignment_id in {first["assignmentId"], second["assignmentId"]}
+        ]
+        assert len(bank_attempts) == 3
+        assert db.scalar(
+            select(func.count(models.TerminalTicketNonce.nonce)).where(
+                models.TerminalTicketNonce.attempt_id == first["attemptId"],
+                models.TerminalTicketNonce.status == "REVOKED",
+            )
+        ) == 1
+        assert db.scalar(
+            select(func.count(models.LabSession.id)).where(
+                models.LabSession.attempt_id == first["attemptId"],
+                models.LabSession.status == "DESTROYED",
+            )
+        ) == 1
         assert db.scalar(
             select(func.count(models.Event.id)).where(
                 models.Event.type == "target.access_url.issued"
             )
-        ) >= 2
+        ) >= 3
+        assert db.scalar(
+            select(func.count(models.Event.id)).where(models.Event.type == "lab.destroyed")
+        ) == 1
 
 
 def test_published_bank_item_must_be_unpublished_before_edit_or_delete(

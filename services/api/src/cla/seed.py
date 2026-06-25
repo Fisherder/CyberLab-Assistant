@@ -105,6 +105,7 @@ def seed_dev_data(db: Session) -> None:
             course,
             models.CourseMember(course_id=course.id, user_id=teacher.id, role="TEACHER"),
             models.CourseMember(course_id=course.id, user_id=student.id, role="STUDENT"),
+            models.CourseMember(course_id=course.id, user_id=other_student.id, role="STUDENT"),
             challenge,
             version,
             validation_run,

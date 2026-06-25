@@ -339,6 +339,9 @@ const StudentChallengeBankItemResponse = z.object({
   openAt: z.string(),
   dueAt: z.string(),
   attemptId: z.string().nullable(),
+  hasEnvironment: z.boolean(),
+  sessionId: z.string().nullable(),
+  sessionStatus: z.string().nullable(),
   targetUrl: z.string().nullable(),
   terminalUrl: z.string().nullable()
 });
@@ -359,6 +362,16 @@ const StartChallengeBankItemResponse = z.object({
   terminalUrl: z.string(),
   workspaceUrl: z.string(),
   reusedAttempt: z.boolean()
+});
+
+const DestroyChallengeBankEnvironmentResponse = z.object({
+  itemId: z.string(),
+  assignmentId: z.string(),
+  attemptId: z.string(),
+  sessionId: z.string(),
+  sessionEpoch: z.number(),
+  sessionStatus: z.string(),
+  destroyed: z.boolean()
 });
 
 export type AttemptResponse = z.infer<typeof AttemptResponse>;
@@ -384,6 +397,7 @@ export type ChallengeBankListResponse = z.infer<typeof ChallengeBankListResponse
 export type StudentChallengeBankItemResponse = z.infer<typeof StudentChallengeBankItemResponse>;
 export type StudentChallengeBankListResponse = z.infer<typeof StudentChallengeBankListResponse>;
 export type StartChallengeBankItemResponse = z.infer<typeof StartChallengeBankItemResponse>;
+export type DestroyChallengeBankEnvironmentResponse = z.infer<typeof DestroyChallengeBankEnvironmentResponse>;
 
 export function currentToken(): string {
   if (typeof window === "undefined") return "";
@@ -653,6 +667,16 @@ export async function startStudentChallengeBankItem(itemId: string): Promise<Sta
   return api(`/api/v1/student/challenge-bank/${itemId}/start`, StartChallengeBankItemResponse, {
     method: "POST"
   });
+}
+
+export async function destroyStudentChallengeBankEnvironment(
+  itemId: string
+): Promise<DestroyChallengeBankEnvironmentResponse> {
+  return api(
+    `/api/v1/student/challenge-bank/${itemId}/environment`,
+    DestroyChallengeBankEnvironmentResponse,
+    { method: "DELETE" }
+  );
 }
 
 export async function requestHint(attemptId: string, level: "L1" | "L2" | "L3"): Promise<HintResponse> {

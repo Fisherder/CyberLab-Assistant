@@ -54,6 +54,7 @@ from cla.schemas import (
     CreateChallengeDraftRequest,
     CreateAttemptRequest,
     CreateCourseRequest,
+    DestroyChallengeBankItemEnvironmentView,
     EnsureSessionRequest,
     GenerateChallengeVersionRequest,
     GradeView,
@@ -1365,6 +1366,94 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "reusedAttempt": reused,
         }
 
+    @app.delete(
+        "/api/v1/student/challenge-bank/{item_id}/environment",
+        response_model=DestroyChallengeBankItemEnvironmentView,
+    )
+    def destroy_challenge_bank_environment(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_student(db, principal, item)
+        if item.assignment_id is None:
+            raise api_error(404, "CHALLENGE_BANK_ENVIRONMENT_NOT_FOUND", "No lab environment exists")
+        assignment = db.get(models.Assignment, item.assignment_id)
+        if assignment is None:
+            raise api_error(500, "ASSIGNMENT_MISSING", "Challenge bank assignment is missing")
+        attempt = db.scalar(
+            select(models.Attempt)
+            .where(models.Attempt.assignment_id == assignment.id)
+            .where(models.Attempt.student_id == principal.user_id)
+            .order_by(models.Attempt.number.asc(), models.Attempt.created_at.asc())
+            .limit(1)
+        )
+        if attempt is None:
+            raise api_error(404, "CHALLENGE_BANK_ENVIRONMENT_NOT_FOUND", "No lab environment exists")
+        lab = _active_lab_session(db, attempt.id)
+        if lab is None:
+            raise api_error(
+                409,
+                "CHALLENGE_BANK_ENVIRONMENT_NOT_RUNNING",
+                "No running lab environment exists",
+            )
+        issued = list(
+            db.scalars(
+                select(models.TerminalTicketNonce)
+                .where(models.TerminalTicketNonce.attempt_id == attempt.id)
+                .where(models.TerminalTicketNonce.session_id == lab.id)
+                .where(models.TerminalTicketNonce.status == "ISSUED")
+            )
+        )
+        for nonce in issued:
+            nonce.status = "REVOKED"
+        lab.route_endpoint = ""
+        lab.status = "DESTROYED"
+        attempt.status = "ENVIRONMENT_DESTROYED"
+        append_event(
+            db,
+            tenant_id=principal.tenant_id,
+            attempt_id=attempt.id,
+            session_epoch=lab.epoch,
+            source="cla-api",
+            event_type="lab.destroyed",
+            payload={
+                "challenge_bank_item_id": item.id,
+                "session_id": lab.id,
+                "revoked_tickets": len(issued),
+            },
+        )
+        _outbox(
+            db,
+            "lab_session",
+            lab.id,
+            "lab.destroyed",
+            {
+                "attemptId": attempt.id,
+                "challengeBankItemId": item.id,
+                "sessionEpoch": lab.epoch,
+            },
+        )
+        _audit(
+            db,
+            principal,
+            "student.challenge_bank.environment.destroy",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            after_ref=f"attempt={attempt.id} session={lab.id}",
+        )
+        return {
+            "itemId": item.id,
+            "assignmentId": assignment.id,
+            "attemptId": attempt.id,
+            "sessionId": lab.id,
+            "sessionEpoch": lab.epoch,
+            "sessionStatus": lab.status,
+            "destroyed": True,
+        }
+
     @app.post(
         "/api/v1/assignments/{assignment_id}/attempts",
         response_model=AttemptResponse,
@@ -2654,6 +2743,7 @@ def _student_challenge_bank_item_view(
             .order_by(models.Attempt.number.asc(), models.Attempt.created_at.asc())
             .limit(1)
         )
+    lab = _active_lab_session(db, attempt.id) if attempt else None
     return {
         "itemId": item.id,
         "courseId": item.course_id,
@@ -2668,8 +2758,11 @@ def _student_challenge_bank_item_view(
         "openAt": item.open_at,
         "dueAt": item.due_at,
         "attemptId": attempt.id if attempt else None,
-        "targetUrl": _challenge_bank_target_url(settings, item) if attempt else None,
-        "terminalUrl": f"/?attemptId={attempt.id}" if attempt else None,
+        "hasEnvironment": lab is not None,
+        "sessionId": lab.id if lab else None,
+        "sessionStatus": lab.status if lab else None,
+        "targetUrl": _challenge_bank_target_url(settings, item) if lab else None,
+        "terminalUrl": f"/?attemptId={attempt.id}" if lab and attempt else None,
     }
 
 

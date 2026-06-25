@@ -21,6 +21,7 @@ import {
   clearAuthToken,
   ensureSession,
   fetchGrade,
+  fetchMe,
   fetchTutorState,
   hasAuthToken,
   requestHint,
@@ -74,6 +75,17 @@ export function TerminalWorkbench() {
       );
       return;
     }
+    void fetchMe()
+      .then((me) => {
+        if (me.roles.includes("teacher") && !me.roles.includes("student")) {
+          window.location.replace("/teacher/challenge-bank");
+        }
+      })
+      .catch(() => {
+        window.location.replace(
+          `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+        );
+      });
     return () => wsRef.current?.close();
   }, []);
 

@@ -1137,6 +1137,82 @@ input {
   margin-bottom: 6px;
 }
 
+.teacher-app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  background: var(--bg);
+}
+
+.teacher-sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.teacher-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.teacher-nav a,
+.teacher-logout {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.teacher-nav a.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.teacher-logout {
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.teacher-main,
+.teacher-create-main {
+  min-width: 0;
+  padding: 18px;
+}
+
+.teacher-page-header {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+}
+
+.teacher-page-header h1 {
+  font-size: 24px;
+  margin: 8px 0 2px;
+}
+
+.teacher-page-header span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.teacher-bank-grid {
+  display: grid;
+  gap: 10px;
+}
+
 .bank-layout,
 .student-bank-layout {
   display: grid;
@@ -1291,6 +1367,194 @@ input {
   padding: 10px 12px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(7, 16, 24, 0.38);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.challenge-detail-modal {
+  width: min(1040px, 100%);
+  max-height: min(86vh, 860px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 18px 42px rgba(23, 32, 51, 0.18);
+  padding: 18px;
+}
+
+.modal-header,
+.modal-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+}
+
+.modal-header h2 {
+  margin: 8px 0 0;
+  font-size: 22px;
+}
+
+.modal-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 14px;
+}
+
+.modal-section {
+  display: grid;
+  gap: 8px;
+}
+
+.modal-section h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.modal-section input,
+.modal-section textarea,
+.challenge-preview-card input,
+.challenge-preview-card textarea,
+.agent-chat-panel textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 9px 10px;
+}
+
+.modal-section textarea,
+.challenge-preview-card textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.detail-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-copy h4,
+.detail-copy p {
+  margin: 0;
+}
+
+.detail-copy p {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.modal-actions {
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.teacher-create-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  align-items: start;
+}
+
+.challenge-preview-card,
+.agent-chat-panel,
+.publish-box {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.challenge-preview-card {
+  display: grid;
+  gap: 10px;
+}
+
+.preview-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.preview-form-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.publish-box {
+  display: grid;
+  gap: 10px;
+}
+
+.agent-chat-panel {
+  display: grid;
+  gap: 10px;
+  position: sticky;
+  top: 14px;
+}
+
+.agent-messages {
+  display: grid;
+  gap: 8px;
+  max-height: 390px;
+  overflow: auto;
+}
+
+.agent-message {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.agent-message.agent {
+  background: var(--panel-2);
+}
+
+.agent-message.teacher {
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+
+.agent-message strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.agent-message p,
+.candidate-summary span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.candidate-summary {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
 @media (max-width: 1100px) {
   .shell {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -1326,8 +1590,14 @@ input {
   }
 
   .bank-layout,
-  .student-bank-layout {
+  .student-bank-layout,
+  .teacher-create-layout,
+  .modal-body-grid {
     grid-template-columns: 1fr;
+  }
+
+  .agent-chat-panel {
+    position: static;
   }
 
   .session-table-head,
@@ -1408,7 +1678,28 @@ input {
     flex-wrap: wrap;
   }
 
+  .teacher-app-shell {
+    display: block;
+  }
+
+  .teacher-sidebar {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+
+  .teacher-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .teacher-logout {
+    margin-top: 12px;
+  }
+
   .publish-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-form-grid {
     grid-template-columns: 1fr;
   }
 

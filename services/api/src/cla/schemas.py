@@ -275,6 +275,9 @@ class StudentChallengeBankItemView(BaseModel):
     openAt: datetime
     dueAt: datetime
     attemptId: str | None = None
+    hasEnvironment: bool = False
+    sessionId: str | None = None
+    sessionStatus: str | None = None
     targetUrl: str | None = None
     terminalUrl: str | None = None
 
@@ -295,6 +298,16 @@ class StartChallengeBankItemView(BaseModel):
     terminalUrl: str
     workspaceUrl: str
     reusedAttempt: bool
+
+
+class DestroyChallengeBankItemEnvironmentView(BaseModel):
+    itemId: str
+    assignmentId: str
+    attemptId: str
+    sessionId: str
+    sessionEpoch: int
+    sessionStatus: str
+    destroyed: bool
 
 
 class CreateAttemptRequest(BaseModel):

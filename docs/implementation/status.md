@@ -16,14 +16,17 @@
 - 已按 [题库要求.md](/Users/fisherder/Desktop/研究生/Security_Class_Tool/题库要求.md) 和 [cla_terminal_first_complete_development_spec.html](/Users/fisherder/Desktop/研究生/Security_Class_Tool/cla_terminal_first_complete_development_spec.html) 新增课堂题库发布层：`challenge_bank_items` 作为教学题库条目，区别于 Challenge Registry 题目数据库。
 - 已新增教师端题库 API：创建、列表、详情、修改、发布、下架、删除、最近 30 条回收站和恢复；已发布题目必须先下架才能修改或删除。
 - 已新增学生端题库 API：学生只看到本课程已发布题目，未开始和已结束题目可预览但不能获取环境，进行中题目才能启动。
-- 已实现题库环境幂等：同一学生同一题库条目重复获取容器返回同一 Attempt 和 LabSession；不同题库条目会分别创建不同 Attempt。
-- 已新增教师端题库页面 `/teacher/challenge-bank` 和学生端题库页面 `/student/challenge-bank`，登录后按角色进入对应题库；学生从题库获取容器后再进入终端，终端页支持 `attemptId` 查询参数。
+- 已实现题库环境幂等和隔离：同一学生同一题库条目重复获取容器返回同一 Attempt；不同学生进入同一题目会获得不同 Attempt 和 LabSession；不同题库条目会分别创建不同 Attempt。
+- 已新增学生销毁容器接口：`DELETE /api/v1/student/challenge-bank/{item_id}/environment` 会把当前 active LabSession 标记为 `DESTROYED`、撤销未消费终端票据、清空学生题库中的目标地址和终端入口。
+- 已重构教师端题库：`/teacher/challenge-bank` 是题库主界面，左侧提供题库、评分系统、个人页面导航；题目详情点击后以浮层卡片展示，不再和创建表单混在侧边栏。
+- 已新增独立教师创建页 `/teacher/challenge-bank/new`：主区域是题目详细信息卡片，侧边栏是出题 Agent 多轮对话框，Agent 根据 Brief Parser 和候选检索结果实时更新题目详情，教师最终点击“创建题目”或“创建并发布”。
+- 已新增学生端题库页面 `/student/challenge-bank`，登录后学生进入题库；学生从题库获取容器后再进入终端，终端页支持 `attemptId` 查询参数；获取环境后隐藏“获取容器”并显示“销毁容器”。
 - 已新增教师端题库 Registry 页面：`/teacher/challenges/registry` 支持导入本地题目、搜索题库、输入 Brief、查看候选、生成版本草稿、打开验证报告和审批发布。
 - 已更新 OpenAPI、`.env.example`、README、内容开发规范、追踪矩阵和状态文档，记录模型接入、题库导入、对象资产和审核发布流程。
 - 已脱敏 `.env.example` 中的本地开发密钥、内部服务 token、Oracle secret、转录加密密钥和模型 API Key；真实密钥只保留在本机 `.env`。
 - 已修复 API 包导入副作用：`from cla import models` 不再创建 FastAPI 应用或连接数据库，`cla.main:app` 改为 ASGI 惰性应用，仅在服务实际收到请求时构造 FastAPI。
 - 已按用户视角重写教师端和学生端使用手册：从进入页面、点击按钮、输入内容、查看结果到常见问题逐步说明，不再把开发接口、内部模块和实现细节作为主体内容。
-- 已新增本地账号注册登录功能：学生和教师可以通过 `/login` 页面注册或登录，登录后获得平台会话 token；学生进入终端工作台，教师进入验证报告页，退出登录会清除浏览器 token。
+- 已新增本地账号注册登录功能：学生和教师可以通过 `/login` 页面注册或登录，登录后获得平台会话 token；学生进入题库，教师进入教师题库，退出登录会清除浏览器 token。
 - 已在后端新增本地账号密码哈希、会话 token、注册/登录接口和 Alembic 迁移，并保留原有 OIDC、开发 token、RBAC、课程成员权限检查。
 - 已为手册补充真实本机页面截图，覆盖学生工作台、终端连接、提示、答案提交、成绩证据、申诉，以及教师验证报告和实时监控页面。
 - 已更新 `tools/build_user_manuals.py`，用同一份结构化内容生成 Markdown、HTML 和 PDF，便于后续同步维护教师端和学生端手册。
@@ -54,7 +57,7 @@
 ## 当前已验证能力
 
 - API 控制平面：OIDC、RBAC、课程/成员/作业、Attempt 幂等、LabSession、本地 reset、终端票据、路由注册、票据撤销、事件接入、转录索引/加密/恢复/保留、Oracle、评分、申诉、Tutor、教师监控和内容验证。
-- 本地账号认证：注册学生账号、学生登录、创建 Attempt，注册教师账号、教师访问验证报告和 live monitor 均已通过 API 测试和本机浏览器验证。
+- 本地账号认证：注册学生账号、学生登录、创建 Attempt，注册教师账号、教师访问题库、验证报告和 live monitor 均已通过 API 测试和本机浏览器验证。
 - Gateway/sessiond：二进制 STDIN/STDOUT、resize、heartbeat、ACK、重连 replay、Redis replay、背压、异步录制和 metrics。
 - Environment Controller：LabSession CRD 类型、资源规划、调和决策、controller-runtime fake client、Kubernetes Event、route registry、ticket revoke、orphan scanner 和 metrics。
 - Web：学生工作台、登录页、成绩证据页、教师验证报告页、教师 live monitor 页面可以构建并通过类型检查；本机浏览器已验证登录页样式加载、学生终端连接、命令回显、提示、提交、成绩页、申诉、教师验证报告和教师 live monitor。
@@ -72,11 +75,11 @@ python -m compileall services/api/src/cla
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 结果：tsc --noEmit 通过
 
-.venv/bin/pytest services/api/tests/test_challenge_bank.py services/api/tests/test_alembic_migrations.py services/api/tests/test_settings.py -q
-# 结果：6 passed, 1 skipped in 0.29s，覆盖课堂题库发布层、学生可见性、时间窗口、删除/恢复和题库 Attempt 幂等
+.venv/bin/pytest services/api/tests/test_challenge_bank.py -q
+# 结果：3 passed in 0.41s，覆盖课堂题库发布层、学生可见性、时间窗口、删除/恢复、不同学生同题环境隔离、销毁容器、票据撤销和重新获取环境
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
-# 结果：tsc --noEmit 通过，覆盖教师题库页面、学生题库页面和题库 API 前端封装
+# 结果：tsc --noEmit 通过，覆盖教师题库页面、独立 Agent 创建页、教师侧边栏、学生题库销毁按钮和题库 API 前端封装
 
 .venv/bin/pytest services/api/tests
 # 结果：70 passed, 1 skipped in 4.71s，包含本地账号注册登录、模型出题、Registry 导入、对象资产和课堂题库测试
@@ -91,7 +94,7 @@ env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sess
 # 结果：Python 编译检查通过
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
-# 结果：Next.js build 通过，包含 /teacher/challenge-bank、/student/challenge-bank 和 /teacher/challenges/registry 页面
+# 结果：Next.js build 通过，包含 /teacher/challenge-bank、/teacher/challenge-bank/new、/teacher/grading、/teacher/profile、/student/challenge-bank 和 /teacher/challenges/registry 页面
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 结果：tsc --noEmit 通过
@@ -112,10 +115,10 @@ curl --noproxy '*' -sS -I 'http://127.0.0.1:3000/_next/static/chunks/main-app.js
 # 结果：登录页恢复为居中卡片式界面，styleSheetCount=1，输入框和按钮样式加载正常
 
 # 通过浏览器登录临时学生账号，打开 http://127.0.0.1:3000/student/challenge-bank
-# 结果：学生题库显示 1 个进行中题目；点击“获取容器”后显示目标网站、进入终端和 Attempt；进入终端后状态 connected，执行 echo CLA_BANK_OK 正常回显。
+# 结果：学生题库显示进行中题目；点击“获取容器”后按钮变为“销毁容器”，显示目标网站、进入终端、Session、状态和 Attempt；点击“销毁容器”后按钮恢复为“获取容器”，目标网站和终端入口不再显示。
 
 # 通过浏览器登录临时教师账号，打开 http://127.0.0.1:3000/teacher/challenge-bank
-# 结果：教师题库显示 1 个 PUBLISHED/进行中题目，验证状态 PASS，发布窗口、下架、删除、恢复等按钮可见。
+# 结果：教师题库显示 PUBLISHED/进行中题目；左侧侧边栏包含题库、评分系统、个人页面；页面不包含学生终端 UI；点击题目后打开居中浮层详情；打开 /teacher/challenge-bank/new 后主区域为题目详细信息卡片，侧边为出题 Agent 对话框。
 
 curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
 # 结果：{"ok":true,"agentRuntimeEnabled":true}

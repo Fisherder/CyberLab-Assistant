@@ -9,9 +9,11 @@ import {
   ExternalLink,
   Play,
   RefreshCw,
-  TerminalSquare
+  TerminalSquare,
+  Trash2
 } from "lucide-react";
 import {
+  destroyStudentChallengeBankEnvironment,
   fetchStudentChallengeBank,
   hasAuthToken,
   startStudentChallengeBankItem,
@@ -42,6 +44,7 @@ export function StudentChallengeBankPage() {
     [items, selectedId]
   );
   const selectedStart = selected ? started[selected.itemId] : null;
+  const hasEnvironment = Boolean(selectedStart || selected?.hasEnvironment);
 
   async function loadItems() {
     setError("");
@@ -69,6 +72,27 @@ export function StudentChallengeBankPage() {
       const result = await startStudentChallengeBankItem(selected.itemId);
       setStarted((current) => ({ ...current, [selected.itemId]: result }));
       setMessage(result.reusedAttempt ? "已连接到你之前创建的环境。" : "容器环境已创建。");
+      await loadItems();
+    } catch (err) {
+      setError(readError(err));
+    } finally {
+      setLoading("");
+    }
+  }
+
+  async function destroySelected() {
+    if (!selected) return;
+    setError("");
+    setMessage("");
+    setLoading("destroy");
+    try {
+      await destroyStudentChallengeBankEnvironment(selected.itemId);
+      setStarted((current) => {
+        const next = { ...current };
+        delete next[selected.itemId];
+        return next;
+      });
+      setMessage("容器环境已销毁。");
       await loadItems();
     } catch (err) {
       setError(readError(err));
@@ -115,7 +139,7 @@ export function StudentChallengeBankPage() {
                 <span>
                   {formatDate(item.openAt)} - {formatDate(item.dueAt)}
                 </span>
-                {item.attemptId ? <span className="pill good">已获取环境</span> : null}
+                {item.hasEnvironment ? <span className="pill good">已获取环境</span> : null}
               </div>
             </button>
           ))}
@@ -155,6 +179,12 @@ export function StudentChallengeBankPage() {
                 </div>
                 {!selected.clickable ? (
                   <div className="empty-state">{selected.disabledReason ?? "当前不能开始"}</div>
+                ) : hasEnvironment ? (
+                  <div className="bank-actionbar">
+                    <button className="iconbutton" type="button" onClick={destroySelected} disabled={loading !== ""}>
+                      <Trash2 size={16} /> 销毁容器
+                    </button>
+                  </div>
                 ) : (
                   <div className="bank-actionbar">
                     <button className="iconbutton primary" type="button" onClick={startSelected} disabled={loading !== ""}>
@@ -172,6 +202,14 @@ export function StudentChallengeBankPage() {
                     label="进入终端"
                     href={selectedStart?.workspaceUrl ?? selected.terminalUrl}
                   />
+                  <div>
+                    <span>Session</span>
+                    <strong>{selectedStart?.sessionId ?? selected.sessionId ?? "尚未创建"}</strong>
+                  </div>
+                  <div>
+                    <span>状态</span>
+                    <strong>{selectedStart?.sessionStatus ?? selected.sessionStatus ?? "无运行环境"}</strong>
+                  </div>
                   <div>
                     <span>Attempt</span>
                     <strong>{selectedStart?.attemptId ?? selected.attemptId ?? "尚未创建"}</strong>

@@ -37,9 +37,10 @@
 1. 新增题库条目数据模型 `challenge_bank_items`。
 2. 教师 API 支持创建、列表、详情、修改、发布、下架、删除、回收站和恢复。
 3. 学生 API 支持查看已发布题库；未开始和已结束题目灰显但可预览；只有进行中题目能开启环境。
-4. 学生获取容器时复用现有 Assignment、Attempt、LabSession、Gateway 链路，确保同一学生同一题目只创建一个 Attempt，但不同题目可以各自创建 Attempt。
-5. 前端增加教师题库页面和学生题库页面，教师端不再把学生做题界面作为主要入口。
-6. 文档和测试覆盖生命周期、权限、时间窗口、删除/恢复和 Attempt 幂等约束。
+4. 学生获取容器时复用现有 Assignment、Attempt、LabSession、Gateway 链路，确保同一学生同一题目只创建一个 Attempt；不同学生即使进入同一题目，也会获得彼此独立的 Attempt 和 LabSession。
+5. 学生可销毁自己当前题目的运行环境；销毁后当前 LabSession 失效，未消费终端票据撤销，页面回到可重新获取容器状态。
+6. 前端增加教师题库页面、独立 Agent 创建页和学生题库页面，教师端不再把学生做题界面作为主要入口。
+7. 文档和测试覆盖生命周期、权限、时间窗口、删除/恢复和 Attempt 幂等约束。
 
 ## 数据模型
 
@@ -100,6 +101,7 @@
 | `GET` | `/api/v1/student/challenge-bank` | 学生题库列表，只显示已发布题目，按时间计算可点击状态 |
 | `GET` | `/api/v1/student/challenge-bank/{item_id}` | 学生题目详情 |
 | `POST` | `/api/v1/student/challenge-bank/{item_id}/start` | 获取或创建本人该题目的 Attempt 和 LabSession |
+| `DELETE` | `/api/v1/student/challenge-bank/{item_id}/environment` | 销毁本人该题目当前运行环境并撤销未消费终端票据 |
 
 ## 学生环境与目标地址
 
@@ -107,7 +109,7 @@
 
 1. 题库条目发布时自动创建或复用一个内部 `Assignment`。
 2. 学生点击获取容器时按 `assignment_id + student_id` 查找已有 Attempt。
-3. 如已有 Attempt，直接返回原 Attempt 和已有 LabSession；如没有则创建 Attempt。
+3. 如已有 Attempt 且存在 active LabSession，直接返回原 Attempt 和已有 LabSession；如已有 Attempt 但环境已销毁，则复用 Attempt 并创建新的 LabSession epoch。
 4. `POST /start` 返回：
    - `attemptId`
    - `sessionId`
@@ -134,19 +136,28 @@
 教师端 `/teacher/challenge-bank`：
 
 - 默认页面是题库列表，不是做题界面。
+- 左侧是教师端导航：题库、评分系统、个人页面。
 - 顶部按钮：创建题目、导入题目数据库、回收站。
 - 列表卡片显示标题、状态、开始时间、截止时间、引用版本、标签。
-- 详情区显示题目描述、要求、引用版本、验证状态和操作按钮。
+- 点击题目后在屏幕中央打开浮层详情卡片，显示题目描述、要求、引用版本、验证状态和操作按钮。
 - 未发布/已下架：可修改、发布、删除。
 - 已发布/未开始/进行中/已结束：只能查看和下架。
 - 回收站：只显示最近 30 条删除项，可恢复。
+
+教师端 `/teacher/challenge-bank/new`：
+
+- 独立创建界面，不和题目详情浮层混在一起。
+- 主区域显示题目详细信息卡片，教师可以最终确认或手动微调。
+- 侧边栏是出题 Agent 对话框，教师多轮描述需求，Agent 调用 Brief Parser 和候选检索接口，并实时更新主区域题目卡片。
+- 底部提供“创建题目”和“创建并发布”两个明确动作。
 
 学生端 `/student/challenge-bank`：
 
 - 展示已发布题目列表。
 - 未开始和已结束卡片灰显，不允许开启环境。
 - 进行中卡片可打开详情并点击获取容器。
-- 获取容器后展示目标地址和进入终端按钮。
+- 获取容器后隐藏“获取容器”按钮，展示目标地址、进入终端、Attempt、Session 和状态。
+- 获取容器后显示“销毁容器”按钮；点击后真实销毁当前 LabSession，页面重新回到可获取容器状态。
 
 ## 验收清单
 
@@ -157,7 +168,9 @@
 - 删除后不出现在教师普通题库和学生题库中；回收站显示最近 30 条。
 - 恢复后状态为未发布，重新出现在教师题库。
 - 学生只看到已发布题目；未开始/已结束不可点击开启环境。
-- 同一学生同一题目重复点击获取容器返回同一 Attempt。
+- 同一学生同一题目重复获取容器返回同一 Attempt；如环境未销毁，返回同一 LabSession。
+- 同一题目下不同学生获取环境时，Attempt 和 LabSession 必须不同。
 - 同一学生不同题目可以分别获取不同 Attempt。
+- 学生销毁容器后 active LabSession 不再返回，目标地址和终端入口不再显示，未消费终端票据被撤销。
 - 学生响应不暴露 Pod、容器 IP、sessiond 地址或内部 route_ref。
 - API、Web build/typecheck 和相关测试通过。
