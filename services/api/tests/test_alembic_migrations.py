@@ -137,7 +137,9 @@ def test_alembic_upgrade_head_on_postgresql_when_configured() -> None:
         pytest.skip("CLA_TEST_POSTGRES_URL is not configured")
 
     database = f"cla_migration_{uuid.uuid4().hex}"
-    target_url = str(make_url(admin_url).set(database=database))
+    target_url = make_url(admin_url).set(database=database).render_as_string(
+        hide_password=False
+    )
     admin_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT", future=True)
     try:
         with admin_engine.connect() as connection:
