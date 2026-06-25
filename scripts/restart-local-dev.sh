@@ -44,6 +44,8 @@ rm -rf "$WORKSPACE_ROOT"
 mkdir -p "$WORKSPACE_ROOT"
 cp -R "$TEMPLATE_DIR/." "$WORKSPACE_ROOT/"
 
+rm -rf "$ROOT/apps/web/.next"
+
 tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION" 2>/dev/null || true
 
 tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION" -n target -c "$ROOT" \
