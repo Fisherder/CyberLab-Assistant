@@ -2,6 +2,8 @@ package main
 
 import (
 	"net"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -21,6 +23,29 @@ func TestEnvOverride(t *testing.T) {
 	t.Setenv("CLA_SESSIOND_TEST_VALUE", "custom")
 	if got := env("CLA_SESSIOND_TEST_VALUE", "fallback"); got != "custom" {
 		t.Fatalf("got %q want custom", got)
+	}
+}
+
+func TestWorkspaceDirCreatesDedicatedDirectory(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "workspace")
+	t.Setenv("CLA_WORKSPACE_DIR", dir)
+
+	got, err := workspaceDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != dir {
+		t.Fatalf("workspace dir = %q, want %q", got, dir)
+	}
+	if info, err := os.Stat(got); err != nil || !info.IsDir() {
+		t.Fatalf("workspace dir was not created: info=%v err=%v", info, err)
+	}
+}
+
+func TestWorkspaceDirRejectsHostTempRoot(t *testing.T) {
+	t.Setenv("CLA_WORKSPACE_DIR", "/tmp")
+	if got, err := workspaceDir(); err == nil {
+		t.Fatalf("workspace dir %q should be rejected", got)
 	}
 }
 

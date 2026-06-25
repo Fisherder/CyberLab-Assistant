@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 
 	"github.com/creack/pty"
@@ -37,12 +39,24 @@ func main() {
 func servePTY(conn net.Conn) {
 	defer conn.Close()
 	shell := env("CLA_WORKSPACE_SHELL", "/bin/bash")
+	workspace, err := workspaceDir()
+	if err != nil {
+		slog.Error("workspace directory rejected", "error", err)
+		return
+	}
 	cmd := exec.Command(shell)
-	cmd.Dir = env("CLA_WORKSPACE_DIR", "/workspace")
-	cmd.Env = append(os.Environ(), "CLA_SESSIOND=1")
+	cmd.Dir = workspace
+	cmd.Env = append(
+		os.Environ(),
+		"CLA_SESSIOND=1",
+		"HOME="+workspace,
+		"PWD="+workspace,
+		"BASH_SILENCE_DEPRECATION_WARNING=1",
+	)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setctty: true, Setsid: true}
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
+		slog.Error("pty start failed", "workspace", workspace, "error", err)
 		return
 	}
 	defer ptmx.Close()
@@ -80,4 +94,31 @@ func env(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func workspaceDir() (string, error) {
+	dir := env("CLA_WORKSPACE_DIR", "/workspace")
+	abs, err := filepath.Abs(filepath.Clean(dir))
+	if err != nil {
+		return "", err
+	}
+	if unsafeWorkspaceDir(abs) {
+		return "", fmt.Errorf("CLA_WORKSPACE_DIR must be a dedicated lab directory, got %s", abs)
+	}
+	if err := os.MkdirAll(abs, 0o750); err != nil {
+		return "", err
+	}
+	return abs, nil
+}
+
+func unsafeWorkspaceDir(abs string) bool {
+	forbidden := map[string]bool{
+		"/":            true,
+		"/tmp":         true,
+		"/private/tmp": true,
+	}
+	if temp, err := filepath.Abs(filepath.Clean(os.TempDir())); err == nil {
+		forbidden[temp] = true
+	}
+	return forbidden[abs]
 }

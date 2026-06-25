@@ -188,6 +188,15 @@ export CLA_DEV_MODE=true
 .venv/bin/uvicorn cla.main:app --reload --app-dir services/api/src
 ```
 
+推荐的一键本地重启方式：
+
+```bash
+chmod +x scripts/restart-local-dev.sh scripts/stop-local-dev.sh
+scripts/restart-local-dev.sh
+```
+
+脚本会在 `tmux -L cla-dev` 中启动 target、sessiond、API、Gateway 和 Web。学生终端使用专用工作区 `/private/tmp/cla-local-workspace/web-sqli-auth`，不会暴露宿主 `/tmp`。
+
 本地账号登录：
 
 ```text
