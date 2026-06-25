@@ -4,6 +4,11 @@
 
 ## 本轮完成
 
+- 已新增教师端和学生端详细使用手册，源文档位于 `docs/user-manuals/teacher-guide.md`、`docs/user-manuals/student-guide.md`，HTML 版本位于 `docs/user-manuals/teacher-guide.html`、`docs/user-manuals/student-guide.html`，PDF 版本位于 `output/pdf/cla-teacher-guide.pdf` 和 `output/pdf/cla-student-guide.pdf`。
+- 已新增 `tools/build_user_manuals.py`，用同一份结构化内容生成 Markdown、HTML 和 PDF，便于后续同步维护教师端和学生端手册。
+- 已把用户使用手册入口加入根目录 `README.md` 的阅读顺序和仓库结构说明。
+- 已将 PDF 生成改为嵌入本机中文字体，避免 Poppler 缺少 Adobe-GB1 映射时出现中文渲染失败。
+- 已抽样渲染教师端 PDF 第 1、6、13 页和学生端 PDF 第 1、5、10 页，确认封面、正文、表格、代码块、清单和页脚可读且没有明显溢出。
 - 已重写根目录 `README.md`，作为人类开发人员和后续 agent 的中文入口文档，覆盖项目定位、当前实现边界、模块职责、核心链路、本地运行、测试、文档维护、Git 和后续路线。
 - 已新增 `docs/development/developer-guide.md`、`docs/development/architecture.md`、`docs/development/security.md`、`docs/development/testing.md`、`docs/development/git.md` 和 `docs/development/content-authoring.md`，分别覆盖开发规范、架构、不可突破安全边界、测试矩阵、Git 协作和 Challenge-as-Code 内容规范。
 - 已扩展 `docs/runbooks/local-development.md`，补齐本地 API、Gateway、sessiond、Web、Compose、手动纵向验证和排障步骤。
@@ -80,6 +85,23 @@ rg --hidden -n "${legacy_upper}|${legacy_lower}|${legacy_title}" . --glob '!.git
 
 find . -path './.git' -prune -o -path './node_modules' -prune -o -path './apps/web/node_modules' -prune -o -path './.pnpm-store' -prune -o -path './apps/web/.next' -prune -o -iname "*${legacy_lower}*" -print
 # 结果：无匹配
+
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/build_user_manuals.py
+# 结果：生成教师端和学生端 Markdown、HTML、PDF 手册
+
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdfinfo output/pdf/cla-teacher-guide.pdf
+# 结果：13 pages，A4，未加密，无 JavaScript
+
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdfinfo output/pdf/cla-student-guide.pdf
+# 结果：10 pages，A4，未加密，无 JavaScript
+
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdftoppm -q -png -r 120 -f 1 -l 1 -singlefile output/pdf/cla-teacher-guide.pdf tmp/pdfs/rendered/teacher-cover
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdftoppm -q -png -r 120 -f 6 -l 6 -singlefile output/pdf/cla-teacher-guide.pdf tmp/pdfs/rendered/teacher-mid
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdftoppm -q -png -r 120 -f 13 -l 13 -singlefile output/pdf/cla-teacher-guide.pdf tmp/pdfs/rendered/teacher-last
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdftoppm -q -png -r 120 -f 1 -l 1 -singlefile output/pdf/cla-student-guide.pdf tmp/pdfs/rendered/student-cover
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdftoppm -q -png -r 120 -f 5 -l 5 -singlefile output/pdf/cla-student-guide.pdf tmp/pdfs/rendered/student-mid
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pdftoppm -q -png -r 120 -f 10 -l 10 -singlefile output/pdf/cla-student-guide.pdf tmp/pdfs/rendered/student-last
+# 结果：抽样 PNG 渲染成功，目视检查封面、正文、表格、代码块、清单和页脚可读
 ```
 
 说明：`next build` 会重写 `apps/web/next-env.d.ts` 的生成注释，本轮构建和类型检查通过后已再次把该文件注释修正为中文，并单独重跑 typecheck 通过。Go 根目录 `./...` 不适用于当前 go.work 布局，因此状态文档和开发文档均使用明确模块路径集合。

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberLab Assistant（CLA）学生端使用手册</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --text: #172033;
+  --muted: #637083;
+  --line: #d9e0ea;
+  --brand: #1957c2;
+  --code: #0b1220;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  line-height: 1.72;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+}
+aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 22px 18px;
+}
+aside h1 {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 0 0 8px;
+}
+aside p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 18px;
+}
+nav a {
+  display: block;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+nav a:hover {
+  color: var(--brand);
+  background: #edf2f8;
+}
+main {
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 42px 34px 80px;
+}
+header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+}
+header h1 {
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+header p {
+  color: var(--muted);
+  margin: 4px 0;
+}
+section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  margin: 18px 0;
+}
+h2 {
+  font-size: 22px;
+  margin: 0 0 12px;
+}
+.note {
+  border-left: 4px solid var(--brand);
+  background: #eef4ff;
+  padding: 12px 14px;
+  margin: 14px 0;
+}
+.note strong {
+  display: block;
+  margin-bottom: 4px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 13px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 8px 9px;
+  vertical-align: top;
+}
+th {
+  background: #edf2f8;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  color: #102a5c;
+}
+pre {
+  background: var(--code);
+  color: #edf4ff;
+  padding: 14px;
+  overflow: auto;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+pre code {
+  color: inherit;
+}
+@media (max-width: 860px) {
+  .layout { display: block; }
+  aside { position: static; height: auto; }
+  main { padding: 24px 16px 60px; }
+}
+@media print {
+  body { background: white; }
+  aside { display: none; }
+  .layout { display: block; }
+  main { max-width: none; padding: 0; }
+  section { break-inside: avoid; border-color: #ddd; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside>
+<h1>CyberLab Assistant（CLA）学生端使用手册</h1>
+<p>浏览器终端实践、分级提示、答案提交、成绩证据与申诉<br>生成日期：2026-06-25</p>
+<nav>
+<a href="#文档定位与学习路径">1. 文档定位与学习路径</a>
+<a href="#登录token-与页面入口">2. 登录、token 与页面入口</a>
+<a href="#学生工作台布局">3. 学生工作台布局</a>
+<a href="#启动-attempt-与-labsession">4. 启动 Attempt 与 LabSession</a>
+<a href="#使用浏览器终端">5. 使用浏览器终端</a>
+<a href="#重连与重置">6. 重连与重置</a>
+<a href="#任务完成方式与提交前检查">7. 任务完成方式与提交前检查</a>
+<a href="#使用-l1l2l3-分级提示">8. 使用 L1、L2、L3 分级提示</a>
+<a href="#理解辅助状态">9. 理解辅助状态</a>
+<a href="#提交答案">10. 提交答案</a>
+<a href="#成绩摘要与完整证据页">11. 成绩摘要与完整证据页</a>
+<a href="#提交申诉">12. 提交申诉</a>
+<a href="#隐私诚信与安全使用">13. 隐私、诚信与安全使用</a>
+<a href="#常见问题与排障">14. 常见问题与排障</a>
+<a href="#本地和-ipv6-访问说明">15. 本地和 IPv6 访问说明</a>
+<a href="#学生端操作清单">16. 学生端操作清单</a>
+<a href="#学生端功能速查">17. 学生端功能速查</a>
+</nav>
+</aside>
+<main>
+<header>
+<h1>CyberLab Assistant（CLA）学生端使用手册</h1>
+<p>浏览器终端实践、分级提示、答案提交、成绩证据与申诉</p>
+<p>适用对象：网安实践课程学生 · 生成日期：2026-06-25</p>
+<p>项目名称：CyberLab Assistant（CLA） · 相关规格：cla_terminal_first_complete_development_spec.html</p>
+</header>
+<section id="文档定位与学习路径"><h2>1. 文档定位与学习路径</h2>
+<p>本文是 CyberLab Assistant（CLA）学生端使用手册，面向参加网安实践课程的学生。它从登录、启动实验、使用浏览器终端、请求提示、提交答案、查看成绩到提交申诉，按完整学习流程说明每一步。</p>
+<div class="note"><strong>你将使用什么</strong>当前学生端是终端优先的一期实现。你会在浏览器中看到 xterm.js 终端，连接到属于自己 Attempt 的隔离 LabSession。平台不会把容器地址、内部路由或 sessiond 地址暴露给浏览器。</div>
+<ol><li>登录或写入开发 token。</li>
+<li>打开学生工作台。</li>
+<li>点击 `启动` 创建 Attempt 和终端会话。</li>
+<li>在浏览器终端中完成实践任务。</li>
+<li>必要时请求 L1、L2、L3 分级提示。</li>
+<li>在右侧提交区填写根因解释并提交。</li>
+<li>查看成绩证据页，理解每个评分项。</li>
+<li>如有充分理由，选择具体评分项提交申诉。</li></ol>
+</section>
+<section id="登录token-与页面入口"><h2>2. 登录、token 与页面入口</h2>
+<p>生产环境通常通过学校或平台统一登录。当前本地开发实例使用 `claDevToken` 模拟学生身份。教师或管理员会提供学生 token。</p>
+<ol><li>打开 `http://127.0.0.1:3000`。</li>
+<li>如果是开发模式，打开浏览器控制台。</li>
+<li>执行 `localStorage.setItem(&quot;claDevToken&quot;, &quot;&lt;student-token&gt;&quot;)`。</li>
+<li>刷新页面。</li>
+<li>页面顶部当前 Attempt 显示 `未创建` 时，说明还没有开始本次作业。</li></ol>
+<pre><code>// 写入学生 token
+localStorage.setItem(&quot;claDevToken&quot;, &quot;&lt;student-token&gt;&quot;)
+
+// 查看当前 token
+localStorage.getItem(&quot;claDevToken&quot;)
+
+// 清理 token
+localStorage.removeItem(&quot;claDevToken&quot;)</code></pre>
+<table><thead><tr><th>入口</th><th>路径</th><th>用途</th></tr></thead><tbody><tr><td>学生工作台</td><td>`/`</td><td>启动实验、连接终端、请求提示、提交答案、查看简要成绩</td></tr><tr><td>完整成绩证据页</td><td>`/student/grades/{attemptId}`</td><td>查看总分、独立完成指数、每项证据和申诉入口</td></tr></tbody></table>
+<div class="note"><strong>身份安全</strong>不要把自己的 token 发给同学，也不要把 token 写进提交答案、终端命令或截图。开发 token 只用于本地环境，正式课程以管理员说明为准。</div>
+</section>
+<section id="学生工作台布局"><h2>3. 学生工作台布局</h2>
+<p>学生工作台分为左侧导航、中间终端区域和右侧辅助/提交/成绩区域。页面使用中文按钮，少数状态字段保留英文状态码，便于和系统日志、教师监控一致。</p>
+<table><thead><tr><th>区域</th><th>你会看到</th><th>用途</th></tr></thead><tbody><tr><td>左侧导航</td><td>`Terminal`、`Evidence`、`Appeal`</td><td>当前主要使用 Terminal；Evidence 和 Appeal 对应成绩和申诉流程</td></tr><tr><td>顶部状态栏</td><td>当前 Attempt、连接状态、session/epoch</td><td>确认自己是否已创建 Attempt、终端是否连接</td></tr><tr><td>中间终端</td><td>黑色终端窗口</td><td>输入命令、运行工具、观察输出</td></tr><tr><td>底部操作</td><td>`启动`、`重连`、`重置`</td><td>创建或恢复会话，必要时重置实验环境</td></tr><tr><td>右侧辅助</td><td>状态、L1/L2/L3 按钮、最近提示、反馈按钮</td><td>请求或管理教学提示</td></tr><tr><td>右侧提交</td><td>答案文本框、`提交` 按钮</td><td>提交根因解释和开放答案</td></tr><tr><td>右侧成绩证据</td><td>Total、各 criterion 简要分数、完整证据页链接</td><td>提交后快速查看成绩摘要</td></tr></tbody></table>
+<div class="note"><strong>焦点行为</strong>提示和平台状态不会抢占终端焦点。终端连接成功后，光标通常在终端内，可以直接输入命令。</div>
+</section>
+<section id="启动-attempt-与-labsession"><h2>4. 启动 Attempt 与 LabSession</h2>
+<p>Attempt 表示你对某个作业的一次实践记录。LabSession 表示本次 Attempt 对应的隔离实验环境。点击 `启动` 后，系统会创建 Attempt、创建或确保 LabSession、签发一次性终端票据，并连接 Gateway。</p>
+<ol><li>确认页面已经登录，右上或顶部没有认证错误。</li>
+<li>点击 `启动`。</li>
+<li>状态从 `idle` 变成 `provisioning`，表示正在准备环境。</li>
+<li>环境就绪后，状态变成 `connected`。</li>
+<li>顶部会显示 Attempt ID，以及 session ID 和 epoch。</li>
+<li>终端出现 shell 提示符后即可输入命令。</li></ol>
+<table><thead><tr><th>状态</th><th>含义</th><th>你应该做什么</th></tr></thead><tbody><tr><td>`idle`</td><td>未开始或当前没有连接</td><td>点击 `启动`</td></tr><tr><td>`provisioning`</td><td>正在创建 Attempt、会话或票据</td><td>等待，不要反复点击</td></tr><tr><td>`connected`</td><td>终端已连接</td><td>开始实践</td></tr><tr><td>`closed`</td><td>WebSocket 关闭</td><td>点击 `重连`</td></tr><tr><td>`error`</td><td>连接或 API 出错</td><td>查看页面错误信息，必要时刷新或联系教师</td></tr></tbody></table>
+<div class="note"><strong>一次性票据</strong>终端票据是 60 秒内有效的一次性票据，绑定 user、attempt、session epoch、audience、nonce 和过期时间。你不需要也不应该手动复制或保存它。</div>
+</section>
+<section id="使用浏览器终端"><h2>5. 使用浏览器终端</h2>
+<p>终端是你完成实践的主要工具。它通过二进制 WebSocket 与 Gateway 通信，支持 UTF-8、resize、heartbeat、ACK 和短时间重连 replay。</p>
+<ul><li>输入命令后按 Enter 执行。</li>
+<li>调整浏览器窗口大小时，页面会向服务端发送 resize。</li>
+<li>终端输出很多时，浏览器会进行流控；不要把超大二进制内容直接打印到终端。</li>
+<li>如果网络短暂断开，重连时会携带最后收到的 server sequence，Gateway 尝试回放缓冲输出。</li>
+<li>不要在终端里输出自己的 token、个人密码、浏览器 localStorage 或其他敏感信息。</li></ul>
+<pre><code># 示例：确认 shell 可用
+pwd
+whoami
+ls
+
+# 示例：访问题目目标，具体目标地址以题目说明为准
+curl -i http://target:8080/</code></pre>
+<div class="note"><strong>终端证据边界</strong>终端文本会被视为不可信数据。它可以辅助教学和证据引用，但正式客观通过依赖学生控制边界外的 Oracle 或平台签名事件。</div>
+</section>
+<section id="重连与重置"><h2>6. 重连与重置</h2>
+<p>`重连` 和 `重置` 是两个不同动作。重连保留当前 LabSession 和 session epoch，只重新获取票据并连接终端。重置会创建新的 session epoch，旧票据和旧路由失效。</p>
+<table><thead><tr><th>按钮</th><th>会发生什么</th><th>适用场景</th><th>风险</th></tr></thead><tbody><tr><td>`重连`</td><td>复用当前 Attempt 和 LabSession，重新签发终端票据</td><td>网络断开、页面刷新、状态为 closed</td><td>通常不会清空实验状态</td></tr><tr><td>`重置`</td><td>重置当前 Attempt 的实验会话，session epoch 递增</td><td>环境损坏、命令误操作导致无法继续</td><td>可能清空当前环境状态，且可能受次数限制</td></tr></tbody></table>
+<ol><li>看到 `closed` 时，先点击 `重连`。</li>
+<li>看到 `error` 且错误与票据过期、nonce 重放或网络断开有关，也先尝试 `重连`。</li>
+<li>只有当环境状态被破坏、目标无法恢复或教师建议时，再点击 `重置`。</li>
+<li>重置后等待状态回到 `connected`，不要继续使用旧页面里保存的任何票据信息。</li></ol>
+</section>
+<section id="任务完成方式与提交前检查"><h2>7. 任务完成方式与提交前检查</h2>
+<p>不同题目有不同目标。以默认 Web SQL 登录题为例，你需要通过终端工具分析目标行为，完成要求的状态改变或验证目标，然后提交根因解释。不要把最终 payload 当成唯一答案，成绩通常同时看客观 Oracle 与解释质量。</p>
+<ul><li>已阅读题目目标和允许工具。</li>
+<li>已确认当前终端属于自己的 Attempt。</li>
+<li>已完成题目要求的客观动作，例如触发目标状态、访问验证端点或完成指定操作。</li>
+<li>已记录关键观察，例如输入与输出的差异、错误信息、服务行为变化。</li>
+<li>已理解根因，而不是只复制某条命令。</li>
+<li>没有在答案中写入 token、动态 secret、他人信息或平台内部地址。</li>
+<li>如使用了提示，已理解提示内容，并能用自己的话解释。</li></ul>
+<div class="note"><strong>答案内容边界</strong>如果题目明确要求不要泄露最终 payload 或动态 secret，答案中也不应该出现这些内容。可以描述漏洞类型、验证思路、影响和修复建议。</div>
+</section>
+<section id="使用-l1l2l3-分级提示"><h2>8. 使用 L1、L2、L3 分级提示</h2>
+<p>右侧辅助面板提供 L1、L2、L3 三个等级。它们用于在你卡住时提供不同粒度的帮助。系统也可能根据卡住检测状态主动生成提示，但你可以反馈或关闭自动提示。</p>
+<table><thead><tr><th>等级</th><th>典型内容</th><th>何时使用</th></tr></thead><tbody><tr><td>`L1`</td><td>方向性提醒，例如检查目标、阅读错误、回顾概念</td><td>刚开始不确定下一步时</td></tr><tr><td>`L2`</td><td>更具体的排查路径，例如建议尝试某类请求或观察某类响应</td><td>尝试多次仍无法定位时</td></tr><tr><td>`L3`</td><td>接近操作层面的强提示，但不应泄露最终 payload 或动态 secret</td><td>临近截止或长期卡住时</td></tr></tbody></table>
+<ol><li>点击 L1、L2 或 L3。</li>
+<li>查看提示卡片中的等级、状态、tutor version 和内容。</li>
+<li>查看 evidence refs，理解系统为什么给出这个提示。</li>
+<li>如果提示有帮助，点击 `接受`。</li>
+<li>如果暂时不需要，点击 `稍后`。</li>
+<li>如果你认为系统误判卡住，点击 `这不是卡住`。</li>
+<li>如果不想再收到自动提示，点击 `关闭自动提示`。</li></ol>
+<div class="note"><strong>提示与成绩</strong>提示使用只影响独立完成指数，不直接改变总分。独立完成指数用于呈现学习过程依赖程度，不是单独扣分按钮。</div>
+</section>
+<section id="理解辅助状态"><h2>9. 理解辅助状态</h2>
+<p>辅助面板会显示当前卡住评估状态和分数。这个分数表示卡住可能性，不是作业成绩，也不是作弊判断。</p>
+<table><thead><tr><th>状态</th><th>含义</th><th>建议</th></tr></thead><tbody><tr><td>`NORMAL`</td><td>系统未发现明显卡住迹象</td><td>继续实践</td></tr><tr><td>`SUSPECTED`</td><td>系统发现一些卡住特征</td><td>可以先请求 L1 或重新检查题目目标</td></tr><tr><td>`CONFIRMED`</td><td>系统认为卡住可能较高</td><td>请求更高等级提示，或向教师说明你已经尝试过什么</td></tr><tr><td>自动提示开启</td><td>系统可能主动展示提示</td><td>可按需反馈</td></tr><tr><td>自动提示已关闭</td><td>系统不再主动提示</td><td>仍可手动点击 L1/L2/L3</td></tr></tbody></table>
+<ul><li>重复同一条失败命令可能提高卡住评分。</li>
+<li>长时间运行的正常任务会被排除，系统不应仅因等待而判定卡住。</li>
+<li>探索新的命令、观察新响应和达成里程碑通常会降低卡住风险。</li>
+<li>如果系统提示不符合你的实际情况，使用反馈按钮比忽略更有价值。</li></ul>
+</section>
+<section id="提交答案"><h2>10. 提交答案</h2>
+<p>完成实践后，在右侧 `提交` 区域填写答案。当前默认提交一个 `root-cause` 问题，格式为 Markdown。提交后系统会请求 Oracle 检查并生成 GradeRevision。</p>
+<ol><li>在答案文本框中写清楚漏洞或问题的根因。</li>
+<li>说明你如何验证该根因，例如关键请求、响应差异或目标状态变化。</li>
+<li>说明影响和修复建议，如果题目要求。</li>
+<li>确认答案中没有 token、动态 secret 或平台内部地址。</li>
+<li>点击 `提交`。</li>
+<li>等待成绩摘要出现。如果暂时显示 `no grade`，可稍后刷新或进入完整证据页。</li></ol>
+<table><thead><tr><th>好答案通常包含</th><th>不建议包含</th></tr></thead><tbody><tr><td>漏洞类型和触发条件</td><td>无关的终端大段输出</td></tr><tr><td>关键观察和验证方法</td><td>未脱敏的 token、Cookie、Authorization</td></tr><tr><td>为什么这个操作证明问题存在</td><td>同学的答案或他人信息</td></tr><tr><td>修复思路或防护建议</td><td>动态 flag 或题目明确禁止公开的 payload</td></tr></tbody></table>
+</section>
+<section id="成绩摘要与完整证据页"><h2>11. 成绩摘要与完整证据页</h2>
+<p>提交后，工作台右侧会显示 Total 和每个 criterion 的简要分数。点击 `完整证据页` 进入更详细页面。完整证据页是你理解成绩和申诉的主要依据。</p>
+<ol><li>在工作台右侧找到 `成绩证据`。</li>
+<li>查看 Total 总分。</li>
+<li>查看每个 criterion 的简要得分。</li>
+<li>点击 `完整证据页`。</li>
+<li>在新页面查看总分、独立完成指数、Attempt、Revision、Rubric、Grader 和 Published。</li>
+<li>逐项点击 criterion，阅读得分、评分类型、置信度、解释和 evidence refs。</li></ol>
+<table><thead><tr><th>字段</th><th>含义</th><th>你应该关注什么</th></tr></thead><tbody><tr><td>`总分`</td><td>本次最新 GradeRevision 的总分</td><td>是否符合预期</td></tr><tr><td>`独立完成指数`</td><td>提示依赖程度指标</td><td>理解自己的求助情况</td></tr><tr><td>`Revision`</td><td>成绩修订号和状态</td><td>申诉后可能递增</td></tr><tr><td>`Rubric`</td><td>评分标准版本</td><td>不同版本不可混淆</td></tr><tr><td>`Grader`</td><td>评分器版本</td><td>用于复现和排错</td></tr><tr><td>`criterionId`</td><td>评分项 ID</td><td>申诉时必须选择具体项</td></tr><tr><td>`score/maxScore`</td><td>单项得分</td><td>定位失分点</td></tr><tr><td>`graderType`</td><td>评分方式</td><td>Oracle、事件模式或开放评价</td></tr><tr><td>`confidence`</td><td>置信度</td><td>低置信可请求教师复核</td></tr><tr><td>`evidenceRefs`</td><td>证据引用</td><td>判断评分是否有依据</td></tr></tbody></table>
+</section>
+<section id="提交申诉"><h2>12. 提交申诉</h2>
+<p>如果你认为某个评分项有误，可以在完整证据页右侧提交申诉。申诉必须针对具体 criterion，不能只写“分数不对”。</p>
+<ol><li>打开完整成绩证据页。</li>
+<li>在右侧 `申诉` 面板中选择要申诉的标准。</li>
+<li>阅读该标准当前分数、评分类型和 evidence refs。</li>
+<li>在理由框中写明具体原因，至少 3 个字符。</li>
+<li>说明你认为哪个证据遗漏、哪条解释不准确、或哪个评分项应如何调整。</li>
+<li>点击 `提交申诉`。</li>
+<li>看到 `OPEN` 状态和 Appeal ID 后，等待教师复核。</li></ol>
+<table><thead><tr><th>有效申诉</th><th>无效或低质量申诉</th></tr></thead><tbody><tr><td>指出具体 criterion 和证据引用</td><td>只写“老师我应该满分”</td></tr><tr><td>说明实际完成步骤与证据之间的关系</td><td>粘贴无关终端输出</td></tr><tr><td>解释为什么评分解释与事实不一致</td><td>要求系统泄露 Oracle 或标准答案</td></tr><tr><td>提供可复核的观察和时间点</td><td>包含 token、Cookie 或他人信息</td></tr></tbody></table>
+<div class="note"><strong>复核结果</strong>教师复核如果覆盖成绩，会生成新的 GradeRevision，旧成绩不会被删除。你之后看到的 Revision 可能递增。</div>
+</section>
+<section id="隐私诚信与安全使用"><h2>13. 隐私、诚信与安全使用</h2>
+<p>CLA 的目标是帮助你在隔离环境中学习真实安全实践。平台会收集必要的事件、证据引用和评分信息，但不应公开你的完整终端明文。你也需要遵守课程规则和安全边界。</p>
+<ul><li>只在平台分配给你的 Attempt 中操作，不尝试访问他人的 Attempt、课程或会话。</li>
+<li>不要攻击平台控制平面、教师页面、Gateway、sessiond、API 或身份系统。</li>
+<li>不要尝试复用、篡改或分享终端票据。</li>
+<li>不要把 token、Cookie、Authorization、动态 flag 或个人密码写进答案。</li>
+<li>不要把题目最终 payload 在公共渠道传播，除非教师明确允许。</li>
+<li>不要把系统辅助状态当作成绩本身；它是教学过程信号。</li>
+<li>发现平台漏洞或越权风险时，立即报告教师或管理员。</li></ul>
+<div class="note"><strong>Prompt Injection 边界</strong>终端、网页、附件和学生答案中的自然语言都被平台视为不可信数据。它们不能改变系统指令、工具权限或评分规则。</div>
+</section>
+<section id="常见问题与排障"><h2>14. 常见问题与排障</h2>
+<table><thead><tr><th>问题</th><th>可能原因</th><th>处理方式</th></tr></thead><tbody><tr><td>页面显示 API 认证失败</td><td>未写入 token 或 token 不是学生角色</td><td>重新写入学生 token，刷新页面</td></tr><tr><td>点击启动后一直 `provisioning`</td><td>环境启动慢、API 或 sessiond 不可用</td><td>等待一会儿，仍失败则联系教师</td></tr><tr><td>状态变成 `closed`</td><td>WebSocket 关闭或网络中断</td><td>点击 `重连`</td></tr><tr><td>状态变成 `error`</td><td>票据过期、nonce 重放、Gateway 不通或 API 错误</td><td>刷新页面后重连，记录错误码给教师</td></tr><tr><td>终端没有输出</td><td>Gateway 未连接 sessiond、shell 未启动或浏览器连接异常</td><td>先重连，再联系教师检查服务</td></tr><tr><td>点击提交后没有成绩</td><td>评分还没完成、Oracle 未产生证据或网络错误</td><td>等待后刷新，必要时联系教师</td></tr><tr><td>成绩页显示暂无成绩</td><td>Attempt ID 错误或尚未提交</td><td>回到工作台确认 Attempt ID 并提交</td></tr><tr><td>申诉按钮不可用</td><td>未选择 criterion、理由少于 3 个字符或没有成绩</td><td>补充理由并选择评分项</td></tr><tr><td>提示看起来不相关</td><td>系统可能误判卡住场景</td><td>点击 `这不是卡住` 并继续实践</td></tr><tr><td>自动提示打扰操作</td><td>自动提示开启</td><td>点击 `关闭自动提示`</td></tr></tbody></table>
+</section>
+<section id="本地和-ipv6-访问说明"><h2>15. 本地和 IPv6 访问说明</h2>
+<p>本地开发环境常见访问地址是 `http://127.0.0.1:3000`。如果教师给出 IPv6 地址，你可以直接在浏览器打开。页面会尽量把终端 WebSocket 地址改写为当前页面主机，保证远程访问时不会错误连接到你自己电脑的回环地址。</p>
+<ul><li>本机访问优先使用 `http://127.0.0.1:3000`。</li>
+<li>同一局域网或校园网访问 IPv6 地址时，应使用教师给出的完整 `http://[ipv6]:3000/` 格式。</li>
+<li>如果页面能打开但终端不能连，可能是 Gateway 端口、防火墙或 IPv6 监听问题。</li>
+<li>如果静态资源加载失败，可能是 Web standalone 静态文件复制不完整，需要教师修复部署。</li></ul>
+</section>
+<section id="学生端操作清单"><h2>16. 学生端操作清单</h2>
+<ul><li>确认自己使用的是学生账号或学生 token。</li>
+<li>打开学生工作台并点击 `启动`。</li>
+<li>确认状态为 `connected`，Attempt ID 和 session epoch 已显示。</li>
+<li>在终端中完成题目要求，不攻击平台控制平面。</li>
+<li>卡住时先请求 L1，再根据需要请求 L2 或 L3。</li>
+<li>对不准确提示及时反馈。</li>
+<li>提交前检查答案不包含 token、动态 secret 或内部地址。</li>
+<li>提交后查看成绩摘要和完整证据页。</li>
+<li>如需申诉，选择具体 criterion 并写清事实依据。</li>
+<li>课程结束后清理开发 token，尤其是在共享电脑上。</li></ul>
+</section>
+<section id="学生端功能速查"><h2>17. 学生端功能速查</h2>
+<table><thead><tr><th>你要做什么</th><th>入口</th><th>说明</th></tr></thead><tbody><tr><td>开始实验</td><td>工作台 `启动`</td><td>创建 Attempt、LabSession 和终端连接</td></tr><tr><td>恢复连接</td><td>工作台 `重连`</td><td>保留当前环境，重新签发票据</td></tr><tr><td>清理环境</td><td>工作台 `重置`</td><td>新 session epoch，旧票据失效</td></tr><tr><td>输入命令</td><td>中间终端</td><td>浏览器终端连接隔离 workspace</td></tr><tr><td>请求提示</td><td>右侧 L1/L2/L3</td><td>分级辅助，不泄露最终 payload</td></tr><tr><td>反馈提示</td><td>提示卡片按钮</td><td>`接受`、`稍后`、`这不是卡住`、`关闭自动提示`</td></tr><tr><td>提交答案</td><td>右侧提交区</td><td>填写 root-cause 解释并提交</td></tr><tr><td>查看简要成绩</td><td>右侧成绩证据</td><td>显示 Total 和各项简要分数</td></tr><tr><td>查看完整成绩</td><td>`完整证据页`</td><td>查看每项得分、解释和证据引用</td></tr><tr><td>提交申诉</td><td>成绩页右侧申诉面板</td><td>按 criterion 提交具体理由</td></tr></tbody></table>
+</section>
+</main>
+</div>
+</body>
+</html>
