@@ -99,6 +99,23 @@ class ValidationRun(Base):
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class ChallengeArtifact(Base):
+    __tablename__ = "challenge_artifacts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
+    challenge_id: Mapped[str] = mapped_column(ForeignKey("challenges.id"), nullable=False)
+    version_id: Mapped[str | None] = mapped_column(
+        ForeignKey("challenge_versions.id"), nullable=True
+    )
+    artifact_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    object_ref: Mapped[str] = mapped_column(String(500), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(128), nullable=False)
+    byte_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class ChallengeDraft(Base):
     __tablename__ = "challenge_drafts"
 

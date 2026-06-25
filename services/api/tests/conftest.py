@@ -19,6 +19,7 @@ def settings(tmp_path) -> Settings:
         internal_service_token="test-internal",
         gateway_url="ws://gateway.test/ws/terminal",
         transcript_object_root=str(tmp_path / "transcripts"),
+        challenge_artifact_object_root=str(tmp_path / "challenge-artifacts"),
         transcript_encryption_key="test-transcript-key",
         agent_runtime_enabled=False,
     )

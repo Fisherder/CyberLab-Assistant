@@ -4,6 +4,19 @@
 
 ## 本轮完成
 
+- 已实现 `.env` 自动加载：API 启动时读取仓库根目录 `.env`，已有进程环境变量优先；本地 tmux 重启脚本也会在启动前导入 `.env`。
+- 已接入 OpenAI-compatible 模型适配器，可通过 `CLA_AGENT_RUNTIME_ENABLED=true`、`CLA_MODEL_BASE_URL`、`CLA_MODEL_NAME=deepseek-v4-flash` 和 `CLA_MODEL_API_KEY` 控制 DeepSeek v4 Flash 兼容模型。
+- 已把模型真实接入教师 Brief 解析：启用模型时优先生成结构化 CourseIntent，输出写入 `AgentRun`；模型关闭、缺配置、超时或返回不合格 JSON 时自动回退规则解析。
+- 已用本机 `.env` 中的 DeepSeek 兼容配置跑通真实模型链路：Brief 解析和题目版本草稿生成均由模型返回，`AgentRun` 为 `SUCCEEDED`，未触发 fallback。
+- 已新增本地 Challenge Registry 导入流程：`POST /api/v1/challenge-registry/import-local` 会扫描 `content/challenges/*/manifest.yaml`、执行内容验证、写入 `challenge_versions`/`validation_runs` 并生成题目包对象资产记录。
+- 已新增 `challenge_artifacts` 表和 Alembic 迁移，用于记录题目包、模型生成版本草稿等对象引用、sha256、大小和元数据。
+- 已实现题库检索接口：`GET /api/v1/challenge-registry` 支持查询、状态过滤、限制数量，并返回 BM25 风格全文检索信号；向量检索字段已预留但本地未启用 pgvector。
+- 已增强候选题检索：`GET /api/v1/challenge-drafts/{id}/candidates` 在硬约束过滤基础上返回 `searchScore` 和 `retrievalSignals`。
+- 已新增模型辅助生成题目版本草稿接口：`POST /api/v1/challenge-drafts/{id}/generate-version` 会基于候选题生成教师可审核草稿、创建 `PENDING_APPROVAL` ChallengeVersion、写入对象资产并保留教师审批门禁。
+- 已新增教师端题库 Registry 页面：`/teacher/challenges/registry` 支持导入本地题目、搜索题库、输入 Brief、查看候选、生成版本草稿、打开验证报告和审批发布。
+- 已更新 OpenAPI、`.env.example`、README、内容开发规范、追踪矩阵和状态文档，记录模型接入、题库导入、对象资产和审核发布流程。
+- 已脱敏 `.env.example` 中的本地开发密钥、内部服务 token、Oracle secret、转录加密密钥和模型 API Key；真实密钥只保留在本机 `.env`。
+- 已修复 API 包导入副作用：`from cla import models` 不再创建 FastAPI 应用或连接数据库，`cla.main:app` 改为 ASGI 惰性应用，仅在服务实际收到请求时构造 FastAPI。
 - 已按用户视角重写教师端和学生端使用手册：从进入页面、点击按钮、输入内容、查看结果到常见问题逐步说明，不再把开发接口、内部模块和实现细节作为主体内容。
 - 已新增本地账号注册登录功能：学生和教师可以通过 `/login` 页面注册或登录，登录后获得平台会话 token；学生进入终端工作台，教师进入验证报告页，退出登录会清除浏览器 token。
 - 已在后端新增本地账号密码哈希、会话 token、注册/登录接口和 Alembic 迁移，并保留原有 OIDC、开发 token、RBAC、课程成员权限检查。
@@ -43,8 +56,17 @@
 ## 本轮实际运行命令与结果
 
 ```bash
-.venv/bin/python -m pytest services/api/tests
-# 结果：65 passed, 1 skipped in 3.86s，包含本地账号注册登录测试
+.venv/bin/pytest services/api/tests/test_authoring.py services/api/tests/test_settings.py services/api/tests/test_alembic_migrations.py
+# 结果：8 passed, 1 skipped in 0.98s，覆盖模型 Brief Parser、模型生成版本草稿、Registry 导入、对象资产和 Alembic 迁移
+
+python -m compileall services/api/src/cla
+# 结果：Python 编译检查通过
+
+/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
+# 结果：tsc --noEmit 通过
+
+.venv/bin/pytest services/api/tests
+# 结果：67 passed, 1 skipped in 5.60s，包含本地账号注册登录、模型出题、Registry 导入和对象资产测试
 
 env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sessionwire/... ./services/terminal-gateway/... ./services/environment-controller/... ./runtime/sessiond/...
 # packages/sessionwire：通过
@@ -56,10 +78,30 @@ env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sess
 # 结果：Python 编译检查通过
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
-# 结果：Next.js build 通过
+# 结果：Next.js build 通过，包含 /teacher/challenges/registry 页面
 
 env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 结果：tsc --noEmit 通过
+
+scripts/restart-local-dev.sh
+# 结果：tmux -L cla-dev 会话已重启，target、sessiond、API、Gateway 和 Web 均启动
+
+curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
+# 结果：{"ok":true,"agentRuntimeEnabled":true}
+
+curl --noproxy '*' -sS -I http://127.0.0.1:3000/teacher/challenges/registry
+# 结果：HTTP/1.1 200 OK
+
+PYTHONPATH=services/api/src .venv/bin/python - <<'PY'
+# 通过本机 HTTP API 执行 Registry 导入、Brief 解析、候选检索、生成版本草稿、验证报告和审批发布
+PY
+# 结果：generatedBy=model、validationStatus=PASS、published=true；AgentRun brief.parse 和 challenge.version.draft 均为 SUCCEEDED，modelPolicy=cla-agent-runtime/openai-compatible:deepseek-v4-flash，fallbackUsed=false
+
+CLA_DATABASE_URL=postgresql+psycopg://cla:cla@localhost:5432/cla PYTHONPATH=services/api/src .venv/bin/python - <<'PY'
+from cla import models
+print(models.Tenant.__tablename__)
+PY
+# 结果：tenants，验证导入 cla 包不会创建应用或连接数据库
 
 PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output content/validation/web-sqli-auth-001-1.3.0.validation.json
 # 结果：{"passed": 8, "warnings": 1, "blocked": 0}
@@ -68,7 +110,7 @@ docker compose -f deploy/compose/docker-compose.yml config
 # 结果：Compose 配置解析通过，服务环境变量使用 CLA_ 前缀
 
 curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
-# 结果：{"ok":true,"agentRuntimeEnabled":false}
+# 结果：{"ok":true,"agentRuntimeEnabled":true}
 
 curl --noproxy '*' -sS http://127.0.0.1:8081/healthz
 # 结果：ok
@@ -128,6 +170,8 @@ find . -path './.git' -prune -o -path './node_modules' -prune -o -path './apps/w
 - live MinIO/S3 对象生命周期、bucket policy、恢复演练和理由审计访问控制未完成。
 - PostgreSQL 迁移 smoke 已接入 `CLA_TEST_POSTGRES_URL`，但本地没有可用 PostgreSQL URL。
 - Tutor 模型边界案例、precision/recall 标定、负载测试、混沌测试和完整安全攻防测试未完成。
+- DeepSeek v4 Flash 兼容模型 live 调用已在本机 `.env` 配置下跑通；自动化测试仍使用 mock 模型返回，不消耗真实密钥。
+- 向量检索尚未连接 pgvector/OpenSearch；当前为硬过滤加 BM25 风格全文检索，并在响应中保留 `vector` 信号字段。
 - 教师评分复核 UI、管理员策略 UI、课程管理完整 UI 仍未实现。
 - 浏览器纵向验证已覆盖终端、提示、提交、成绩、申诉和教师监控；仍未完成真实 target/Oracle PASS 的 Compose live 版本，因为 Docker daemon 不可用。
 

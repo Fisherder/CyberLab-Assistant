@@ -184,6 +184,62 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output 
 - 网络策略验证。
 - 负例攻击验证。
 
+## 题库 Registry 与对象资产
+
+当前 API 已提供本地题目导入流程：
+
+```http
+POST /api/v1/challenge-registry/import-local
+GET /api/v1/challenge-registry?query=认证
+```
+
+导入行为：
+
+- 扫描 `content/challenges/*/manifest.yaml`。
+- 读取 manifest 中的 `metadata.id`、`metadata.version`、`metadata.title` 和 `spec.category`。
+- 对每个题目包执行内容验证。
+- 将题目包打成确定性 tar 对象。
+- 将对象写入 `CLA_CHALLENGE_ARTIFACT_STORAGE_BACKEND` 指定的后端。
+- 在 `challenge_artifacts` 表记录 `object_ref`、`sha256`、字节数和资产元数据。
+- 已存在的 `ChallengeVersion` 不会被静默覆盖；新版本进入 `PENDING_APPROVAL`。
+
+本地对象存储配置：
+
+```bash
+CLA_CHALLENGE_ARTIFACT_STORAGE_BACKEND=local
+CLA_CHALLENGE_ARTIFACT_OBJECT_ROOT=/tmp/cla-challenge-artifacts
+```
+
+MinIO/S3 配置：
+
+```bash
+CLA_CHALLENGE_ARTIFACT_STORAGE_BACKEND=s3
+CLA_CHALLENGE_ARTIFACT_S3_BUCKET=cla-challenge-artifacts
+CLA_CHALLENGE_ARTIFACT_S3_PREFIX=challenge-artifacts
+CLA_CHALLENGE_ARTIFACT_S3_ENDPOINT_URL=http://localhost:9000
+CLA_CHALLENGE_ARTIFACT_S3_REGION=us-east-1
+CLA_CHALLENGE_ARTIFACT_S3_FORCE_PATH_STYLE=true
+```
+
+对象引用只能由服务端生成和消费。前端可以看到摘要和引用计数，但不得获得任何运行时 secret、容器内部地址或控制面凭据。
+
+## 检索规则
+
+当前 Registry 检索由两层组成：
+
+1. 硬约束过滤：tenant、版本状态、类别、工作区类型、隔离等级、难度、预计时长、外连策略和允许工具。
+2. BM25 风格全文得分：题目 slug、标题、类别、学习目标、前置知识和 workspace 工具。
+
+响应中包含：
+
+- `score`：综合候选分。
+- `searchScore`：归一化全文得分。
+- `retrievalSignals.metadata`：元数据匹配信号。
+- `retrievalSignals.bm25`：全文检索信号。
+- `retrievalSignals.vector`：当前为 `0`，保留给后续 pgvector/OpenSearch。
+
+向量检索尚未启用。启用前必须保证动态 secret、最终 payload、教师解法和学生私有轨迹不会进入向量索引。
+
 ## 版本规则
 
 题目版本是不可变发布单元。
@@ -206,21 +262,33 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output 
 当前链路：
 
 1. 教师提交 Brief。
-2. API 解析 CourseIntent。
-3. 候选题硬过滤。
+2. API 优先调用配置的模型解析 CourseIntent；模型关闭、缺配置或返回不合格 JSON 时回退规则解析。
+3. 候选题执行硬过滤和 BM25 风格检索。
 4. 教师选择候选。
-5. materialize 生成待审批版本。
-6. 内容验证报告生成。
-7. 教师审批。
+5. 模型可生成版本草稿、Rubric 草稿和教师审核清单。
+6. API 创建 `PENDING_APPROVAL` ChallengeVersion，并记录模型输出、对象资产和验证报告。
+7. 教师打开验证报告并审批。
 8. 作业引用不可变 ChallengeVersion。
 
-后续 Agent 接入要求：
+模型接入配置写入 `.env`：
 
-- Agent 只能给候选、解释和 Rubric 草稿。
+```bash
+CLA_AGENT_RUNTIME_ENABLED=true
+CLA_MODEL_PROVIDER=openai-compatible
+CLA_MODEL_BASE_URL=https://api.deepseek.com
+CLA_MODEL_NAME=deepseek-v4-flash
+CLA_MODEL_API_KEY=你的模型密钥
+```
+
+Agent 边界：
+
+- Agent 只能做 Brief 解析和版本草稿。
 - Agent 不能直接部署 target。
 - Agent 不能直接发布版本。
+- Agent 不能获得 Shell、SQL、Docker、Kubernetes 或任意 HTTP 工具。
 - 低置信字段必须显式展示给教师。
 - 教师审批事件必须写审计。
+- `AgentRun` 记录用途、模型策略、输出、状态和用量，不记录 API Key。
 
 ## 题目安全审查清单
 

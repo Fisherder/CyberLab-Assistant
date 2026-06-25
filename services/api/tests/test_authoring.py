@@ -3,8 +3,12 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from fastapi.testclient import TestClient
 
+from cla import agent_runtime
 from cla import models
+from cla.main import create_app
+from cla.security import create_dev_token
 from cla.seed import DEV_IDS
+from cla.settings import Settings
 
 from test_terminal_vertical_slice import auth
 
@@ -174,3 +178,132 @@ def test_materialize_creates_pending_version_validation_and_requires_approval(
         )
         assert materialized_events == 1
         assert db.scalar(select(func.count(models.AgentRun.id))) == 0
+
+
+def test_registry_import_searches_and_records_artifacts(
+    client: TestClient,
+    teacher_token: str,
+    student_token: str,
+) -> None:
+    forbidden = client.get("/api/v1/challenge-registry", headers=auth(student_token))
+    assert forbidden.status_code == 403
+
+    before = client.get("/api/v1/challenge-registry?query=SQLi", headers=auth(teacher_token))
+    assert before.status_code == 200, before.text
+    assert before.json()["versions"]
+
+    imported = client.post("/api/v1/challenge-registry/import-local", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+    body = imported.json()
+    assert body["imported"]
+    assert body["skipped"] == []
+
+    searched = client.get("/api/v1/challenge-registry?query=认证 登录", headers=auth(teacher_token))
+    assert searched.status_code == 200, searched.text
+    registry = searched.json()
+    assert registry["retrieval"]["mode"] == "hard-filter+bm25"
+    assert registry["versions"]
+    assert registry["versions"][0]["artifactCount"] >= 1
+    assert registry["versions"][0]["latestArtifactRef"].startswith("local://challenge-artifacts/")
+
+    with client.app.state.SessionLocal() as db:
+        assert db.scalar(select(func.count(models.ChallengeArtifact.id))) >= 1
+
+
+def test_model_brief_parser_and_version_generation_are_audited(tmp_path, monkeypatch) -> None:
+    settings = Settings(
+        database_url="sqlite+pysqlite:///:memory:",
+        dev_mode=True,
+        dev_oidc_secret="test-oidc-secret",
+        terminal_ticket_secret="test-terminal-secret",
+        oracle_shared_secret="test-oracle-secret",
+        internal_service_token="test-internal",
+        gateway_url="ws://gateway.test/ws/terminal",
+        transcript_object_root=str(tmp_path / "transcripts"),
+        challenge_artifact_object_root=str(tmp_path / "challenge-artifacts"),
+        transcript_encryption_key="test-transcript-key",
+        agent_runtime_enabled=True,
+        model_base_url="https://model.example/v1",
+        model_name="deepseekv4flash",
+        model_api_key="test-key",
+    )
+
+    def fake_parse(*args, **kwargs) -> agent_runtime.AgentModelResult:
+        return agent_runtime.AgentModelResult(
+            output={
+                "category": "WEB",
+                "target": "AUTHENTICATION",
+                "difficulty": 2,
+                "expectedMinutes": 75,
+                "workspaceType": "TERMINAL",
+                "isolationTier": 1,
+                "allowedTools": ["curl", "python"],
+                "learningObjectives": [
+                    "identify-input-trust-boundary",
+                    "validate-authentication-impact",
+                ],
+                "uncertainFields": [],
+                "confidence": 0.97,
+            },
+            usage={"provider": "openai-compatible", "model": "deepseekv4flash"},
+        )
+
+    def fake_draft(*args, **kwargs) -> agent_runtime.AgentModelResult:
+        return agent_runtime.AgentModelResult(
+            output={
+                "title": "登录逻辑与输入信任边界",
+                "summary": "学生验证登录输入边界并说明修复方向。",
+                "manifestNotes": ["保持终端工作区", "保持外部 Oracle"],
+                "rubricDraft": {
+                    "criteria": [
+                        {
+                            "id": "oracle-auth-bypass",
+                            "title": "外部 Oracle 观测到认证绕过",
+                            "graderType": "DETERMINISTIC_ORACLE",
+                            "maxScore": 60,
+                            "evidencePolicy": {"requiredEventTypes": ["oracle.observed"]},
+                        }
+                    ]
+                },
+                "teacherReviewChecklist": ["确认验证报告没有阻断项"],
+                "confidence": 0.91,
+            },
+            usage={"provider": "openai-compatible", "model": "deepseekv4flash"},
+        )
+
+    monkeypatch.setattr(agent_runtime, "parse_course_intent_with_model", fake_parse)
+    monkeypatch.setattr(agent_runtime, "draft_challenge_version_with_model", fake_draft)
+
+    client = TestClient(create_app(settings))
+    teacher_token = create_dev_token(settings, subject="teacher@example.edu", roles=["teacher"])
+
+    draft = create_draft(client, teacher_token, key="model-draft")
+    assert draft["courseIntent"]["confidence"] == 0.97
+
+    candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+    assert candidates.status_code == 200, candidates.text
+    selected = candidates.json()["candidates"][0]["candidateId"]
+
+    generated = client.post(
+        f"/api/v1/challenge-drafts/{draft['draftId']}/generate-version",
+        headers=auth(teacher_token),
+        json={"selectedCandidateId": selected},
+    )
+    assert generated.status_code == 200, generated.text
+    body = generated.json()
+    assert body["generatedBy"] == "model"
+    assert body["versionStatus"] == "PENDING_APPROVAL"
+    assert body["modelDraft"]["summary"] == "学生验证登录输入边界并说明修复方向。"
+
+    approval = client.post(
+        f"/api/v1/challenge-versions/{body['challengeVersionId']}/approve",
+        headers=auth(teacher_token),
+    )
+    assert approval.status_code == 200, approval.text
+    assert approval.json()["published"] is True
+
+    with client.app.state.SessionLocal() as db:
+        runs = db.scalars(select(models.AgentRun).order_by(models.AgentRun.purpose.asc())).all()
+        assert {run.purpose for run in runs} == {"brief.parse", "challenge.version.draft"}
+        assert all(run.status == "SUCCEEDED" for run in runs)
+        assert db.scalar(select(func.count(models.ChallengeArtifact.id))) >= 1

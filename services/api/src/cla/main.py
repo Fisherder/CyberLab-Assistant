@@ -16,7 +16,10 @@ from cla.authoring import (
     DEFAULT_CHALLENGE_DIR,
     DEFAULT_VALIDATION_REPORT_REF,
     challenge_manifest,
-    parse_course_intent,
+    generate_model_assisted_version,
+    import_local_challenge_packages,
+    list_challenge_registry,
+    parse_course_intent_for_draft,
     search_challenge_candidates,
     validate_selected_challenge_package,
 )
@@ -36,7 +39,10 @@ from cla.schemas import (
     ChallengeApprovalView,
     ChallengeCandidateSearchView,
     ChallengeDraftView,
+    ChallengeGeneratedVersionView,
+    ChallengeImportView,
     ChallengeMaterializeView,
+    ChallengeRegistryListView,
     ChallengeValidationView,
     ConsumeTicketRequest,
     CriterionOverrideRequest,
@@ -47,6 +53,7 @@ from cla.schemas import (
     CreateAttemptRequest,
     CreateCourseRequest,
     EnsureSessionRequest,
+    GenerateChallengeVersionRequest,
     GradeView,
     HintFeedbackRequest,
     HintRequest,
@@ -332,6 +339,61 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         return _course_member_view(member)
 
+    @app.get("/api/v1/challenge-registry", response_model=ChallengeRegistryListView)
+    def challenge_registry(
+        query: str = "",
+        status: str | None = None,
+        limit: int = 50,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        if not ({"teacher", "admin"} & set(principal.roles)):
+            raise api_error(403, "FORBIDDEN_SCOPE", "Only teachers or admins can read registry")
+        result = list_challenge_registry(
+            db,
+            tenant_id=principal.tenant_id,
+            query=query,
+            status=status,
+            limit=max(1, min(100, limit)),
+        )
+        _audit(db, principal, "challenge.registry.read", "challenge_registry", "global", "ALLOW")
+        return result
+
+    @app.post(
+        "/api/v1/challenge-registry/import-local",
+        response_model=ChallengeImportView,
+        status_code=202,
+    )
+    def import_challenge_registry(
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        if not ({"teacher", "admin"} & set(principal.roles)):
+            raise api_error(403, "FORBIDDEN_SCOPE", "Only teachers or admins can import challenges")
+        result = import_local_challenge_packages(
+            db,
+            settings,
+            tenant_id=principal.tenant_id,
+            actor_id=principal.user_id,
+        )
+        _audit(
+            db,
+            principal,
+            "challenge.registry.import_local",
+            "challenge_registry",
+            "content/challenges",
+            "ALLOW",
+            after_ref=f"imported={len(result['imported'])} skipped={len(result['skipped'])}",
+        )
+        _outbox(
+            db,
+            "challenge_registry",
+            principal.tenant_id,
+            "challenge.registry.imported",
+            {"imported": len(result["imported"]), "skipped": len(result["skipped"])},
+        )
+        return result
+
     @app.post(
         "/api/v1/challenge-drafts",
         response_model=ChallengeDraftView,
@@ -362,7 +424,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         if existing is not None:
             return existing.response_json
-        intent = parse_course_intent(body.brief, body.constraints)
+        intent = parse_course_intent_for_draft(
+            db,
+            settings,
+            tenant_id=principal.tenant_id,
+            brief=body.brief,
+            constraints=body.constraints,
+            input_ref=f"course:{course.id}:brief:{idempotency_key}",
+        )
         draft = models.ChallengeDraft(
             id=new_id("draft"),
             tenant_id=principal.tenant_id,
@@ -420,6 +489,92 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "status": draft.status,
             "courseIntent": draft.intent_json,
             **result,
+        }
+
+    @app.post(
+        "/api/v1/challenge-drafts/{draft_id}/generate-version",
+        response_model=ChallengeGeneratedVersionView,
+    )
+    def generate_challenge_version(
+        draft_id: str,
+        body: GenerateChallengeVersionRequest,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        draft = _get_challenge_draft_or_404(db, draft_id)
+        _require_challenge_draft_teacher(db, principal, draft)
+        if draft.selected_version_id is not None:
+            version = db.get(models.ChallengeVersion, draft.selected_version_id)
+            if version is None:
+                raise api_error(404, "NOT_FOUND", "Generated ChallengeVersion not found")
+            validation_run = _latest_validation_run(db, version.id)
+            if validation_run is None:
+                raise api_error(404, "NOT_FOUND", "Validation report not found")
+            model_draft = version.manifest_json.get("authoring", {}).get("modelDraft", {})
+            generated_by = version.manifest_json.get("authoring", {}).get("generatedBy", "unknown")
+            return {
+                **_challenge_materialize_view(
+                    draft,
+                    body.selectedCandidateId,
+                    version,
+                    validation_run,
+                ),
+                "generatedBy": generated_by,
+                "modelDraft": model_draft,
+            }
+        try:
+            version, validation_run, model_payload = generate_model_assisted_version(
+                db,
+                settings,
+                tenant_id=principal.tenant_id,
+                actor_id=principal.user_id,
+                draft=draft,
+                selected_candidate_id=body.selectedCandidateId,
+            )
+        except KeyError as exc:
+            raise api_error(404, "NOT_FOUND", "Candidate not found") from exc
+        except ValueError as exc:
+            try:
+                details = json.loads(str(exc))
+            except json.JSONDecodeError:
+                details = {}
+            raise api_error(
+                422,
+                "AUTHORING_HARD_CONSTRAINT_CONFLICT",
+                "Selected candidate violates hard constraints",
+                details,
+            ) from exc
+        _audit(
+            db,
+            principal,
+            "challenge.draft.generate_version",
+            "challenge_draft",
+            draft.id,
+            "ALLOW",
+            before_ref=body.selectedCandidateId,
+            after_ref=version.id,
+        )
+        _outbox(
+            db,
+            "challenge_version",
+            version.id,
+            "challenge.version.generated",
+            {
+                "draftId": draft.id,
+                "sourceCandidateId": body.selectedCandidateId,
+                "challengeVersionId": version.id,
+                "generatedBy": model_payload["generatedBy"],
+            },
+        )
+        return {
+            **_challenge_materialize_view(
+                draft,
+                body.selectedCandidateId,
+                version,
+                validation_run,
+            ),
+            "generatedBy": model_payload["generatedBy"],
+            "modelDraft": model_payload["draft"],
         }
 
     @app.post(
@@ -2419,4 +2574,14 @@ def _outbox(
     )
 
 
-app = create_app()
+class LazyApp:
+    def __init__(self) -> None:
+        self._app: FastAPI | None = None
+
+    async def __call__(self, scope, receive, send) -> None:
+        if self._app is None:
+            self._app = create_app()
+        await self._app(scope, receive, send)
+
+
+app = LazyApp()

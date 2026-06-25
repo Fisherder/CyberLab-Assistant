@@ -88,6 +88,61 @@ paths:
           description: Assignment created
         "409":
           description: CHALLENGE_VERSION_NOT_PUBLISHED
+  /challenge-registry:
+    get:
+      summary: 使用硬过滤和 BM25 信号查询题库 Registry 版本
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema: {type: string}
+        - in: query
+          name: status
+          required: false
+          schema: {type: string}
+        - in: query
+          name: limit
+          required: false
+          schema: {type: integer, minimum: 1, maximum: 100}
+      responses:
+        "200":
+          description: Registry 版本列表和检索元数据
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [query, count, versions, retrieval]
+                properties:
+                  query: {type: string}
+                  count: {type: integer}
+                  versions:
+                    type: array
+                    items: {$ref: "#/components/schemas/ChallengeRegistryVersion"}
+                  retrieval:
+                    type: object
+                    required: [mode, vectorEnabled, vectorReason]
+                    properties:
+                      mode: {type: string}
+                      vectorEnabled: {type: boolean}
+                      vectorReason: {type: string}
+  /challenge-registry/import-local:
+    post:
+      summary: 将本地 Challenge-as-Code 题目包导入 Registry 和对象存储
+      responses:
+        "202":
+          description: 已导入的题目版本和跳过的目录
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [imported, skipped]
+                properties:
+                  imported:
+                    type: array
+                    items: {$ref: "#/components/schemas/ChallengeRegistryVersion"}
+                  skipped:
+                    type: array
+                    items: {type: object}
   /challenge-drafts:
     post:
       summary: Create a teacher Challenge-as-Code brief draft and parse typed CourseIntent
@@ -156,6 +211,42 @@ paths:
       responses:
         "200":
           description: Pending ChallengeVersion with validation report URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChallengeMaterializeResult"
+        "422":
+          description: AUTHORING_HARD_CONSTRAINT_CONFLICT
+  /challenge-drafts/{draftId}/generate-version:
+    post:
+      summary: 基于已选候选题生成教师可审核的 ChallengeVersion 草稿
+      parameters:
+        - in: path
+          name: draftId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [selectedCandidateId]
+              properties:
+                selectedCandidateId: {type: string}
+      responses:
+        "200":
+          description: 带模型或确定性草稿元数据的待审批 ChallengeVersion
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ChallengeMaterializeResult"
+                  - type: object
+                    required: [generatedBy, modelDraft]
+                    properties:
+                      generatedBy: {type: string}
+                      modelDraft: {type: object}
         "422":
           description: AUTHORING_HARD_CONSTRAINT_CONFLICT
   /assignments/{assignmentId}/attempts:
@@ -1130,6 +1221,8 @@ components:
         - artifactDigest
         - riskTier
         - score
+        - searchScore
+        - retrievalSignals
         - constraintsSatisfied
         - matchReasons
         - conflicts
@@ -1143,6 +1236,14 @@ components:
         artifactDigest: {type: string}
         riskTier: {type: integer}
         score: {type: number}
+        searchScore: {type: number}
+        retrievalSignals:
+          type: object
+          required: [metadata, bm25, vector]
+          properties:
+            metadata: {type: number}
+            bm25: {type: number}
+            vector: {type: number}
         constraintsSatisfied: {type: boolean}
         matchReasons:
           type: array
@@ -1151,6 +1252,74 @@ components:
           type: array
           items: {type: string}
         validationStatus: {type: string}
+    ChallengeRegistryVersion:
+      type: object
+      required:
+        - challengeId
+        - challengeVersionId
+        - slug
+        - title
+        - category
+        - semver
+        - status
+        - workspaceType
+        - difficulty
+        - expectedMinutes
+        - riskTier
+        - artifactDigest
+        - validationStatus
+        - searchScore
+        - created
+        - artifactCount
+        - latestArtifactRef
+        - approvalUrl
+        - validationUrl
+      properties:
+        challengeId: {type: string}
+        challengeVersionId: {type: string}
+        slug: {type: string}
+        title: {type: string}
+        category: {type: string}
+        semver: {type: string}
+        status: {type: string}
+        workspaceType: {type: string}
+        difficulty: {type: integer}
+        expectedMinutes: {type: integer}
+        riskTier: {type: integer}
+        artifactDigest: {type: string}
+        validationStatus: {type: string}
+        searchScore: {type: number}
+        created: {type: boolean}
+        artifactCount: {type: integer}
+        latestArtifactRef: {type: [string, "null"]}
+        approvalUrl: {type: string}
+        validationUrl: {type: string}
+    ChallengeMaterializeResult:
+      type: object
+      required:
+        - draftId
+        - status
+        - sourceCandidateId
+        - challengeVersionId
+        - challengeId
+        - semver
+        - versionStatus
+        - validationRunId
+        - validationStatus
+        - validationReportUrl
+        - approvalRequired
+      properties:
+        draftId: {type: string}
+        status: {type: string}
+        sourceCandidateId: {type: string}
+        challengeVersionId: {type: string}
+        challengeId: {type: string}
+        semver: {type: string}
+        versionStatus: {type: string}
+        validationRunId: {type: string}
+        validationStatus: {type: string}
+        validationReportUrl: {type: string}
+        approvalRequired: {type: boolean}
   securitySchemes:
     bearerAuth:
       type: http

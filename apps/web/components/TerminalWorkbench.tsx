@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Ban,
+  BookOpenCheck,
   Cable,
   ClipboardCheck,
   FileText,
@@ -248,6 +249,9 @@ export function TerminalWorkbench() {
           <button type="button">
             <ShieldCheck size={16} /> Appeal
           </button>
+          <Link className="navlink" href="/teacher/challenges/registry">
+            <BookOpenCheck size={16} /> 题库
+          </Link>
         </div>
         <div className="sidebar-actions">
           <button type="button" onClick={logout}>

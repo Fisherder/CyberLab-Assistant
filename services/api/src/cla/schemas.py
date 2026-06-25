@@ -53,6 +53,10 @@ class MaterializeChallengeDraftRequest(BaseModel):
     selectedCandidateId: str = Field(min_length=1, max_length=120)
 
 
+class GenerateChallengeVersionRequest(BaseModel):
+    selectedCandidateId: str = Field(min_length=1, max_length=120)
+
+
 class CreateCourseRequest(BaseModel):
     code: str = Field(min_length=1, max_length=80)
     title: str = Field(min_length=1, max_length=200)
@@ -128,6 +132,8 @@ class ChallengeCandidateView(BaseModel):
     artifactDigest: str
     riskTier: int
     score: float
+    searchScore: float = 0
+    retrievalSignals: dict = Field(default_factory=dict)
     constraintsSatisfied: bool
     matchReasons: list[str]
     conflicts: list[str]
@@ -154,6 +160,45 @@ class ChallengeMaterializeView(BaseModel):
     validationStatus: str
     validationReportUrl: str
     approvalRequired: bool
+
+
+class ChallengeRegistryVersionView(BaseModel):
+    challengeId: str
+    challengeVersionId: str
+    slug: str
+    title: str
+    category: str
+    semver: str
+    status: str
+    workspaceType: str
+    difficulty: int
+    expectedMinutes: int
+    riskTier: int
+    artifactDigest: str
+    validationStatus: str
+    searchScore: float
+    created: bool = False
+    artifactCount: int
+    latestArtifactRef: str | None
+    approvalUrl: str
+    validationUrl: str
+
+
+class ChallengeRegistryListView(BaseModel):
+    query: str
+    count: int
+    versions: list[ChallengeRegistryVersionView]
+    retrieval: dict
+
+
+class ChallengeImportView(BaseModel):
+    imported: list[ChallengeRegistryVersionView]
+    skipped: list[dict]
+
+
+class ChallengeGeneratedVersionView(ChallengeMaterializeView):
+    generatedBy: str
+    modelDraft: dict
 
 
 class CreateAttemptRequest(BaseModel):

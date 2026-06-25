@@ -194,6 +194,107 @@ const ChallengeApprovalResponse = z.object({
   alreadyPublished: z.boolean()
 });
 
+const ChallengeRegistryVersionResponse = z.object({
+  challengeId: z.string(),
+  challengeVersionId: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  category: z.string(),
+  semver: z.string(),
+  status: z.string(),
+  workspaceType: z.string(),
+  difficulty: z.number(),
+  expectedMinutes: z.number(),
+  riskTier: z.number(),
+  artifactDigest: z.string(),
+  validationStatus: z.string(),
+  searchScore: z.number(),
+  created: z.boolean(),
+  artifactCount: z.number(),
+  latestArtifactRef: z.string().nullable(),
+  approvalUrl: z.string(),
+  validationUrl: z.string()
+});
+
+const ChallengeRegistryResponse = z.object({
+  query: z.string(),
+  count: z.number(),
+  versions: z.array(ChallengeRegistryVersionResponse),
+  retrieval: z.object({
+    mode: z.string(),
+    vectorEnabled: z.boolean(),
+    vectorReason: z.string()
+  })
+});
+
+const ChallengeImportResponse = z.object({
+  imported: z.array(ChallengeRegistryVersionResponse),
+  skipped: z.array(z.record(z.unknown()))
+});
+
+const CourseIntentResponse = z.object({
+  category: z.string(),
+  target: z.string(),
+  difficulty: z.number(),
+  expectedMinutes: z.number(),
+  workspaceType: z.string(),
+  isolationTier: z.number(),
+  allowedTools: z.array(z.string()),
+  learningObjectives: z.array(z.string()),
+  uncertainFields: z.array(z.string()),
+  confidence: z.number()
+});
+
+const ChallengeDraftResponse = z.object({
+  draftId: z.string(),
+  status: z.string(),
+  courseId: z.string(),
+  courseIntent: CourseIntentResponse,
+  constraints: z.record(z.unknown()),
+  candidatesUrl: z.string()
+});
+
+const ChallengeCandidateResponse = z.object({
+  candidateId: z.string(),
+  challengeId: z.string(),
+  challengeVersionId: z.string(),
+  title: z.string(),
+  semver: z.string(),
+  artifactDigest: z.string(),
+  riskTier: z.number(),
+  score: z.number(),
+  searchScore: z.number(),
+  retrievalSignals: z.record(z.unknown()),
+  constraintsSatisfied: z.boolean(),
+  matchReasons: z.array(z.string()),
+  conflicts: z.array(z.string()),
+  validationStatus: z.string()
+});
+
+const ChallengeCandidateSearchResponse = z.object({
+  draftId: z.string(),
+  status: z.string(),
+  courseIntent: CourseIntentResponse,
+  candidates: z.array(ChallengeCandidateResponse),
+  rejectedCandidates: z.array(ChallengeCandidateResponse)
+});
+
+const ChallengeGeneratedVersionResponse = z.object({
+  draftId: z.string(),
+  status: z.string(),
+  sourceCandidateId: z.string(),
+  challengeVersionId: z.string(),
+  challengeId: z.string(),
+  semver: z.string(),
+  versionStatus: z.string(),
+  validationRunId: z.string(),
+  validationStatus: z.string(),
+  validationReportUrl: z.string(),
+  approvalRequired: z.boolean(),
+  generatedBy: z.string(),
+  modelDraft: z.record(z.unknown())
+});
+
 export type AttemptResponse = z.infer<typeof AttemptResponse>;
 export type SessionResponse = z.infer<typeof SessionResponse>;
 export type TicketResponse = z.infer<typeof TicketResponse>;
@@ -206,6 +307,12 @@ export type ChallengeValidationResponse = z.infer<typeof ChallengeValidationResp
 export type ChallengeApprovalResponse = z.infer<typeof ChallengeApprovalResponse>;
 export type AuthUserResponse = z.infer<typeof AuthUserResponse>;
 export type AuthTokenResponse = z.infer<typeof AuthTokenResponse>;
+export type ChallengeRegistryVersionResponse = z.infer<typeof ChallengeRegistryVersionResponse>;
+export type ChallengeRegistryResponse = z.infer<typeof ChallengeRegistryResponse>;
+export type ChallengeImportResponse = z.infer<typeof ChallengeImportResponse>;
+export type ChallengeDraftResponse = z.infer<typeof ChallengeDraftResponse>;
+export type ChallengeCandidateSearchResponse = z.infer<typeof ChallengeCandidateSearchResponse>;
+export type ChallengeGeneratedVersionResponse = z.infer<typeof ChallengeGeneratedVersionResponse>;
 
 export function currentToken(): string {
   if (typeof window === "undefined") return "";
@@ -346,6 +453,47 @@ export async function approveChallengeVersion(
 ): Promise<ChallengeApprovalResponse> {
   return api(`/api/v1/challenge-versions/${versionId}/approve`, ChallengeApprovalResponse, {
     method: "POST"
+  });
+}
+
+export async function fetchChallengeRegistry(query = ""): Promise<ChallengeRegistryResponse> {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("query", query.trim());
+  const suffix = params.toString() ? `?${params}` : "";
+  return api(`/api/v1/challenge-registry${suffix}`, ChallengeRegistryResponse);
+}
+
+export async function importLocalChallenges(): Promise<ChallengeImportResponse> {
+  return api("/api/v1/challenge-registry/import-local", ChallengeImportResponse, {
+    method: "POST"
+  });
+}
+
+export async function createChallengeDraft(
+  courseId: string,
+  brief: string,
+  constraints: Record<string, unknown>
+): Promise<ChallengeDraftResponse> {
+  return api("/api/v1/challenge-drafts", ChallengeDraftResponse, {
+    method: "POST",
+    headers: { "Idempotency-Key": crypto.randomUUID() },
+    body: JSON.stringify({ courseId, brief, constraints })
+  });
+}
+
+export async function fetchChallengeCandidates(
+  candidatesUrl: string
+): Promise<ChallengeCandidateSearchResponse> {
+  return api(candidatesUrl, ChallengeCandidateSearchResponse);
+}
+
+export async function generateChallengeVersion(
+  draftId: string,
+  selectedCandidateId: string
+): Promise<ChallengeGeneratedVersionResponse> {
+  return api(`/api/v1/challenge-drafts/${draftId}/generate-version`, ChallengeGeneratedVersionResponse, {
+    method: "POST",
+    body: JSON.stringify({ selectedCandidateId })
   });
 }
 

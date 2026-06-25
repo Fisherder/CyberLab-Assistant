@@ -2,6 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
 TMUX_SOCKET="${CLA_TMUX_SOCKET:-cla-dev}"
 SESSION="${CLA_TMUX_SESSION:-cla}"
 WORKSPACE_ROOT="${CLA_LOCAL_WORKSPACE_DIR:-/private/tmp/cla-local-workspace/web-sqli-auth}"

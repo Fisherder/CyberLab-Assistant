@@ -7,12 +7,12 @@
 | 需求编号 | 代码 / 契约 / 数据 | 当前证据 | 状态 |
 |---|---|---|---|
 | FR-IAM-001 | `services/api/src/cla/security.py`，`GET /api/v1/me` | API 测试覆盖开发 token、生产 JWKS/RS256、发现文档、错误 issuer/audience、过期 token、未知 kid 和缺失 bearer。 | 部分完成：外部校园 IdP smoke 未运行。 |
-| FR-CONTENT-001 | `content/challenges/web-sqli-auth/manifest.yaml`，`packages/contracts/json-schema/challenge.schema.json` | 题目 fixture 通过 JSON Schema；迁移包含 `validation_runs`。 | 部分完成：生产内容 CI、镜像签名和对象存储报告仍未完成。 |
-| FR-CONTENT-002 | `challenge_versions` 表、seed 固定版本与摘要 | API 测试固定 `web-sqli-auth-001@1.3.0`；核心表契约覆盖 `challenge_versions`。 | 部分完成。 |
+| FR-CONTENT-001 | `content/challenges/web-sqli-auth/manifest.yaml`，`packages/contracts/json-schema/challenge.schema.json`，`POST /api/v1/challenge-registry/import-local` | 题目 fixture 通过 JSON Schema；API 测试覆盖本地 Challenge 包导入、内容验证和 Registry 查询。 | 部分完成：生产内容 CI、镜像签名和大规模内容质量门禁仍未完成。 |
+| FR-CONTENT-002 | `challenge_versions` 表、`challenge_artifacts` 表、seed 固定版本与摘要 | API 测试固定 `web-sqli-auth-001@1.3.0`；核心表契约覆盖 `challenge_versions`；Alembic 迁移覆盖 `challenge_artifacts`；导入测试验证对象资产引用。 | 部分完成：生产级对象生命周期、制品签名和远端 MinIO/S3 live 验证未完成。 |
 | FR-CONTENT-003 | `services/api/src/cla/content_validation.py`，`Taskfile.yml`，教师验证报告页面 | 测试覆盖 schema/rubric、目标 HTTP smoke、Oracle 正负例、WARN/BLOCK 报告、教师审批门禁和页面构建；本机浏览器已验证教师验证报告页显示 Overall PASS、8 PASS、1 WARN、0 BLOCK。 | 部分完成：真实 OCI 构建、Trivy/SBOM、报告签名、Temporal 发布流程未完成。 |
-| FR-AUTHOR-001 | `challenge_drafts`，`services/api/src/cla/authoring.py` | 测试覆盖教师 Brief 创建、幂等、结构化 CourseIntent、低置信字段、审计、Outbox，且不创建 AgentRun。 | 部分完成：模型 Brief Parser 和教师澄清 UI 未完成。 |
-| FR-AUTHOR-002 | `GET /api/v1/challenge-drafts/{id}/candidates` | 测试覆盖硬过滤、候选理由、REMOTE_DESKTOP 冲突拒绝。 | 部分完成：BM25/向量混合检索和大型 Challenge Registry 未完成。 |
-| FR-AUTHOR-003 | materialize 与 approve API | 测试覆盖创建不可变 `PENDING_APPROVAL` 版本、验证报告、审批后发布、学生拒绝和审计。 | 部分完成：Agent 能力 broker、rubric draft/critic、Temporal 等待审批未完成。 |
+| FR-AUTHOR-001 | `challenge_drafts`，`agent_runs`，`services/api/src/cla/authoring.py`，`services/api/src/cla/agent_runtime.py` | 测试覆盖教师 Brief 创建、幂等、模型解析 CourseIntent、模型失败回退、审计、Outbox 和 `AgentRun` 写入；本机 `.env` 已跑通 DeepSeek 兼容 live smoke，`brief.parse` 的 `AgentRun` 为 `SUCCEEDED` 且 `fallbackUsed=false`。 | 已验证本地模型适配链路；教师澄清 UI 和生产模型配额、限流、内容质量评测仍未完成。 |
+| FR-AUTHOR-002 | `GET /api/v1/challenge-drafts/{id}/candidates`，`GET /api/v1/challenge-registry` | 测试覆盖硬过滤、候选理由、REMOTE_DESKTOP 冲突拒绝、BM25 风格全文检索、Registry 列表和对象资产展示。 | 部分完成：pgvector/OpenSearch 语义向量检索和大规模教学质量排序未完成。 |
+| FR-AUTHOR-003 | `POST /api/v1/challenge-drafts/{id}/generate-version`，materialize 与 approve API | 测试覆盖模型生成题目版本草稿、Rubric 草稿、`PENDING_APPROVAL` 版本、验证报告、审批后发布、学生拒绝和审计；本机 live smoke 已验证 `generatedBy=model`、验证报告 `PASS`、教师审批后 `published=true`。 | 部分完成：Agent 能力 broker、Temporal 等待审批和多人审核策略未完成。 |
 | FR-ATTEMPT-001 | `POST /api/v1/assignments/{id}/attempts`，`idempotency_records` | `test_attempt_creation_is_idempotent` 覆盖重复 Idempotency-Key 返回同一 Attempt。 | 已验证本地切片。 |
 | FR-LAB-001 | `lab_sessions`，LabSession CRD，environment-controller，路由注册与票据撤销 API | API、Go controller、fake-client、Kubernetes Event、orphan scanner、route registry、ticket revoke 和 metrics 测试均通过。 | 部分完成：真实 Kubernetes 集群写入、健康探针、TTL 清理、节点故障和 live orphan scan 未执行。 |
 | FR-LAB-002 | `services/environment-controller/internal/labplan`，Helm/RBAC/CRD，NetworkPolicy | Go 测试覆盖 namespace、ResourceQuota、LimitRange、Secret、Service、NetworkPolicy、Deployment、安全上下文、gVisor runtimeClass 和禁止特权配置；静态测试覆盖 Compose/Helm。 | 部分完成：真实 NetworkPolicy、gVisor/Kata 节点兼容和跨 session 攻击测试未执行。 |
@@ -28,9 +28,9 @@
 | FR-GRADE-003 | GradeRevision、CriterionResult、Appeal API、学生成绩页 | API 测试覆盖证据页数据、跨学生拒绝、申诉 criterion 校验、教师 override 生成新 revision；本机浏览器已验证成绩证据页、申诉创建、教师复核 API、Revision 2 和 `appeal:{id}` 证据引用。 | 部分完成：教师复核 UI 未完成。 |
 | FR-ADMIN-001 | Feature flags、环境变量、Helm values | 静态测试覆盖 terminal-only Feature Flag 和 GUI 禁用。 | 部分完成：管理员管理 UI 和二次确认流程未完成。 |
 | FR-EXT-001 | WorkspaceType enum、session endpoint | 测试覆盖 REMOTE_DESKTOP/SIMULATED 返回 `WORKSPACE_FEATURE_NOT_ENABLED`，并扫描一期无 GUI 依赖。 | 已验证本地切片。 |
-| 工程文档与开发规范 | `README.md`，`docs/development/developer-guide.md`，`docs/development/architecture.md`，`docs/development/security.md`，`docs/development/testing.md`，`docs/development/git.md`，`docs/development/content-authoring.md`，`docs/runbooks/local-development.md` | 文档覆盖项目定位、模块职责、核心链路、安全边界、测试矩阵、Git 协作、内容开发和本地运行；命名扫描和 Web 生成注释检查已通过。 | 已完成本轮文档交付。 |
+| 工程文档与开发规范 | `README.md`，`docs/development/developer-guide.md`，`docs/development/architecture.md`，`docs/development/security.md`，`docs/development/testing.md`，`docs/development/git.md`，`docs/development/content-authoring.md`，`docs/runbooks/local-development.md` | 文档覆盖项目定位、模块职责、核心链路、安全边界、模型接入、题库 Registry、对象资产、测试矩阵、Git 协作、内容开发和本地运行；命名扫描和 Web 生成注释检查已通过。 | 已完成本轮文档交付。 |
 | P0 契约与迁移 | JSON Schema、OpenAPI、Protobuf、Alembic | API 契约测试、OpenAPI route drift、核心表元数据、SQLite Alembic smoke 通过；PostgreSQL smoke 已接入 CI 配置。 | 部分完成：本地 PostgreSQL 未运行。 |
-| P1 纵向核心 | 教师建作业 → 学生 Attempt → Session/Ticket → Gateway → Event/Transcript → Oracle → Grade → Appeal → Monitor | API `61 passed, 1 skipped`；Go sessionwire/gateway/sessiond/controller 全部通过；Web build/typecheck 通过；本机浏览器已验证 Attempt、Lab Ready、xterm.js、命令回显、L1 提示、提交、成绩页、申诉、教师 override、验证报告和 live monitor。 | 部分完成：真实 Compose target/Oracle PASS、MinIO/Redis live 和生产集群 E2E 被 Docker/Kubernetes 环境不可用阻塞。 |
+| P1 纵向核心 | 教师建作业 → 学生 Attempt → Session/Ticket → Gateway → Event/Transcript → Oracle → Grade → Appeal → Monitor | API `67 passed, 1 skipped`；Go sessionwire/gateway/sessiond/controller 全部通过；Web build/typecheck 通过；本机浏览器已验证 Attempt、Lab Ready、xterm.js、命令回显、L1 提示、提交、成绩页、申诉、教师 override、验证报告和 live monitor。 | 部分完成：真实 Compose target/Oracle PASS、MinIO/Redis live 和生产集群 E2E 被 Docker/Kubernetes 环境不可用阻塞。 |
 
 ## 未标记完成的关键缺口
 
