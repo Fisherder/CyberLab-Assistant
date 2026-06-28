@@ -177,6 +177,67 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     assert "route" not in first
     assert "sessiond" not in str(first).lower()
 
+    with client.app.state.SessionLocal() as db:
+        lab_before_edit = db.get(models.LabSession, first["sessionId"])
+        attempt_before_edit = db.get(models.Attempt, first["attemptId"])
+        assignment_before_edit = db.get(models.Assignment, first["assignmentId"])
+        assert lab_before_edit is not None
+        assert attempt_before_edit is not None
+        assert assignment_before_edit is not None
+        lab_route_before_edit = lab_before_edit.route_endpoint
+        lab_status_before_edit = lab_before_edit.status
+        attempt_assignment_before_edit = attempt_before_edit.assignment_id
+        assignment_version_before_edit = assignment_before_edit.challenge_version_id
+
+    edited_active = client.patch(
+        f"/api/v1/teacher/challenge-bank/{item_one['itemId']}",
+        headers=auth(teacher_token),
+        json={
+            "title": "第一题：认证绕过（课堂提示已更新）",
+            "description": "教师更新了题面说明，但不会重建或替换学生已经开启的容器。",
+            "openAt": (open_at - timedelta(minutes=10)).isoformat(),
+            "dueAt": (due_at + timedelta(hours=1)).isoformat(),
+        },
+    )
+    assert edited_active.status_code == 200, edited_active.text
+    assert edited_active.json()["status"] == "PUBLISHED"
+    assert edited_active.json()["challengeVersionId"] == item_one["challengeVersionId"]
+    assert edited_active.json()["assignmentId"] == first["assignmentId"]
+    assert edited_active.json()["title"] == "第一题：认证绕过（课堂提示已更新）"
+
+    visible_after_teacher_edit = client.get(
+        "/api/v1/student/challenge-bank", headers=auth(student_token)
+    )
+    assert visible_after_teacher_edit.status_code == 200, visible_after_teacher_edit.text
+    first_item_after_teacher_edit = next(
+        item
+        for item in visible_after_teacher_edit.json()["items"]
+        if item["itemId"] == item_one["itemId"]
+    )
+    assert first_item_after_teacher_edit["description"] == "教师更新了题面说明，但不会重建或替换学生已经开启的容器。"
+    assert first_item_after_teacher_edit["hasEnvironment"] is True
+    assert first_item_after_teacher_edit["sessionId"] == first["sessionId"]
+    assert first_item_after_teacher_edit["sessionStatus"] == first["sessionStatus"]
+    assert first_item_after_teacher_edit["terminalUrl"] == f"/student/terminal?attemptId={first['attemptId']}"
+
+    ticket_after_teacher_edit = client.post(
+        f"/api/v1/attempts/{first['attemptId']}/terminal-ticket",
+        headers=auth(student_token),
+    )
+    assert ticket_after_teacher_edit.status_code == 200, ticket_after_teacher_edit.text
+
+    with client.app.state.SessionLocal() as db:
+        lab_after_edit = db.get(models.LabSession, first["sessionId"])
+        attempt_after_edit = db.get(models.Attempt, first["attemptId"])
+        assignment_after_edit = db.get(models.Assignment, first["assignmentId"])
+        assert lab_after_edit is not None
+        assert attempt_after_edit is not None
+        assert assignment_after_edit is not None
+        assert lab_after_edit.status == lab_status_before_edit
+        assert lab_after_edit.route_endpoint == lab_route_before_edit
+        assert attempt_after_edit.assignment_id == attempt_assignment_before_edit
+        assert assignment_after_edit.challenge_version_id == assignment_version_before_edit
+
     before_submit = client.get("/api/v1/student/challenge-bank", headers=auth(student_token))
     assert before_submit.status_code == 200, before_submit.text
     first_item_before_submit = next(
@@ -309,7 +370,7 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
                 models.TerminalTicketNonce.attempt_id == first["attemptId"],
                 models.TerminalTicketNonce.status == "REVOKED",
             )
-        ) == 1
+        ) == 2
         assert db.scalar(
             select(func.count(models.LabSession.id)).where(
                 models.LabSession.attempt_id == first["attemptId"],
@@ -326,7 +387,7 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
         ) == 1
 
 
-def test_published_bank_item_must_be_unpublished_before_edit_or_delete(
+def test_published_bank_item_can_update_display_fields_without_unpublishing(
     client: TestClient,
     teacher_token: str,
 ) -> None:
@@ -339,14 +400,62 @@ def test_published_bank_item_must_be_unpublished_before_edit_or_delete(
         publish=True,
         publishWindow={"openAt": open_at.isoformat(), "dueAt": due_at.isoformat()},
     )
+    assert item["status"] == "PUBLISHED"
+    assert item["actions"]["canEdit"] is True
+    assert item["actions"]["canDelete"] is False
 
+    new_open_at = open_at + timedelta(minutes=10)
+    new_due_at = due_at + timedelta(hours=2)
     edit = client.patch(
         f"/api/v1/teacher/challenge-bank/{item['itemId']}",
         headers=auth(teacher_token),
-        json={"summary": "已发布时不能直接修改。"},
+        json={
+            "title": "已发布题目的展示标题可直接修改",
+            "summary": "已发布时可以直接修改展示摘要。",
+            "description": "这只影响学生看到的题面说明，不会改变 ChallengeVersion、镜像或环境代码。",
+            "requirements": "仍然使用同一个已经发布的题目环境完成。",
+            "tags": ["WEB", "展示信息"],
+            "openAt": new_open_at.isoformat(),
+            "dueAt": new_due_at.isoformat(),
+        },
     )
-    assert edit.status_code == 409
-    assert edit.json()["detail"]["code"] == "CHALLENGE_BANK_ITEM_PUBLISHED"
+    assert edit.status_code == 200, edit.text
+    edited = edit.json()
+    assert edited["status"] == "PUBLISHED"
+    assert edited["title"] == "已发布题目的展示标题可直接修改"
+    assert edited["summary"] == "已发布时可以直接修改展示摘要。"
+    assert edited["tags"] == ["WEB", "展示信息"]
+    assert edited["challengeVersionId"] == item["challengeVersionId"]
+    assert edited["assignmentId"] == item["assignmentId"]
+
+    with client.app.state.SessionLocal() as db:
+        assignment = db.get(models.Assignment, item["assignmentId"])
+        assert assignment is not None
+        assert assignment.title == "已发布题目的展示标题可直接修改"
+        assert assignment.challenge_version_id == item["challengeVersionId"]
+        assert assignment.open_at == new_open_at.replace(tzinfo=None)
+        assert assignment.due_at == new_due_at.replace(tzinfo=None)
+
+    new_course = client.post(
+        "/api/v1/courses",
+        headers={**auth(teacher_token), "Idempotency-Key": "bank-edit-display-course"},
+        json={"code": "WEBSEC-BANK-EDIT", "title": "题库展示信息编辑课", "term": "2026-S"},
+    )
+    assert new_course.status_code == 201, new_course.text
+    move_course = client.patch(
+        f"/api/v1/teacher/challenge-bank/{item['itemId']}",
+        headers=auth(teacher_token),
+        json={"courseId": new_course.json()["courseId"]},
+    )
+    assert move_course.status_code == 200, move_course.text
+    assert move_course.json()["courseId"] == new_course.json()["courseId"]
+    assert move_course.json()["challengeVersionId"] == item["challengeVersionId"]
+    assert move_course.json()["assignmentId"] == item["assignmentId"]
+    with client.app.state.SessionLocal() as db:
+        moved_assignment = db.get(models.Assignment, item["assignmentId"])
+        assert moved_assignment is not None
+        assert moved_assignment.course_id == new_course.json()["courseId"]
+        assert moved_assignment.challenge_version_id == item["challengeVersionId"]
 
     delete = client.delete(
         f"/api/v1/teacher/challenge-bank/{item['itemId']}",

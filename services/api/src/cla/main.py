@@ -1159,15 +1159,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         _require_challenge_bank_teacher(db, principal, item)
         if item.status == "DELETED":
             raise api_error(409, "CHALLENGE_BANK_ITEM_DELETED", "Deleted items must be restored first")
-        if item.status == "PUBLISHED":
-            raise api_error(
-                409,
-                "CHALLENGE_BANK_ITEM_PUBLISHED",
-                "Published items must be unpublished before editing",
-            )
-        before_ref = item.status
+        before_ref = (
+            f"status={item.status};course={item.course_id};"
+            f"open={item.open_at.isoformat() if item.open_at else ''};"
+            f"due={item.due_at.isoformat() if item.due_at else ''}"
+        )
+        assignment = db.get(models.Assignment, item.assignment_id) if item.assignment_id else None
+        if body.courseId is not None and body.courseId != item.course_id:
+            course = _get_course_or_404(db, body.courseId)
+            _require_course_same_tenant(principal, course)
+            require_course_role(db, principal, course.id, {"TEACHER", "TA"})
+            item.course_id = course.id
+            if assignment is not None:
+                assignment.course_id = course.id
         if body.title is not None:
             item.title = body.title
+            if assignment is not None:
+                assignment.title = body.title
         if body.summary is not None:
             item.summary = body.summary
         if body.description is not None:
@@ -1176,6 +1184,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             item.requirements = body.requirements
         if body.tags is not None:
             item.tags_json = _normalized_tags(body.tags)
+        if body.openAt is not None or body.dueAt is not None:
+            open_source = body.openAt if body.openAt is not None else item.open_at
+            due_source = body.dueAt if body.dueAt is not None else item.due_at
+            if open_source is None or due_source is None:
+                raise api_error(
+                    422,
+                    "PUBLISH_WINDOW_REQUIRED",
+                    "openAt and dueAt are required when updating the publish window",
+                )
+            open_value, due_value = _validate_publish_window(open_source, due_source)
+            item.open_at = open_value
+            item.due_at = due_value
+            if assignment is not None:
+                assignment.open_at = open_value
+                assignment.due_at = due_value
         item.updated_at = datetime.now(timezone.utc)
         _audit(
             db,
@@ -1185,7 +1208,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             item.id,
             "ALLOW",
             before_ref=before_ref,
-            after_ref=item.status,
+            after_ref=(
+                f"status={item.status};course={item.course_id};"
+                f"open={item.open_at.isoformat() if item.open_at else ''};"
+                f"due={item.due_at.isoformat() if item.due_at else ''}"
+            ),
         )
         return _challenge_bank_item_view(db, item)
 
@@ -2752,7 +2779,7 @@ def _challenge_bank_publish_state(item: models.ChallengeBankItem) -> str:
 def _challenge_bank_actions(item: models.ChallengeBankItem) -> dict:
     state = _challenge_bank_publish_state(item)
     return {
-        "canEdit": item.status in {"DRAFT", "UNPUBLISHED"},
+        "canEdit": item.status in {"DRAFT", "UNPUBLISHED", "PUBLISHED"},
         "canPublish": item.status in {"DRAFT", "UNPUBLISHED"},
         "canUnpublish": item.status == "PUBLISHED",
         "canDelete": item.status in {"DRAFT", "UNPUBLISHED"},

@@ -636,11 +636,14 @@ export async function createChallengeBankItem(payload: {
 export async function updateChallengeBankItem(
   itemId: string,
   payload: {
+    courseId?: string;
     title?: string;
     summary?: string;
     description?: string;
     requirements?: string;
     tags?: string[];
+    openAt?: string;
+    dueAt?: string;
   }
 ): Promise<ChallengeBankItemResponse> {
   return api(`/api/v1/teacher/challenge-bank/${itemId}`, ChallengeBankItemResponse, {

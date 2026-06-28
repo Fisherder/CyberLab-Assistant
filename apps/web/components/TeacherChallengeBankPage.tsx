@@ -78,11 +78,14 @@ export function TeacherChallengeBankPage() {
     setLoading("save");
     try {
       await updateChallengeBankItem(item.itemId, {
+        courseId: form.courseId.trim(),
         title: form.title.trim(),
         summary: form.summary.trim(),
         description: form.description.trim(),
         requirements: form.requirements.trim(),
-        tags: parseTags(form.tags)
+        tags: parseTags(form.tags),
+        openAt: toIso(form.openAt),
+        dueAt: toIso(form.dueAt)
       });
       setMessage("题目内容已保存。");
       await loadItems(view);
@@ -234,11 +237,14 @@ export function TeacherChallengeBankPage() {
 }
 
 type DetailFormState = {
+  courseId: string;
   title: string;
   summary: string;
   description: string;
   requirements: string;
   tags: string;
+  openAt: string;
+  dueAt: string;
 };
 
 function ChallengeDetailModal({
@@ -261,11 +267,14 @@ function ChallengeDetailModal({
   onUnpublish: (item: ChallengeBankItemResponse) => Promise<void>;
 }) {
   const [form, setForm] = useState<DetailFormState>(() => ({
+    courseId: item.courseId,
     title: item.title,
     summary: item.summary,
     description: item.description,
     requirements: item.requirements,
-    tags: item.tags.join(", ")
+    tags: item.tags.join(", "),
+    openAt: toLocalInput(item.openAt) || defaultWindow().openAt,
+    dueAt: toLocalInput(item.dueAt) || defaultWindow().dueAt
   }));
   const [windowValue, setWindowValue] = useState(() => ({
     openAt: toLocalInput(item.openAt) || defaultWindow().openAt,
@@ -293,6 +302,11 @@ function ChallengeDetailModal({
             <h3>题目内容</h3>
             {editable ? (
               <>
+                <label className="field-label">课程 ID</label>
+                <input
+                  value={form.courseId}
+                  onChange={(event) => setForm({ ...form, courseId: event.target.value })}
+                />
                 <label className="field-label">标题</label>
                 <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
                 <label className="field-label">列表摘要</label>
@@ -312,6 +326,9 @@ function ChallengeDetailModal({
                 />
                 <label className="field-label">标签</label>
                 <input value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} />
+                <div className="status-note">
+                  保存这些展示信息不会修改题目环境、代码、镜像或已开启的学生容器。
+                </div>
               </>
             ) : (
               <div className="detail-copy">
@@ -344,16 +361,24 @@ function ChallengeDetailModal({
                 开始时间
                 <input
                   type="datetime-local"
-                  value={windowValue.openAt}
-                  onChange={(event) => setWindowValue({ ...windowValue, openAt: event.target.value })}
+                  value={editable ? form.openAt : windowValue.openAt}
+                  onChange={(event) => {
+                    setForm({ ...form, openAt: event.target.value });
+                    setWindowValue({ ...windowValue, openAt: event.target.value });
+                  }}
+                  disabled={!editable}
                 />
               </label>
               <label>
                 结束时间
                 <input
                   type="datetime-local"
-                  value={windowValue.dueAt}
-                  onChange={(event) => setWindowValue({ ...windowValue, dueAt: event.target.value })}
+                  value={editable ? form.dueAt : windowValue.dueAt}
+                  onChange={(event) => {
+                    setForm({ ...form, dueAt: event.target.value });
+                    setWindowValue({ ...windowValue, dueAt: event.target.value });
+                  }}
+                  disabled={!editable}
                 />
               </label>
             </div>
@@ -372,7 +397,7 @@ function ChallengeDetailModal({
           <button
             className="iconbutton primary"
             type="button"
-            onClick={() => onPublish(item, windowValue.openAt, windowValue.dueAt)}
+            onClick={() => onPublish(item, form.openAt, form.dueAt)}
             disabled={!item.actions.canPublish || loading !== ""}
           >
             <UploadCloud size={16} /> 发布

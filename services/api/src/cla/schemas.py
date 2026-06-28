@@ -221,11 +221,14 @@ class CreateChallengeBankItemRequest(BaseModel):
 
 
 class UpdateChallengeBankItemRequest(BaseModel):
+    courseId: str | None = Field(default=None, min_length=1, max_length=64)
     title: str | None = Field(default=None, min_length=1, max_length=240)
     summary: str | None = Field(default=None, min_length=1, max_length=1000)
     description: str | None = Field(default=None, min_length=1, max_length=8000)
     requirements: str | None = Field(default=None, min_length=1, max_length=8000)
     tags: list[str] | None = Field(default=None, max_length=20)
+    openAt: datetime | None = None
+    dueAt: datetime | None = None
 
 
 class PublishChallengeBankItemRequest(BaseModel):
