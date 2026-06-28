@@ -35,6 +35,19 @@
             "fileTransfer": {"type": "string", "enum": ["DISABLED", "CONTROLLED"]}
           }
         },
+        "studentAccess": {
+          "type": "object",
+          "properties": {
+            "kind": {"type": "string", "enum": ["WEB_HTTP", "DOWNLOAD_FILE", "TERMINAL_ONLY"]},
+            "label": {"type": "string"},
+            "entryPath": {"type": "string"},
+            "downloadPath": {"type": "string"},
+            "actionLabel": {"type": "string"},
+            "description": {"type": "string"},
+            "guidance": {"type": "string"},
+            "commands": {"type": "array", "items": {"type": "string"}}
+          }
+        },
         "learningObjectives": {"type": "array", "items": {"type": "string"}},
         "difficulty": {"type": "integer", "minimum": 1, "maximum": 5},
         "expectedMinutes": {"type": "integer", "minimum": 1},
@@ -65,4 +78,3 @@
   },
   "additionalProperties": false
 }
-

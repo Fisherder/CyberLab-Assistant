@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 import shutil
+import socket
+import threading
+import urllib.request
 
 from sqlalchemy import func, select
 from fastapi.testclient import TestClient
@@ -38,6 +42,30 @@ def test_content_validation_runner_generates_teacher_visible_report(tmp_path: Pa
     output = tmp_path / "validation.json"
     write_validation_report(report, output)
     assert json.loads(output.read_text(encoding="utf-8")) == report
+
+
+def test_web_target_root_serves_student_gui() -> None:
+    module_path = CHALLENGE_DIR / "target/server.py"
+    spec = importlib.util.spec_from_file_location("web_sqli_auth_target", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    server = module.ThreadingHTTPServer(("127.0.0.1", port), module.Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as response:
+            body = response.read().decode("utf-8")
+        assert response.status == 200
+        assert "Web 登录认证调试页" in body
+        assert "TARGET_BASE_URL" in body
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
 
 
 def test_content_validation_blocks_broken_oracle_package(tmp_path: Path) -> None:

@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from cla import models
+from cla.challenge_assets import store_generated_challenge_package
+from cla.ids import new_id
 from cla.seed import DEV_IDS
 
 from test_terminal_vertical_slice import auth
@@ -173,6 +175,10 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     first = first_start.json()
     assert first["reusedAttempt"] is False
     assert first["targetUrl"].startswith("http://127.0.0.1:18080")
+    assert first["access"]["kind"] == "WEB_HTTP"
+    assert first["access"]["url"].startswith("http://127.0.0.1:18080")
+    assert first["access"]["displayUrl"] == first["access"]["url"]
+    assert any("$TARGET_BASE_URL" in command for command in first["access"]["commands"])
     assert first["terminalUrl"] == f"/student/terminal?attemptId={first['attemptId']}"
     assert "route" not in first
     assert "sessiond" not in str(first).lower()
@@ -219,6 +225,8 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     assert first_item_after_teacher_edit["sessionId"] == first["sessionId"]
     assert first_item_after_teacher_edit["sessionStatus"] == first["sessionStatus"]
     assert first_item_after_teacher_edit["terminalUrl"] == f"/student/terminal?attemptId={first['attemptId']}"
+    assert first_item_after_teacher_edit["access"]["kind"] == "WEB_HTTP"
+    assert first_item_after_teacher_edit["access"]["url"] == first["access"]["url"]
 
     ticket_after_teacher_edit = client.post(
         f"/api/v1/attempts/{first['attemptId']}/terminal-ticket",
@@ -342,6 +350,8 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
     assert destroyed_item["sessionId"] is None
     assert destroyed_item["targetUrl"] is None
     assert destroyed_item["terminalUrl"] is None
+    assert destroyed_item["access"]["kind"] == "WEB_HTTP"
+    assert destroyed_item["access"]["url"] is None
 
     restart_after_destroy = client.post(
         f"/api/v1/student/challenge-bank/{item_one['itemId']}/start",
@@ -385,6 +395,106 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
         assert db.scalar(
             select(func.count(models.Event.id)).where(models.Event.type == "lab.destroyed")
         ) == 1
+
+
+def test_student_access_distinguishes_reverse_download_target(
+    client: TestClient,
+    teacher_token: str,
+    student_token: str,
+) -> None:
+    with client.app.state.SessionLocal() as db:
+        reverse_challenge = models.Challenge(
+            id="chal_reverse_access",
+            tenant_id=DEV_IDS["tenant"],
+            slug="reverse-access-demo",
+            title="逆向目标文件入口验证",
+            category="REVERSE",
+            owner_id=DEV_IDS["teacher"],
+        )
+        reverse_version = models.ChallengeVersion(
+            id="cv_reverse_access_1",
+            challenge_id=reverse_challenge.id,
+            semver="1.0.0",
+            status="PUBLISHED",
+            manifest_json={
+                "category": "REVERSE",
+                "workspaceType": "TERMINAL",
+                "studentAccess": {
+                    "kind": "DOWNLOAD_FILE",
+                    "label": "目标文件",
+                    "downloadPath": "target/challenge.c",
+                    "commands": ["file ./challenge", "strings ./challenge | head"],
+                },
+            },
+            artifact_digest="sha256:reverse-access-demo",
+            risk_tier=1,
+            created_by=DEV_IDS["teacher"],
+        )
+        stored = store_generated_challenge_package(
+            client.app.state.settings,
+            tenant_id=DEV_IDS["tenant"],
+            slug=reverse_challenge.slug,
+            semver=reverse_version.semver,
+            files={
+                "manifest.yaml": "kind: CyberChallenge\n",
+                "target/challenge.c": "int main(void) { return 0; }\n",
+            },
+        )
+        db.add_all(
+            [
+                reverse_challenge,
+                reverse_version,
+                models.ChallengeArtifact(
+                    id=new_id("casset"),
+                    tenant_id=DEV_IDS["tenant"],
+                    challenge_id=reverse_challenge.id,
+                    version_id=reverse_version.id,
+                    artifact_type="generated-challenge-package",
+                    object_ref=stored.object_ref,
+                    sha256=stored.sha256,
+                    byte_count=stored.byte_count,
+                    metadata_json=stored.metadata,
+                ),
+            ]
+        )
+        db.commit()
+
+    open_at = datetime.now(timezone.utc) - timedelta(minutes=5)
+    due_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    published_item = _create_bank_item(
+        client,
+        teacher_token,
+        key="bank-reverse-download",
+        challengeVersionId="cv_reverse_access_1",
+        title="逆向目标文件入口验证",
+        tags=["REVERSE", "文件分析"],
+        publish=True,
+        publishWindow={"openAt": open_at.isoformat(), "dueAt": due_at.isoformat()},
+    )
+
+    visible = client.get("/api/v1/student/challenge-bank", headers=auth(student_token))
+    assert visible.status_code == 200, visible.text
+    reverse_item = next(
+        row for row in visible.json()["items"] if row["itemId"] == published_item["itemId"]
+    )
+    access = reverse_item["access"]
+    assert access["kind"] == "DOWNLOAD_FILE"
+    assert access["url"].endswith(f"/student/challenge-bank/{published_item['itemId']}/artifact/download")
+    assert reverse_item["targetUrl"] is None
+    assert "file ./challenge" in access["commands"]
+
+    download = client.get(access["url"], headers=auth(student_token))
+    assert download.status_code == 200, download.text
+    assert "challenge.c" in download.headers["content-disposition"]
+    assert b"int main" in download.content
+
+    start = client.post(
+        f"/api/v1/student/challenge-bank/{published_item['itemId']}/start",
+        headers=auth(student_token),
+    )
+    assert start.status_code == 202, start.text
+    assert start.json()["targetUrl"] is None
+    assert start.json()["access"]["kind"] == "DOWNLOAD_FILE"
 
 
 def test_published_bank_item_can_update_display_fields_without_unpublishing(

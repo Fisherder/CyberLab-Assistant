@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from io import BytesIO
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import secrets
+import tarfile
 
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import Response
 import jwt
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -1396,6 +1399,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         _audit(db, principal, "student.challenge_bank.read_detail", "challenge_bank_item", item.id, "ALLOW")
         return _student_challenge_bank_item_view(db, settings, principal, item)
 
+    @app.get("/api/v1/student/challenge-bank/{item_id}/artifact/download")
+    def download_student_challenge_artifact(
+        item_id: str,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> Response:
+        item = _get_challenge_bank_item_or_404(db, item_id)
+        _require_challenge_bank_student(db, principal, item)
+        if item.status != "PUBLISHED":
+            raise api_error(404, "NOT_FOUND", "Challenge bank item is not published")
+        filename, material = _student_download_artifact(db, settings, item)
+        _audit(
+            db,
+            principal,
+            "student.challenge_bank.download_artifact",
+            "challenge_bank_item",
+            item.id,
+            "ALLOW",
+            after_ref=filename,
+        )
+        return Response(
+            content=material,
+            media_type="application/octet-stream",
+            headers={"content-disposition": f'attachment; filename="{filename}"'},
+        )
+
     @app.post(
         "/api/v1/student/challenge-bank/{item_id}/start",
         response_model=StartChallengeBankItemView,
@@ -1467,6 +1496,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if lab is None:
             lab = _create_local_lab_session(db, settings, principal.tenant_id, attempt)
         target_url = _challenge_bank_target_url(settings, item)
+        terminal_url = f"/student/terminal?attemptId={attempt.id}"
+        access = _student_challenge_access_view(
+            db,
+            settings,
+            item,
+            has_environment=True,
+            target_url=target_url,
+            terminal_url=terminal_url,
+        )
         append_event(
             db,
             tenant_id=principal.tenant_id,
@@ -1496,10 +1534,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "sessionId": lab.id,
             "sessionEpoch": lab.epoch,
             "sessionStatus": lab.status,
-            "targetUrl": target_url,
-            "terminalUrl": f"/student/terminal?attemptId={attempt.id}",
-            "workspaceUrl": f"/student/terminal?attemptId={attempt.id}",
+            "targetUrl": access["url"] if access["kind"] == "WEB_HTTP" else None,
+            "terminalUrl": terminal_url,
+            "workspaceUrl": terminal_url,
             "reusedAttempt": reused,
+            "access": access,
         }
 
     @app.delete(
@@ -2882,6 +2921,16 @@ def _student_challenge_bank_item_view(
     lab = _active_lab_session(db, attempt.id) if attempt else None
     grade = _latest_grade_revision(db, attempt.id) if attempt else None
     completed = grade is not None
+    target_url = _challenge_bank_target_url(settings, item) if lab else None
+    terminal_url = f"/student/terminal?attemptId={attempt.id}" if lab and attempt else None
+    access = _student_challenge_access_view(
+        db,
+        settings,
+        item,
+        has_environment=lab is not None,
+        target_url=target_url,
+        terminal_url=terminal_url,
+    )
     return {
         "itemId": item.id,
         "courseId": item.course_id,
@@ -2903,8 +2952,9 @@ def _student_challenge_bank_item_view(
         "hasEnvironment": lab is not None,
         "sessionId": lab.id if lab else None,
         "sessionStatus": lab.status if lab else None,
-        "targetUrl": _challenge_bank_target_url(settings, item) if lab else None,
-        "terminalUrl": f"/student/terminal?attemptId={attempt.id}" if lab and attempt else None,
+        "targetUrl": access["url"] if access["kind"] == "WEB_HTTP" else None,
+        "terminalUrl": terminal_url,
+        "access": access,
     }
 
 
@@ -2920,6 +2970,254 @@ def _latest_grade_revision(db: Session, attempt_id: str) -> models.GradeRevision
 def _challenge_bank_target_url(settings: Settings, item: models.ChallengeBankItem) -> str:
     base_url = settings.local_target_base_url.rstrip("/")
     return base_url
+
+
+def _student_challenge_access_view(
+    db: Session,
+    settings: Settings,
+    item: models.ChallengeBankItem,
+    *,
+    has_environment: bool,
+    target_url: str | None,
+    terminal_url: str | None,
+) -> dict:
+    category = _challenge_category(db, item)
+    spec = _challenge_spec(item.challenge_version)
+    config = spec.get("studentAccess", {}) if isinstance(spec.get("studentAccess"), dict) else {}
+    kind = str(config.get("kind") or _default_access_kind(category)).upper()
+    if kind == "WEB":
+        kind = "WEB_HTTP"
+    if kind == "DOWNLOAD":
+        kind = "DOWNLOAD_FILE"
+    if kind not in {"WEB_HTTP", "DOWNLOAD_FILE", "TERMINAL_ONLY"}:
+        kind = _default_access_kind(category)
+
+    if kind == "WEB_HTTP":
+        entry_path = str(config.get("entryPath") or "/")
+        url = _join_url(target_url, entry_path) if has_environment and target_url else None
+        return {
+            "kind": kind,
+            "label": str(config.get("label") or "目标网站"),
+            "url": url,
+            "displayUrl": url,
+            "actionLabel": str(config.get("actionLabel") or "在浏览器中打开目标网站"),
+            "description": str(
+                config.get("description")
+                or "这是 Web 类实践题。获取容器后，目标网站会提供可浏览的调试页面，适合先观察页面交互，再回到终端构造请求。"
+            ),
+            "guidance": str(
+                config.get("guidance")
+                or "建议先打开目标网站进行初步探索，再在终端中使用 curl 复现登录请求、观察状态码和响应内容。"
+            ),
+            "commands": _access_commands(
+                config,
+                [
+                    'curl -i "$TARGET_BASE_URL/"',
+                    'curl -i "$TARGET_BASE_URL/healthz"',
+                    'curl -i -X POST "$TARGET_BASE_URL/login" -d "username=alice&password=wrong"',
+                ],
+            ),
+            "requiresEnvironment": True,
+        }
+
+    if kind == "DOWNLOAD_FILE":
+        download_url = f"/api/v1/student/challenge-bank/{item.id}/artifact/download"
+        return {
+            "kind": kind,
+            "label": str(config.get("label") or "目标文件"),
+            "url": download_url,
+            "displayUrl": download_url,
+            "actionLabel": str(config.get("actionLabel") or "下载目标文件"),
+            "description": str(
+                config.get("description")
+                or "这是逆向或文件分析类实践题，通常不需要目标网站。请下载目标文件后，在终端中使用命令行工具分析。"
+            ),
+            "guidance": str(
+                config.get("guidance")
+                or "下载附件后可使用 file、strings、objdump、readelf、gdb 等工具分析。若题面要求容器环境，请先获取容器再进入终端。"
+            ),
+            "commands": _access_commands(
+                config,
+                ["file ./challenge", "strings ./challenge | head", "objdump -d ./challenge | less"],
+            ),
+            "requiresEnvironment": False,
+        }
+
+    url = terminal_url if has_environment else None
+    return {
+        "kind": "TERMINAL_ONLY",
+        "label": str(config.get("label") or "终端交互"),
+        "url": url,
+        "displayUrl": url,
+        "actionLabel": str(config.get("actionLabel") or "进入终端"),
+        "description": str(
+            config.get("description")
+            or "这个题目没有可浏览的目标网站，主要通过终端命令与靶场或目标进程交互。"
+        ),
+        "guidance": str(
+            config.get("guidance")
+            or "请先获取容器并进入终端，按照题面要求使用命令行工具连接目标、运行程序或分析输出。"
+        ),
+        "commands": _access_commands(
+            config,
+            [
+                'echo "$TARGET_BASE_URL"',
+                'nc "$TARGET_HOST" "${TARGET_PORT:-31337}"',
+                "python3 solve.py",
+            ],
+        ),
+        "requiresEnvironment": True,
+    }
+
+
+def _challenge_category(db: Session, item: models.ChallengeBankItem) -> str:
+    challenge = db.get(models.Challenge, item.challenge_version.challenge_id)
+    spec = _challenge_spec(item.challenge_version)
+    return str((challenge.category if challenge else None) or spec.get("category") or "").upper()
+
+
+def _challenge_spec(version: models.ChallengeVersion) -> dict:
+    manifest = version.manifest_json or {}
+    spec = manifest.get("spec")
+    return spec if isinstance(spec, dict) else manifest
+
+
+def _default_access_kind(category: str) -> str:
+    if category == "WEB":
+        return "WEB_HTTP"
+    if category in {"REVERSE", "REVERSING", "RE"}:
+        return "DOWNLOAD_FILE"
+    return "TERMINAL_ONLY"
+
+
+def _access_commands(config: dict, fallback: list[str]) -> list[str]:
+    commands = config.get("commands")
+    if not isinstance(commands, list):
+        return fallback
+    return [str(command) for command in commands if str(command).strip()][:6] or fallback
+
+
+def _join_url(base_url: str | None, entry_path: str) -> str | None:
+    if not base_url:
+        return None
+    if entry_path.startswith("http://") or entry_path.startswith("https://"):
+        return entry_path
+    if not entry_path.startswith("/"):
+        entry_path = f"/{entry_path}"
+    return f"{base_url.rstrip('/')}{entry_path}"
+
+
+def _student_download_artifact(
+    db: Session,
+    settings: Settings,
+    item: models.ChallengeBankItem,
+) -> tuple[str, bytes]:
+    category = _challenge_category(db, item)
+    spec = _challenge_spec(item.challenge_version)
+    config = spec.get("studentAccess", {}) if isinstance(spec.get("studentAccess"), dict) else {}
+    explicit_path = str(config.get("downloadPath") or "").strip() or None
+    artifacts = db.scalars(
+        select(models.ChallengeArtifact)
+        .where(models.ChallengeArtifact.version_id == item.challenge_version_id)
+        .where(models.ChallengeArtifact.artifact_type.in_(["student-download", "challenge-package", "generated-challenge-package"]))
+    ).all()
+    artifacts = sorted(artifacts, key=_student_artifact_rank)
+    for artifact in artifacts:
+        filename, material = _read_challenge_artifact_material(settings, artifact.object_ref)
+        extracted = _extract_student_download_from_tar(
+            material,
+            category=category,
+            explicit_path=explicit_path,
+        )
+        if extracted is not None:
+            return extracted
+        if artifact.artifact_type == "student-download":
+            return _safe_download_filename(filename), material
+    raise api_error(
+        404,
+        "STUDENT_ARTIFACT_NOT_CONFIGURED",
+        "This challenge does not expose a downloadable student target file",
+    )
+
+
+def _student_artifact_rank(artifact: models.ChallengeArtifact) -> int:
+    if artifact.artifact_type == "student-download":
+        return 0
+    if artifact.artifact_type == "generated-challenge-package":
+        return 1
+    if artifact.artifact_type == "challenge-package":
+        return 2
+    return 10
+
+
+def _read_challenge_artifact_material(settings: Settings, object_ref: str) -> tuple[str, bytes]:
+    if not object_ref.startswith("local://challenge-artifacts/"):
+        raise api_error(
+            501,
+            "CHALLENGE_ARTIFACT_DOWNLOAD_UNSUPPORTED",
+            "Only local challenge artifact downloads are supported in this development build",
+        )
+    relative = Path(object_ref.removeprefix("local://challenge-artifacts/"))
+    root = Path(settings.challenge_artifact_object_root).resolve()
+    path = (root / relative).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise api_error(403, "CHALLENGE_ARTIFACT_REF_INVALID", "Challenge artifact path escapes object root") from exc
+    if not path.is_file():
+        raise api_error(404, "CHALLENGE_ARTIFACT_NOT_FOUND", "Challenge artifact object is missing")
+    return path.name, path.read_bytes()
+
+
+def _extract_student_download_from_tar(
+    material: bytes,
+    *,
+    category: str,
+    explicit_path: str | None,
+) -> tuple[str, bytes] | None:
+    try:
+        archive = tarfile.open(fileobj=BytesIO(material), mode="r:*")
+    except tarfile.TarError:
+        return None
+    with archive:
+        members = [member for member in archive.getmembers() if member.isfile() and _safe_tar_member(member.name)]
+        preferred = _download_member_candidates(category, explicit_path)
+        for candidate in preferred:
+            for member in members:
+                if member.name == candidate:
+                    return _read_tar_member(archive, member)
+        for member in members:
+            if member.name.startswith("target/") and Path(member.name).name not in {"Dockerfile", "server.py"}:
+                return _read_tar_member(archive, member)
+    return None
+
+
+def _download_member_candidates(category: str, explicit_path: str | None) -> list[str]:
+    candidates: list[str] = []
+    if explicit_path and _safe_tar_member(explicit_path):
+        candidates.append(explicit_path)
+    if category in {"REVERSE", "REVERSING", "RE"}:
+        candidates.extend(["target/challenge", "target/challenge.bin", "target/challenge.elf", "target/challenge.c"])
+    elif category == "PWN":
+        candidates.extend(["target/vuln", "target/vuln.bin", "target/vuln.c"])
+    return candidates
+
+
+def _safe_tar_member(name: str) -> bool:
+    path = Path(name)
+    return not path.is_absolute() and ".." not in path.parts and name.startswith("target/")
+
+
+def _read_tar_member(archive: tarfile.TarFile, member: tarfile.TarInfo) -> tuple[str, bytes]:
+    file_obj = archive.extractfile(member)
+    if file_obj is None:
+        raise api_error(404, "CHALLENGE_ARTIFACT_NOT_FOUND", "Challenge artifact member is missing")
+    return _safe_download_filename(Path(member.name).name), file_obj.read()
+
+
+def _safe_download_filename(value: str) -> str:
+    cleaned = "".join(char if char.isalnum() or char in "._-" else "_" for char in value)
+    return cleaned[:120] or "challenge-target.bin"
 
 
 def _get_challenge_draft_or_404(db: Session, draft_id: str) -> models.ChallengeDraft:

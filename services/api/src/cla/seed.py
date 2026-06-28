@@ -73,7 +73,21 @@ def seed_dev_data(db: Session) -> None:
         manifest_json={
             "id": "web-sqli-auth-001",
             "version": "1.3.0",
+            "category": "WEB",
             "workspaceType": "TERMINAL",
+            "studentAccess": {
+                "kind": "WEB_HTTP",
+                "label": "目标网站",
+                "entryPath": "/",
+                "actionLabel": "在浏览器中打开目标网站",
+                "description": "这是 Web 登录认证实践题。获取容器后，目标网站会显示可交互的登录调试页面，学生可以先用浏览器观察页面行为，再回到终端构造请求。",
+                "guidance": "建议先打开目标网站进行初步探索，再在终端中使用 curl 复现登录请求、观察状态码和响应内容。",
+                "commands": [
+                    'curl -i "$TARGET_BASE_URL/"',
+                    'curl -i "$TARGET_BASE_URL/healthz"',
+                    'curl -i -X POST "$TARGET_BASE_URL/login" -d "username=alice&password=wrong"',
+                ],
+            },
             "futureCapabilities": {"remoteDesktop": False, "simulatedWorkspace": False},
         },
         artifact_digest="sha256:dev-fixture-web-sqli-auth",

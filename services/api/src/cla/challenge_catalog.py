@@ -497,6 +497,7 @@ def _custom_manifest(slug: str, semver: str, intent: dict[str, Any], category: s
                 "capabilities": intent.get("allowedTools", ["curl", "python"]),
                 "fileTransfer": "CONTROLLED",
             },
+            "studentAccess": _custom_student_access(category),
             "learningObjectives": intent.get("learningObjectives", []),
             "difficulty": int(intent.get("difficulty", 3)),
             "expectedMinutes": int(intent.get("expectedMinutes", 90)),
@@ -515,6 +516,40 @@ def _custom_manifest(slug: str, semver: str, intent: dict[str, Any], category: s
             "rubricRef": "rubric.yaml",
             "futureCapabilities": {"remoteDesktop": False, "simulatedWorkspace": False},
         },
+    }
+
+
+def _custom_student_access(category: str) -> dict[str, Any]:
+    if category == "WEB":
+        return {
+            "kind": "WEB_HTTP",
+            "label": "目标网站",
+            "entryPath": "/",
+            "actionLabel": "在浏览器中打开目标网站",
+            "description": "这是 Web 类实践题。目标服务必须提供可浏览的入口页，学生可以先用浏览器做初步探索。",
+            "guidance": "建议先打开目标网站观察交互，再进入终端用 curl 或 Python 复现请求。",
+            "commands": [
+                'curl -i "$TARGET_BASE_URL/"',
+                'curl -i "$TARGET_BASE_URL/healthz"',
+            ],
+        }
+    if category == "REVERSE":
+        return {
+            "kind": "DOWNLOAD_FILE",
+            "label": "目标文件",
+            "downloadPath": "target/challenge.c",
+            "actionLabel": "下载目标文件",
+            "description": "这是逆向工程实践题，不依赖目标网站。学生应下载目标文件并使用命令行工具分析。",
+            "guidance": "下载后可使用 file、strings、objdump、readelf、gdb 等工具分析。",
+            "commands": ["file ./challenge", "strings ./challenge | head", "objdump -d ./challenge | less"],
+        }
+    return {
+        "kind": "TERMINAL_ONLY",
+        "label": "终端目标",
+        "actionLabel": "进入终端",
+        "description": "这是终端交互类实践题，通常通过命令行连接目标进程或运行脚本完成。",
+        "guidance": "请先获取容器并进入终端，根据题面使用 nc、python、gdb 等工具与目标交互。",
+        "commands": ['nc "$TARGET_HOST" "${TARGET_PORT:-31337}"', "python3 solve.py"],
     }
 
 
@@ -576,6 +611,9 @@ SUCCESS = False
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path in {"/", "/login"}:
+            self.html()
+            return
         if self.path == "/healthz":
             self.reply({"ok": True})
             return
@@ -593,6 +631,24 @@ class Handler(BaseHTTPRequestHandler):
         data = json.dumps(body).encode()
         self.send_response(status)
         self.send_header("content-type", "application/json")
+        self.send_header("content-length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def html(self):
+        data = '''<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>CLA Web Target</title></head>
+<body>
+<main>
+  <h1>CLA Web 调试页</h1>
+  <p>这是生成的 Web 目标入口。可先在浏览器中输入内容观察响应，再在终端中用 curl 复现。</p>
+  <form method="post"><input name="input" value="test"><button>提交</button></form>
+</main>
+</body>
+</html>'''.encode()
+        self.send_response(200)
+        self.send_header("content-type", "text/html; charset=utf-8")
         self.send_header("content-length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)

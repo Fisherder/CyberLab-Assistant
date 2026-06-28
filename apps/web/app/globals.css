@@ -1407,6 +1407,79 @@ input {
   overflow-wrap: anywhere;
 }
 
+.student-access-panel {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.student-access-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.student-access-panel p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.student-access-url {
+  align-items: flex-start;
+  display: grid;
+  gap: 6px;
+}
+
+.student-access-url > span,
+.student-command-guide > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.target-url-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--brand);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 7px;
+  max-width: 100%;
+  padding: 0;
+  text-align: left;
+}
+
+.target-url-link code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.target-url-link:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.student-command-guide {
+  display: grid;
+  gap: 6px;
+}
+
+.student-command-guide pre {
+  background: #0b1220;
+  border-radius: 8px;
+  color: #e8eef9;
+  margin: 0;
+  overflow-x: auto;
+  padding: 10px 12px;
+  white-space: pre;
+}
+
 .banner {
   background: color-mix(in srgb, var(--bad) 8%, var(--panel));
   border: 1px solid color-mix(in srgb, var(--bad) 32%, var(--line));

@@ -289,6 +289,19 @@ class StudentChallengeBankItemView(BaseModel):
     sessionStatus: str | None = None
     targetUrl: str | None = None
     terminalUrl: str | None = None
+    access: "StudentChallengeAccessView"
+
+
+class StudentChallengeAccessView(BaseModel):
+    kind: str
+    label: str
+    url: str | None = None
+    displayUrl: str | None = None
+    actionLabel: str
+    description: str
+    guidance: str
+    commands: list[str] = Field(default_factory=list)
+    requiresEnvironment: bool = True
 
 
 class StudentChallengeBankListView(BaseModel):
@@ -303,10 +316,11 @@ class StartChallengeBankItemView(BaseModel):
     sessionId: str
     sessionEpoch: int
     sessionStatus: str
-    targetUrl: str
+    targetUrl: str | None
     terminalUrl: str
     workspaceUrl: str
     reusedAttempt: bool
+    access: StudentChallengeAccessView
 
 
 class DestroyChallengeBankItemEnvironmentView(BaseModel):

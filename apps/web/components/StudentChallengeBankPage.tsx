@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BookOpenCheck,
   Clock,
+  Download,
   ExternalLink,
   Play,
   RefreshCw,
@@ -13,10 +14,12 @@ import {
 } from "lucide-react";
 import { StudentWorkspaceShell } from "./StudentWorkspaceShell";
 import {
+  downloadStudentChallengeArtifact,
   destroyStudentChallengeBankEnvironment,
   fetchStudentChallengeBank,
   hasAuthToken,
   startStudentChallengeBankItem,
+  type StudentChallengeAccessResponse,
   type StartChallengeBankItemResponse,
   type StudentChallengeBankItemResponse
 } from "../lib/api";
@@ -45,6 +48,7 @@ export function StudentChallengeBankPage() {
   );
   const selectedStart = selected ? started[selected.itemId] : null;
   const hasEnvironment = Boolean(selectedStart || selected?.hasEnvironment);
+  const selectedAccess = selectedStart?.access ?? selected?.access ?? null;
 
   async function loadItems() {
     setError("");
@@ -94,6 +98,29 @@ export function StudentChallengeBankPage() {
       });
       setMessage("容器环境已销毁。");
       await loadItems();
+    } catch (err) {
+      setError(readError(err));
+    } finally {
+      setLoading("");
+    }
+  }
+
+  async function downloadSelectedArtifact() {
+    if (!selected) return;
+    setError("");
+    setMessage("");
+    setLoading("download");
+    try {
+      const { blob, filename } = await downloadStudentChallengeArtifact(selected.itemId);
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      setMessage(`目标文件 ${filename} 已开始下载。`);
     } catch (err) {
       setError(readError(err));
     } finally {
@@ -206,15 +233,17 @@ export function StudentChallengeBankPage() {
                   </div>
                 )}
 
+                {selectedAccess ? (
+                  <StudentAccessPanel
+                    access={selectedAccess}
+                    hasEnvironment={hasEnvironment}
+                    loading={loading}
+                    onDownload={downloadSelectedArtifact}
+                  />
+                ) : null}
+
                 <div className="student-targets">
-                  <TargetLink
-                    label="目标网站"
-                    href={selectedStart?.targetUrl ?? selected.targetUrl}
-                  />
-                  <TargetLink
-                    label="进入终端"
-                    href={selectedStart?.workspaceUrl ?? selected.terminalUrl}
-                  />
+                  <TargetLink label="进入终端" href={selectedStart?.workspaceUrl ?? selected.terminalUrl} />
                   <div>
                     <span>Session</span>
                     <strong>{selectedStart?.sessionId ?? selected.sessionId ?? "尚未创建"}</strong>
@@ -240,6 +269,57 @@ export function StudentChallengeBankPage() {
   );
 }
 
+function StudentAccessPanel({
+  access,
+  hasEnvironment,
+  loading,
+  onDownload
+}: {
+  access: StudentChallengeAccessResponse;
+  hasEnvironment: boolean;
+  loading: string;
+  onDownload: () => Promise<void>;
+}) {
+  const unavailableText = access.requiresEnvironment && !hasEnvironment ? "获取容器后显示" : "当前题目没有配置入口地址";
+  return (
+    <div className="student-access-panel">
+      <div className="student-access-header">
+        <span className="pill">{accessKindLabel(access.kind)}</span>
+        <strong>{access.label}</strong>
+      </div>
+      <p>{access.description}</p>
+      <p>{access.guidance}</p>
+      <div className="student-access-url">
+        <span>{access.kind === "DOWNLOAD_FILE" ? "下载入口" : "访问地址"}</span>
+        {access.kind === "WEB_HTTP" && access.url ? (
+          <Link className="target-url-link" href={access.url} target="_blank" rel="noreferrer">
+            <ExternalLink size={15} />
+            <code>{access.displayUrl ?? access.url}</code>
+          </Link>
+        ) : access.kind === "DOWNLOAD_FILE" && access.url ? (
+          <button className="target-url-link" type="button" onClick={() => void onDownload()} disabled={loading !== ""}>
+            <Download size={15} />
+            <code>{access.displayUrl ?? access.url}</code>
+          </button>
+        ) : access.kind === "TERMINAL_ONLY" && access.url ? (
+          <Link className="target-url-link" href={access.url}>
+            <TerminalSquare size={15} />
+            <code>{access.displayUrl ?? access.url}</code>
+          </Link>
+        ) : (
+          <strong>{unavailableText}</strong>
+        )}
+      </div>
+      {access.commands.length > 0 ? (
+        <div className="student-command-guide">
+          <span>建议起步命令</span>
+          <pre>{access.commands.join("\n")}</pre>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function TargetLink({ label, href }: { label: string; href?: string | null }) {
   if (!href) {
     return (
@@ -252,11 +332,17 @@ function TargetLink({ label, href }: { label: string; href?: string | null }) {
   return (
     <div>
       <span>{label}</span>
-      <Link className="evidence-link" href={href} target={href.startsWith("http") ? "_blank" : undefined}>
-        <ExternalLink size={15} /> 打开
+      <Link className="evidence-link" href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
+        <ExternalLink size={15} /> {href.startsWith("http") ? href : "打开终端"}
       </Link>
     </div>
   );
+}
+
+function accessKindLabel(value: StudentChallengeAccessResponse["kind"]): string {
+  if (value === "WEB_HTTP") return "Web 页面";
+  if (value === "DOWNLOAD_FILE") return "目标文件";
+  return "终端交互";
 }
 
 function formatDate(value: string): string {

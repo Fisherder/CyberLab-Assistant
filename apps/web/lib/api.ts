@@ -21,6 +21,18 @@ const AuthTokenResponse = z.object({
   user: AuthUserResponse
 });
 
+const StudentChallengeAccessResponse = z.object({
+  kind: z.enum(["WEB_HTTP", "DOWNLOAD_FILE", "TERMINAL_ONLY"]),
+  label: z.string(),
+  url: z.string().nullable(),
+  displayUrl: z.string().nullable(),
+  actionLabel: z.string(),
+  description: z.string(),
+  guidance: z.string(),
+  commands: z.array(z.string()),
+  requiresEnvironment: z.boolean()
+});
+
 const AttemptResponse = z.object({
   attemptId: z.string(),
   status: z.string(),
@@ -349,7 +361,8 @@ const StudentChallengeBankItemResponse = z.object({
   sessionId: z.string().nullable(),
   sessionStatus: z.string().nullable(),
   targetUrl: z.string().nullable(),
-  terminalUrl: z.string().nullable()
+  terminalUrl: z.string().nullable(),
+  access: StudentChallengeAccessResponse
 });
 
 const StudentChallengeBankListResponse = z.object({
@@ -364,10 +377,11 @@ const StartChallengeBankItemResponse = z.object({
   sessionId: z.string(),
   sessionEpoch: z.number(),
   sessionStatus: z.string(),
-  targetUrl: z.string(),
+  targetUrl: z.string().nullable(),
   terminalUrl: z.string(),
   workspaceUrl: z.string(),
-  reusedAttempt: z.boolean()
+  reusedAttempt: z.boolean(),
+  access: StudentChallengeAccessResponse
 });
 
 const DestroyChallengeBankEnvironmentResponse = z.object({
@@ -392,6 +406,7 @@ export type ChallengeValidationResponse = z.infer<typeof ChallengeValidationResp
 export type ChallengeApprovalResponse = z.infer<typeof ChallengeApprovalResponse>;
 export type AuthUserResponse = z.infer<typeof AuthUserResponse>;
 export type AuthTokenResponse = z.infer<typeof AuthTokenResponse>;
+export type StudentChallengeAccessResponse = z.infer<typeof StudentChallengeAccessResponse>;
 export type ChallengeRegistryVersionResponse = z.infer<typeof ChallengeRegistryVersionResponse>;
 export type ChallengeRegistryResponse = z.infer<typeof ChallengeRegistryResponse>;
 export type ChallengeImportResponse = z.infer<typeof ChallengeImportResponse>;
@@ -446,6 +461,20 @@ async function api<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}
     throw new Error(body?.detail?.code ?? response.statusText);
   }
   return schema.parse(await response.json());
+}
+
+async function apiBlob(path: string): Promise<{ blob: Blob; filename: string }> {
+  const headers = new Headers();
+  const bearer = token();
+  if (bearer) headers.set("authorization", `Bearer ${bearer}`);
+  const response = await fetch(`${API_BASE}${path}`, { headers });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body?.detail?.code ?? response.statusText);
+  }
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(disposition);
+  return { blob: await response.blob(), filename: match?.[1] ?? "challenge-target.bin" };
 }
 
 export async function loginLocalAccount(email: string, password: string): Promise<AuthTokenResponse> {
@@ -699,6 +728,10 @@ export async function destroyStudentChallengeBankEnvironment(
     DestroyChallengeBankEnvironmentResponse,
     { method: "DELETE" }
   );
+}
+
+export async function downloadStudentChallengeArtifact(itemId: string): Promise<{ blob: Blob; filename: string }> {
+  return apiBlob(`/api/v1/student/challenge-bank/${itemId}/artifact/download`);
 }
 
 export async function requestHint(attemptId: string, level: "L1" | "L2" | "L3"): Promise<HintResponse> {
