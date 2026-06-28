@@ -219,6 +219,13 @@ def search_challenge_candidates(db: Session, draft: models.ChallengeDraft) -> di
     accepted = accepted[:10]
     rejected = rejected[:10]
     composition_plan = composition_plan_for_candidates(draft.intent_json, accepted, rejected)
+    if draft.constraints_json.get("preferComposition") and len(accepted) > 1:
+        composition_plan = {
+            **composition_plan,
+            "mode": "compose-existing-blueprints",
+            "candidateIds": [str(item["candidateId"]) for item in accepted[: min(3, len(accepted))]],
+            "reason": "teacher-requested-composition",
+        }
     return {
         "candidates": accepted,
         "rejectedCandidates": rejected,
@@ -297,8 +304,7 @@ def _custom_authoring_proposal(
         "requirements": requirements,
         "tags": tags,
         "agentMessage": (
-            "这轮需求更适合生成定制靶场草稿。我会准备题目说明、目标代码、工作区、拓扑、"
-            "外部验证器和评分标准，生成后仍由教师查看验证报告并确认发布。"
+            "已进入定制靶场草稿路径。生成后仍需教师审核验证。"
         ),
         "matchExplanation": (
             f"现有题库中有 {len(rejected)} 个候选不符合当前约束；本轮进入定制草稿路径。"
@@ -319,11 +325,7 @@ def _proposal_agent_message(
     category = _human_category(str(intent.get("category") or "WEB"))
     minutes = int(intent.get("expectedMinutes") or 75)
     difficulty = _difficulty_label(int(intent.get("difficulty") or 2))
-    return (
-        f"已根据你的最新要求更新题目卡片。当前建议基于{source_text}“{top['title']}”，"
-        f"匹配度约 {percent}%。题目方向为{category}，难度为{difficulty}，"
-        f"学生预计解题时间约 {minutes} 分钟。你可以继续补充知识点、难度、发布时间或学生提交要求。"
-    )
+    return f"已更新题目卡片：{source_text}“{top['title']}”，匹配 {percent}%，{category}/{difficulty}/{minutes} 分钟。"
 
 
 def _difficulty_label(value: int) -> str:

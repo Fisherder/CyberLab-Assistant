@@ -77,7 +77,7 @@ export function TeacherChallengeCreatePage() {
     setMessages(nextMessages);
     setInput("");
     try {
-      const fieldUpdate = inferAuthoringFieldUpdate(text, preview, publishWindow);
+      const fieldUpdate = inferAuthoringFieldUpdate(text, preview, publishWindow, new Date(), courseIntent);
       const activePublishWindow = fieldUpdate.publish?.window ?? publishWindow;
       const activePreview = applyPreviewFieldUpdate(preview, fieldUpdate.preview);
       if (fieldUpdate.publish) {
@@ -88,6 +88,7 @@ export function TeacherChallengeCreatePage() {
         internet: false,
         maxDifficulty: 5,
         workspaceType: "TERMINAL",
+        ...fieldUpdate.constraints,
         authoringConversation: nextMessages,
         latestTeacherMessage: text,
         currentPreview: activePreview,
@@ -99,21 +100,11 @@ export function TeacherChallengeCreatePage() {
       setCandidateSearch(candidates);
       const proposal = candidates.authoringProposal;
       let challengeVersionId = proposal.challengeVersionId ?? candidates.candidates[0]?.challengeVersionId ?? preview.challengeVersionId;
-      let agentMessage = proposal.agentMessage;
+      let generatedVersionId = "";
       if (proposal.requiresCustomGeneration) {
         const generated = await generateCustomChallengePackage(draft.draftId);
         challengeVersionId = generated.challengeVersionId;
-        const generatedFiles = Array.isArray(generated.modelDraft.generatedFiles)
-          ? generated.modelDraft.generatedFiles.map(String)
-          : proposal.generatedFiles;
-        agentMessage = [
-          proposal.agentMessage,
-          `已生成定制靶场代码包草稿 ${generated.challengeVersionId}。`,
-          generatedFiles.length ? `生成文件：${generatedFiles.slice(0, 8).join("、")}。` : "",
-          "请在发布前查看验证报告并完成教师审核。"
-        ]
-          .filter(Boolean)
-          .join("\n");
+        generatedVersionId = generated.challengeVersionId;
       }
       setPreview((current) => applyPreviewFieldUpdate({
         ...current,
@@ -128,7 +119,14 @@ export function TeacherChallengeCreatePage() {
         ...current,
         {
           role: "agent",
-          content: formatAgentReply(agentMessage, fieldUpdate)
+          content: formatAgentReply(
+            fieldUpdate,
+            proposal.mode,
+            proposal.title,
+            candidates.candidates[0]?.title ?? "",
+            candidates.candidates[0]?.score ?? 0,
+            generatedVersionId
+          )
         }
       ]);
     } catch (err) {
@@ -339,12 +337,26 @@ function buildConversationBrief(items: ChatMessage[]): string {
     .join("\n");
 }
 
-function formatAgentReply(agentMessage: string, fieldUpdate: AuthoringFieldUpdate): string {
-  const parts = [agentMessage.trim()];
+function formatAgentReply(
+  fieldUpdate: AuthoringFieldUpdate,
+  proposalMode: string,
+  proposalTitle: string,
+  candidateTitle: string,
+  score: number,
+  generatedVersionId: string
+): string {
+  const parts: string[] = [];
   if (fieldUpdate.labels.length) {
-    parts.push(`已按你的明确指令更新：${fieldUpdate.labels.join("；")}。`);
-  } else if (fieldUpdate.publish) {
-    parts.push(`发布设置已更新：${fieldUpdate.publish.label}。`);
+    parts.push(`已更新：${fieldUpdate.labels.join("；")}。`);
+  }
+  if (generatedVersionId) {
+    parts.push(`已生成定制草稿 ${generatedVersionId}，发布前仍需审核验证。`);
+  } else if (!fieldUpdate.labels.length) {
+    const title = candidateTitle || proposalTitle;
+    const scoreText = score > 0 ? `，匹配 ${Math.round(score * 100)}%` : "";
+    parts.push(`已更新题目卡片，当前候选：${title || proposalMode}${scoreText}。`);
+  } else if (candidateTitle) {
+    parts.push(`当前候选保持为“${candidateTitle}”。`);
   }
   return parts.filter(Boolean).join("\n");
 }
@@ -352,7 +364,7 @@ function formatAgentReply(agentMessage: string, fieldUpdate: AuthoringFieldUpdat
 function defaultWindow() {
   const openAt = new Date();
   const dueAt = new Date(openAt.getTime() + 2 * 60 * 60 * 1000);
-  return { openAt: toLocalInput(openAt.toISOString()), dueAt: toLocalInput(dueAt.toISOString()) };
+  return { openAt: toLocalInput(openAt.toISOString()), dueAt: toLocalInput(dueAt.toISOString()), mode: "duration" as const };
 }
 
 function emptyWindow(): PublishWindow {

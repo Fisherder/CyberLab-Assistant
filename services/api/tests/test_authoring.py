@@ -496,7 +496,8 @@ def test_authoring_agent_preserves_multiturn_context_and_uses_latest_updates(
     assert body["candidates"]
     assert "pwn_format" in body["candidates"][0]["candidateId"]
     proposal = body["authoringProposal"]
-    assert "最新要求" in proposal["agentMessage"]
+    assert proposal["agentMessage"].startswith("已更新题目卡片")
+    assert len(proposal["agentMessage"]) < 120
     assert "CourseIntent" not in proposal["agentMessage"]
     assert "不会直接复用教师原句" not in proposal["agentMessage"]
 
