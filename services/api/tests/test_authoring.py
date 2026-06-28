@@ -443,6 +443,79 @@ def test_authoring_handles_common_security_briefs_with_target_specific_proposals
         assert "教师需求" not in proposal["description"]
 
 
+def test_authoring_agent_preserves_multiturn_context_and_uses_latest_updates(
+    client: TestClient,
+    teacher_token: str,
+) -> None:
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+
+    conversation = [
+        {"role": "teacher", "content": "出一道经典的字符串相关漏洞的 Pwn 题，难度中等。"},
+        {"role": "agent", "content": "已生成初版题面。"},
+        {"role": "teacher", "content": "时间持续一年。"},
+    ]
+    brief = "\n".join(
+        f"{item['role']}：{item['content']}" for item in conversation if item["role"] == "teacher"
+    )
+    draft_response = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "multiturn-pwn-year"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": brief,
+            "constraints": {
+                "internet": False,
+                "maxDifficulty": 5,
+                "workspaceType": "TERMINAL",
+                "authoringConversation": conversation,
+                "latestTeacherMessage": "时间持续一年。",
+            },
+        },
+    )
+    assert draft_response.status_code == 201, draft_response.text
+    draft = draft_response.json()
+    assert draft["courseIntent"]["category"] == "PWN"
+    assert draft["courseIntent"]["target"] == "PWN_FORMAT"
+    assert draft["courseIntent"]["difficulty"] == 3
+
+    candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+    assert candidates.status_code == 200, candidates.text
+    body = candidates.json()
+    assert body["candidates"]
+    assert "pwn_format" in body["candidates"][0]["candidateId"]
+    proposal = body["authoringProposal"]
+    assert "最新要求" in proposal["agentMessage"]
+    assert "CourseIntent" not in proposal["agentMessage"]
+    assert "不会直接复用教师原句" not in proposal["agentMessage"]
+
+    followup_conversation = [
+        {"role": "teacher", "content": "出一道经典的字符串相关漏洞的 Pwn 题，难度中等。"},
+        {"role": "agent", "content": proposal["agentMessage"]},
+        {"role": "teacher", "content": "难度改成简单一些，仍然保持 Pwn 字符串方向。"},
+    ]
+    followup = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "multiturn-pwn-easy"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": "\n".join(item["content"] for item in followup_conversation if item["role"] == "teacher"),
+            "constraints": {
+                "internet": False,
+                "maxDifficulty": 5,
+                "workspaceType": "TERMINAL",
+                "authoringConversation": followup_conversation,
+                "latestTeacherMessage": "难度改成简单一些，仍然保持 Pwn 字符串方向。",
+            },
+        },
+    )
+    assert followup.status_code == 201, followup.text
+    followup_intent = followup.json()["courseIntent"]
+    assert followup_intent["category"] == "PWN"
+    assert followup_intent["target"] == "PWN_FORMAT"
+    assert followup_intent["difficulty"] == 1
+
+
 def test_model_parser_gui_tools_and_higher_isolation_still_retrieve_blueprints(
     tmp_path,
     monkeypatch,

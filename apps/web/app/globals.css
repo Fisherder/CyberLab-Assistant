@@ -1746,6 +1746,10 @@ input {
   margin: 0;
 }
 
+.agent-message p {
+  white-space: pre-wrap;
+}
+
 .candidate-summary {
   border: 1px solid var(--line);
   border-radius: 8px;

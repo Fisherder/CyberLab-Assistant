@@ -37,10 +37,14 @@ DEFAULT_MODEL_POLICY = "cla-agent-runtime/openai-compatible"
 
 def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -> dict[str, Any]:
     constraints = constraints or {}
-    text = brief.lower()
+    context = _authoring_conversation_context(brief, constraints)
+    text = context["effectiveBrief"].lower()
+    latest_text = context["latestTeacherMessage"].lower()
     uncertain_fields: list[str] = []
 
-    category = str(constraints.get("category") or _category_from_text(text))
+    full_category = _category_from_text(text)
+    latest_category = _category_from_text(latest_text) if latest_text else "UNKNOWN"
+    category = str(constraints.get("category") or (latest_category if latest_category != "UNKNOWN" else full_category))
     if category == "UNKNOWN":
         uncertain_fields.append("category")
 
@@ -49,9 +53,19 @@ def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -
         workspace_type = "TERMINAL"
         uncertain_fields.append("workspaceType")
 
-    target = str(constraints.get("target") or _target_from_text(text))
-    difficulty = int(constraints.get("difficulty") or _difficulty_from_text(text))
-    expected_minutes = int(constraints.get("expectedMinutes") or _minutes_from_text(text) or 75)
+    latest_target = _target_from_text(latest_text) if latest_text else "GENERAL_SECURITY_PRACTICE"
+    if constraints.get("target"):
+        target = str(constraints["target"])
+    elif _is_specific_target(latest_target):
+        target = latest_target
+    elif latest_category != "UNKNOWN" and latest_category != full_category:
+        target = _default_target_for_category(category)
+    else:
+        target = _target_from_text(text)
+    difficulty_text = latest_text if _has_difficulty_signal(latest_text) else text
+    minutes_text = latest_text if _has_expected_minutes_signal(latest_text) else text
+    difficulty = int(constraints.get("difficulty") or _difficulty_from_text(difficulty_text))
+    expected_minutes = int(constraints.get("expectedMinutes") or _minutes_from_text(minutes_text) or 75)
     isolation_tier = int(constraints.get("isolationTier") or 1)
     allowed_tools = [str(tool) for tool in constraints.get("allowedTools", _tools_from_text(text, category))]
     learning_objectives = constraints.get("learningObjectives") or _objectives_from_text(text, category)
@@ -69,6 +83,25 @@ def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -
         "confidence": confidence,
     }
     return _postprocess_course_intent(intent, brief, constraints)
+
+
+def _authoring_conversation_context(brief: str, constraints: dict[str, Any]) -> dict[str, str]:
+    conversation = constraints.get("authoringConversation")
+    teacher_messages: list[str] = []
+    if isinstance(conversation, list):
+        for item in conversation:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("role") or "").lower() != "teacher":
+                continue
+            content = str(item.get("content") or "").strip()
+            if content:
+                teacher_messages.append(content)
+    latest = str(constraints.get("latestTeacherMessage") or "").strip()
+    if not latest and teacher_messages:
+        latest = teacher_messages[-1]
+    effective = "\n".join(teacher_messages).strip() if teacher_messages else brief
+    return {"effectiveBrief": effective, "latestTeacherMessage": latest}
 
 
 def parse_course_intent_for_draft(
@@ -214,11 +247,7 @@ def build_authoring_proposal(
         "description": description,
         "requirements": requirements,
         "tags": tags,
-        "agentMessage": (
-            f"已按 CourseIntent 完成题库检索，选用{source_text} {top['title']}@{top['semver']}，"
-            f"当前匹配度约 {percent}%。我已根据候选环境、学习目标和约束生成题面提案，"
-            "标题、说明和完成要求不会直接复用教师原句。"
-        ),
+        "agentMessage": _proposal_agent_message(intent, source_text, top, percent, mode),
         "matchExplanation": _match_explanation(selected, rejected),
         "requiresCustomGeneration": False,
         "generatedDraftUrl": None,
@@ -248,18 +277,45 @@ def _custom_authoring_proposal(
         "requirements": requirements,
         "tags": tags,
         "agentMessage": (
-            "没有找到同时满足硬约束和教学目标的现有候选或组合。我将生成定制靶场代码包草稿，"
-            "包括题目 manifest、学生说明、目标服务代码、工作区镜像、拓扑、Oracle 和 Rubric。"
-            "生成结果仍需教师审核和验证报告确认后才能发布。"
+            "这轮需求更适合生成定制靶场草稿。我会准备题目说明、目标代码、工作区、拓扑、"
+            "外部验证器和评分标准，生成后仍由教师查看验证报告并确认发布。"
         ),
         "matchExplanation": (
-            f"已淘汰 {len(rejected)} 个不满足硬约束的候选；"
-            "进入自定义代码包生成路径，Agent 只生成可审核资产，不直接部署或发布。"
+            f"现有题库中有 {len(rejected)} 个候选不符合当前约束；本轮进入定制草稿路径。"
         ),
         "requiresCustomGeneration": True,
         "generatedDraftUrl": f"/api/v1/challenge-drafts/{draft.id}/generate-custom-package",
         "generatedFiles": files,
     }
+
+
+def _proposal_agent_message(
+    intent: dict[str, Any],
+    source_text: str,
+    top: dict[str, Any],
+    percent: int,
+    mode: str,
+) -> str:
+    category = _human_category(str(intent.get("category") or "WEB"))
+    minutes = int(intent.get("expectedMinutes") or 75)
+    difficulty = _difficulty_label(int(intent.get("difficulty") or 2))
+    return (
+        f"已根据你的最新要求更新题目卡片。当前建议基于{source_text}“{top['title']}”，"
+        f"匹配度约 {percent}%。题目方向为{category}，难度为{difficulty}，"
+        f"学生预计解题时间约 {minutes} 分钟。你可以继续补充知识点、难度、发布时间或学生提交要求。"
+    )
+
+
+def _difficulty_label(value: int) -> str:
+    if value <= 1:
+        return "入门"
+    if value == 2:
+        return "基础"
+    if value == 3:
+        return "中等"
+    if value == 4:
+        return "较难"
+    return "高难"
 
 
 def challenge_candidate_view(
@@ -693,6 +749,9 @@ def _pwn_target_from_text(value: str, text: str) -> str | None:
         return "PWN_SHELLCODE"
     if any(token in value for token in ["FORMAT", "PRINTF", "FSB"]) or any(
         token in lowered for token in ["format string", "printf", "格式化字符串", "任意地址写"]
+    ) or (
+        any(token in lowered for token in ["pwn", "二进制利用"])
+        and any(token in lowered for token in ["字符串相关", "字符串漏洞", "字符串格式化", "字符串安全"])
     ):
         return "PWN_FORMAT"
     if any(token in value for token in ["HEAP", "TCACHE", "FASTBIN"]) or any(
@@ -1733,6 +1792,63 @@ def _int(value: Any, fallback: Any) -> int:
         return int(fallback)
 
 
+GENERIC_TARGETS = {
+    "GENERAL_SECURITY_PRACTICE",
+    "CRYPTOGRAPHY",
+    "FORENSICS",
+    "BINARY_ANALYSIS",
+    "MEMORY_CORRUPTION",
+}
+
+
+def _is_specific_target(target: str) -> bool:
+    value = target.upper()
+    return bool(value) and value not in GENERIC_TARGETS
+
+
+def _default_target_for_category(category: str) -> str:
+    return {
+        "WEB": "INPUT_TRUST_BOUNDARY",
+        "REVERSE": "BINARY_ANALYSIS",
+        "PWN": "MEMORY_CORRUPTION",
+        "CRYPTO": "CRYPTOGRAPHY",
+        "FORENSICS": "FORENSICS",
+        "MISC": "GENERAL_SECURITY_PRACTICE",
+    }.get(category.upper(), "GENERAL_SECURITY_PRACTICE")
+
+
+def _has_difficulty_signal(text: str) -> bool:
+    return any(
+        token in text
+        for token in [
+            "intro",
+            "beginner",
+            "easy",
+            "medium",
+            "intermediate",
+            "advanced",
+            "hard",
+            "入门",
+            "简单",
+            "容易",
+            "基础",
+            "低难度",
+            "中等",
+            "中级",
+            "困难",
+            "高级",
+            "高难",
+        ]
+    )
+
+
+def _has_expected_minutes_signal(text: str) -> bool:
+    return bool(
+        re.search(r"(预计|解题|完成|耗时|时长|限时)?\s*\d{1,3}\s*(?:min|minute|minutes|分钟)", text)
+        or re.search(r"\d{1,2}\s*(?:hour|hours|小时)", text)
+    )
+
+
 def _category_from_text(text: str) -> str:
     if any(
         token in text
@@ -2040,18 +2156,23 @@ def _target_from_text(text: str) -> str:
 
 
 def _difficulty_from_text(text: str) -> int:
-    if any(token in text for token in ["intro", "beginner", "easy", "入门"]):
+    if any(token in text for token in ["intro", "beginner", "easy", "入门", "简单", "容易", "基础", "低难度"]):
         return 1
     if any(token in text for token in ["medium", "intermediate", "中等", "中级"]):
         return 3
-    if any(token in text for token in ["advanced", "hard", "困难"]):
+    if any(token in text for token in ["advanced", "hard", "困难", "高级", "高难"]):
         return 4
     return 2
 
 
 def _minutes_from_text(text: str) -> int | None:
     match = re.search(r"(\d{1,3})\s*(?:min|minute|minutes|分钟)", text)
-    return int(match.group(1)) if match else None
+    if match:
+        return int(match.group(1))
+    hour_match = re.search(r"(\d{1,2})\s*(?:hour|hours|小时)", text)
+    if hour_match:
+        return int(hour_match.group(1)) * 60
+    return None
 
 
 def _tools_from_text(text: str, category: str) -> list[str]:
