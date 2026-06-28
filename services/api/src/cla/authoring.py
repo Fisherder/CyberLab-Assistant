@@ -161,8 +161,8 @@ def search_challenge_candidates(db: Session, draft: models.ChallengeDraft) -> di
             accepted.append(candidate)
         else:
             rejected.append(candidate)
-    accepted.sort(key=lambda item: item["score"], reverse=True)
-    rejected.sort(key=lambda item: item["score"], reverse=True)
+    accepted.sort(key=lambda item: _candidate_sort_key(draft.intent_json, item), reverse=True)
+    rejected.sort(key=lambda item: _candidate_sort_key(draft.intent_json, item), reverse=True)
     accepted = accepted[:10]
     rejected = rejected[:10]
     composition_plan = composition_plan_for_candidates(draft.intent_json, accepted, rejected)
@@ -632,6 +632,25 @@ def _postprocess_course_intent(
 
 def _normalize_target(raw: str, text: str) -> str:
     value = raw.upper().replace("-", "_").replace(" ", "_")
+    if "XSS" in value or "xss" in text or "跨站脚本" in text or "脚本注入" in text:
+        return "XSS"
+    if (
+        "INTEGER_OVERFLOW" in value
+        or "整数溢出" in text
+        or "整型溢出" in text
+        or "类型溢出" in text
+        or ("integer" in text and "overflow" in text)
+    ):
+        return "INTEGER_OVERFLOW"
+    if (
+        value in {"BINARY_ANALYSIS", "REVERSE", "REVERSING"}
+        or value.startswith("REV")
+        or "reverse" in text
+        or "reversing" in text
+        or "逆向" in text
+        or "crackme" in text
+    ):
+        return "BINARY_ANALYSIS"
     if value in {"SQL_INJECTION", "SQLI", "SQL_INJECTION_AUTH", "SQLI_AUTH"}:
         if "auth" in text or "login" in text or "登录" in text or "认证" in text:
             return "SQLI_AUTHENTICATION"
@@ -654,13 +673,34 @@ def _normalize_allowed_tools(
     constraints: dict[str, Any],
 ) -> list[str]:
     scanner_tools = {"sqlmap", "nmap", "nikto", "zap", "owasp-zap", "burp", "burp-suite"}
+    gui_tools = {
+        "firefox",
+        "chrome",
+        "chromium",
+        "browser",
+        "burp suite",
+        "burp-suite",
+        "ida",
+        "ida pro",
+        "ghidra",
+    }
     allow_scanners = bool(constraints.get("allowAutomaticScanners"))
+    explicit_tools = "allowedTools" in constraints
+    cross_category_tools = {
+        "WEB": {"checksec", "file", "gdb", "objdump", "pwntools", "readelf", "strings"},
+        "REVERSE": {"checksec", "curl", "httpie", "pwntools"},
+        "PWN": {"curl", "httpie", "objdump", "readelf", "strings"},
+    }
     normalized: list[str] = []
     for value in values:
         tool = value.strip()
         if not tool:
             continue
         key = tool.lower()
+        if key in gui_tools:
+            continue
+        if not explicit_tools and key in cross_category_tools.get(category, set()):
+            continue
         if key in scanner_tools and not allow_scanners:
             continue
         if tool not in normalized:
@@ -683,6 +723,10 @@ def _normalize_learning_objectives(values: list[str], category: str, text: str) 
         "AUTHENTICATION": "validate-authentication-impact",
         "AUTH_BYPASS": "validate-authentication-impact",
         "PARAMETERIZED_QUERY": "explain-parameterized-query",
+        "XSS": "validate-cross-site-scripting-impact",
+        "CROSS_SITE_SCRIPTING": "validate-cross-site-scripting-impact",
+        "OUTPUT_ENCODING": "explain-output-encoding",
+        "INTEGER_OVERFLOW": "analyze-integer-overflow",
     }
     for value in values:
         key = value.strip().upper().replace("-", "_").replace(" ", "_")
@@ -1087,6 +1131,12 @@ def _proposal_title(
         or "identify-input-trust-boundary" in objectives
     ):
         return "定制 SQL 注入认证绕过靶场" if custom else "SQL 注入登录认证绕过实践"
+    if category == "WEB" and (
+        "XSS" in target
+        or "validate-cross-site-scripting-impact" in objectives
+        or "explain-output-encoding" in objectives
+    ):
+        return "定制 XSS 脚本注入靶场" if custom else "XSS 输出编码与脚本注入实践"
     if category == "WEB" and ("AUTH" in target or "validate-authentication-impact" in objectives):
         return "Web 登录认证边界实践"
     if category == "WEB":
@@ -1094,6 +1144,8 @@ def _proposal_title(
     if category == "REVERSE":
         return "逆向校验逻辑分析实践"
     if category == "PWN":
+        if "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives:
+            return "Pwn 整数溢出利用实践"
         return "二进制内存破坏利用实践"
     if selected:
         return f"{_human_category(category)}综合实践"
@@ -1109,9 +1161,24 @@ def _proposal_summary(intent: dict[str, Any], *, mode: str) -> str:
             f"验证器和评分标准，预计 {minutes} 分钟完成。"
         )
     if category == "WEB":
+        if _is_xss_intent(intent):
+            return (
+                f"面向 XSS 输出编码缺陷的终端实践，学生需要验证脚本注入影响，"
+                f"并说明上下文转义和内容安全策略修复方式，预计 {minutes} 分钟。"
+            )
         return (
             f"面向 Web 登录接口的终端实践，学生需要验证输入处理缺陷造成的认证影响，"
             f"并说明安全修复方式，预计 {minutes} 分钟。"
+        )
+    if category == "PWN" and _is_integer_overflow_intent(intent):
+        return (
+            f"面向 Pwn 整数溢出缺陷的终端实践，学生需要定位数值边界问题、"
+            f"构造可复现实验并说明修复方式，预计 {minutes} 分钟。"
+        )
+    if category == "REVERSE":
+        return (
+            f"面向逆向工程的终端实践，学生需要使用命令行分析工具还原校验逻辑、"
+            f"给出可复现实验证据并说明判断依据，预计 {minutes} 分钟。"
         )
     return f"面向 {_human_category(category)} 的终端实践，学生需要完成验证、解释根因并提交修复建议，预计 {minutes} 分钟。"
 
@@ -1125,6 +1192,13 @@ def _proposal_description(
     category = str(intent.get("category") or "WEB").upper()
     if mode == "GENERATE_CUSTOM":
         if category == "WEB":
+            if _is_xss_intent(intent):
+                return (
+                    "本题将由 Agent 生成一套可审核的 Web XSS 靶场代码包。代码包包含可浏览的目标页面、"
+                    "后端反射或存储输入接口、基础数据初始化、工作区 Dockerfile、拓扑配置、外部 Oracle 和 Rubric 草稿。"
+                    "学生进入题目后会获得独立终端和目标服务地址，先确认服务健康状态，再建立普通输入的安全基线，"
+                    "最后验证输出编码缺陷是否会让非预期脚本进入页面执行上下文。发布前教师需要检查生成代码、验证报告和评分标准。"
+                )
             return (
                 "本题将由 Agent 生成一套可审核的 Web 靶场代码包。代码包包含可浏览的目标页面、"
                 "后端登录接口、SQLite 初始化数据、工作区 Dockerfile、拓扑配置、外部 Oracle 和 Rubric 草稿。"
@@ -1144,11 +1218,30 @@ def _proposal_description(
         else f"本题基于题库候选“{candidate_title}”及兼容蓝图组合生成。"
     )
     if category == "WEB":
+        if _is_xss_intent(intent):
+            return (
+                f"{candidate_text}学生进入题目后会获得独立终端和目标 Web 服务地址，"
+                "先通过健康检查确认服务在线，再围绕页面中可控输入建立普通文本输出基线。"
+                "随后学生需要比较不同输入在 HTML、属性或脚本上下文中的呈现差异，判断输出编码是否存在缺陷。"
+                "题目重点是验证 XSS 影响、解释浏览器执行上下文，并给出上下文敏感编码、模板安全 API 或内容安全策略等修复方案。"
+            )
         return (
             f"{candidate_text}学生进入题目后会获得独立终端和目标 Web 服务地址，"
             "先通过健康检查确认服务在线，再围绕登录接口的 username 与 password 参数建立正常失败基线。"
             "随后学生需要比较不同输入导致的状态码、响应体和认证状态差异，判断认证查询是否受到输入内容影响。"
             "题目重点是识别输入信任边界、解释认证绕过影响，并给出参数化查询或等价安全实现的修复方案。"
+        )
+    if category == "REVERSE":
+        return (
+            f"{candidate_text}学生进入题目后会获得独立终端工作区和目标二进制或源码材料，"
+            "先用 file、strings、objdump、readelf 等工具识别文件结构和关键字符串，再结合 gdb 或脚本验证关键分支。"
+            "题目重点是还原校验逻辑、说明控制流或数据流证据，并给出可复现的验证过程。"
+        )
+    if category == "PWN" and _is_integer_overflow_intent(intent):
+        return (
+            f"{candidate_text}学生进入题目后会获得独立终端工作区和目标程序，"
+            "先观察程序如何处理长度、数量、索引或分配大小等整数输入，再构造边界值验证数值溢出后的行为差异。"
+            "题目重点是解释整数类型、符号转换或乘加运算溢出如何影响内存访问或逻辑判断，并给出安全边界检查与类型选择建议。"
         )
     return (
         f"{candidate_text}学生进入题目后会获得独立终端工作区，根据题目资源完成观察、验证和记录。"
@@ -1159,6 +1252,16 @@ def _proposal_description(
 def _proposal_requirements(intent: dict[str, Any], *, mode: str) -> str:
     category = str(intent.get("category") or "WEB").upper()
     if category == "WEB":
+        if _is_xss_intent(intent):
+            prefix = "生成的靶场草稿发布后，学生需要" if mode == "GENERATE_CUSTOM" else "学生需要"
+            return (
+                f"{prefix}完成以下内容：\n"
+                "1. 确认目标服务在线，并记录一次普通文本输入在页面中的呈现结果。\n"
+                "2. 围绕可控输入构造最小验证样例，说明页面上下文为什么会执行或渲染非预期脚本。\n"
+                "3. 在提交中写清楚根因、验证过程、影响范围和修复建议。\n"
+                "4. 修复建议必须覆盖上下文敏感输出编码、模板安全 API 或内容安全策略等防护点。\n"
+                "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+            )
         prefix = "生成的靶场草稿发布后，学生需要" if mode == "GENERATE_CUSTOM" else "学生需要"
         return (
             f"{prefix}完成以下内容：\n"
@@ -1166,6 +1269,24 @@ def _proposal_requirements(intent: dict[str, Any], *, mode: str) -> str:
             "2. 围绕登录参数构造最小验证请求，说明哪些响应差异能够证明认证边界被输入影响。\n"
             "3. 在提交中写清楚根因、验证过程、影响范围和修复建议。\n"
             "4. 修复建议必须覆盖参数化查询、输入边界控制或等价的安全认证实现。\n"
+            "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+        )
+    if category == "PWN" and _is_integer_overflow_intent(intent):
+        return (
+            "学生需要完成以下内容：\n"
+            "1. 找到与长度、数量、索引、分配大小或符号转换有关的整数边界。\n"
+            "2. 构造可复现输入，说明溢出前后程序行为、内存访问或逻辑判断的差异。\n"
+            "3. 写清楚根因链路、影响判断和验证证据。\n"
+            "4. 修复建议必须覆盖类型选择、范围检查、乘加溢出检查或安全库函数。\n"
+            "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+        )
+    if category == "REVERSE":
+        return (
+            "学生需要完成以下内容：\n"
+            "1. 确认目标文件类型、架构和关键字符串或符号线索。\n"
+            "2. 使用 objdump、readelf、strings、gdb 或脚本还原关键校验逻辑。\n"
+            "3. 提交可复现实验过程，说明输入、输出和判断依据。\n"
+            "4. 写清楚逆向结论、关键控制流或数据流证据。\n"
             "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
         )
     return (
@@ -1184,17 +1305,42 @@ def _proposal_tags(intent: dict[str, Any], selected: list[dict[str, Any]]) -> li
     raw = [_human_category(category)]
     if category == "WEB":
         raw.append("Web安全")
+    if "XSS" in target or "validate-cross-site-scripting-impact" in objectives:
+        raw.append("XSS")
+        raw.append("输出编码")
     if "SQLI" in target or "INPUT_TRUST_BOUNDARY" in target or "identify-input-trust-boundary" in objectives:
         raw.append("SQL注入")
         raw.append("输入信任边界")
     if "AUTH" in target or "validate-authentication-impact" in objectives:
         raw.append("认证")
+    if category == "PWN":
+        raw.append("内存安全")
+    if category == "REVERSE":
+        raw.append("二进制分析")
+    if "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives:
+        raw.append("整数溢出")
     if selected:
         raw.append("题库改写")
     else:
         raw.append("Agent生成")
     raw.extend(["终端实践", "容器环境"])
     return _dedupe_tags(raw)
+
+
+def _is_xss_intent(intent: dict[str, Any]) -> bool:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    return (
+        "XSS" in target
+        or "validate-cross-site-scripting-impact" in objectives
+        or "explain-output-encoding" in objectives
+    )
+
+
+def _is_integer_overflow_intent(intent: dict[str, Any]) -> bool:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    return "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives
 
 
 def _match_explanation(selected: list[dict[str, Any]], rejected: list[dict[str, Any]]) -> str:
@@ -1320,6 +1466,15 @@ def _workspace_from_text(text: str) -> str:
 
 
 def _target_from_text(text: str) -> str:
+    if "xss" in text or "跨站脚本" in text or "脚本注入" in text:
+        return "XSS"
+    if (
+        "整数溢出" in text
+        or "整型溢出" in text
+        or "类型溢出" in text
+        or ("integer" in text and "overflow" in text)
+    ):
+        return "INTEGER_OVERFLOW"
     if ("sql" in text or "sqli" in text or "注入" in text) and (
         "auth" in text or "login" in text or "登录" in text or "认证" in text
     ):
@@ -1346,6 +1501,8 @@ def _target_from_text(text: str) -> str:
 def _difficulty_from_text(text: str) -> int:
     if any(token in text for token in ["intro", "beginner", "easy", "入门"]):
         return 1
+    if any(token in text for token in ["medium", "intermediate", "中等", "中级"]):
+        return 3
     if any(token in text for token in ["advanced", "hard", "困难"]):
         return 4
     return 2
@@ -1381,7 +1538,16 @@ def _objectives_from_text(text: str, category: str) -> list[str]:
     elif category == "FORENSICS":
         objectives = ["提取可验证证据", "还原事件链路", "说明取证结论依据"]
     else:
-        objectives = ["validate-authentication-impact"]
+        objectives = ["识别输入输出信任边界", "构造可复现实验证据"]
+    if "xss" in text or "跨站脚本" in text or "脚本注入" in text:
+        objectives.extend(["validate-cross-site-scripting-impact", "explain-output-encoding"])
+    if (
+        "整数溢出" in text
+        or "整型溢出" in text
+        or "类型溢出" in text
+        or ("integer" in text and "overflow" in text)
+    ):
+        objectives.append("analyze-integer-overflow")
     if "sql" in text or "sqli" in text or "注入" in text:
         objectives.append("identify-input-trust-boundary")
     if "auth" in text or "login" in text or "登录" in text or "认证" in text:
@@ -1405,10 +1571,15 @@ def _candidate_conflicts(
         conflicts.append(f"category:{challenge.category}!={intent.get('category')}")
     if workspace.get("type") != intent.get("workspaceType"):
         conflicts.append(f"workspaceType:{workspace.get('type')}!={intent.get('workspaceType')}")
-    if int(runtime.get("isolationTier", 0)) != int(intent.get("isolationTier", 0)):
-        conflicts.append(
-            f"isolationTier:{runtime.get('isolationTier')}!={intent.get('isolationTier')}"
-        )
+    candidate_tier = int(runtime.get("isolationTier", 1) or 1)
+    allowed_tier = int(
+        constraints.get("maxIsolationTier")
+        or constraints.get("isolationTier")
+        or intent.get("isolationTier", 1)
+        or 1
+    )
+    if candidate_tier > allowed_tier:
+        conflicts.append(f"isolationTier:{candidate_tier}>{allowed_tier}")
     max_difficulty = constraints.get("maxDifficulty")
     if max_difficulty is not None and int(spec.get("difficulty", 99)) > int(max_difficulty):
         conflicts.append(f"difficulty:{spec.get('difficulty')}>{max_difficulty}")
@@ -1417,9 +1588,9 @@ def _candidate_conflicts(
         conflicts.append(f"expectedMinutes:{spec.get('expectedMinutes')}>{max_minutes}")
     if constraints.get("internet") is False and runtime.get("egressPolicy") != "DENY_ALL":
         conflicts.append("egressPolicy:not-deny-all")
-    capabilities = set(workspace.get("capabilities", []))
+    capabilities = {str(item).strip().lower() for item in workspace.get("capabilities", []) if str(item).strip()}
     for tool in intent.get("allowedTools", []):
-        if tool not in capabilities:
+        if capabilities and str(tool).strip().lower() not in capabilities:
             conflicts.append(f"tool:{tool}:missing")
     return conflicts
 
@@ -1449,6 +1620,53 @@ def _candidate_match_reasons(
 
 def _candidate_score(reasons: list[str], conflicts: list[str], search_score: float) -> float:
     return min(1.0, max(0.0, 0.35 + 0.12 * len(reasons) + 0.25 * search_score - 0.2 * len(conflicts)))
+
+
+def _candidate_sort_key(intent: dict[str, Any], candidate: dict[str, Any]) -> tuple[float, float, float, str]:
+    return (
+        _candidate_target_relevance(intent, candidate),
+        float(candidate.get("score", 0.0)),
+        float(candidate.get("searchScore", 0.0)),
+        str(candidate.get("candidateId", "")),
+    )
+
+
+def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any]) -> float:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    signals = candidate.get("retrievalSignals", {})
+    text = " ".join(
+        [
+            str(candidate.get("candidateId", "")),
+            str(candidate.get("title", "")),
+            str(signals.get("compositionGroup", "")),
+            _signal_list_text(signals.get("compatibleGroups", [])),
+            _signal_list_text(signals.get("learningObjectives", [])),
+            _signal_list_text(signals.get("sourceRefs", [])),
+            str(signals.get("generatorTemplate", "")),
+        ]
+    ).lower()
+    if ("XSS" in target or "validate-cross-site-scripting-impact" in objectives) and (
+        "xss" in text or "跨站脚本" in text or "脚本" in text
+    ):
+        return 1.0
+    if ("INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives) and (
+        "integer" in text or "整数" in text or "溢出" in text or "边界" in text
+    ):
+        return 1.0
+    if ("SQLI" in target or "identify-input-trust-boundary" in objectives) and (
+        "sqli" in text or "sql" in text or "注入" in text
+    ):
+        return 1.0
+    if target and target.lower() in text:
+        return 0.8
+    return 0.0
+
+
+def _signal_list_text(value: Any) -> str:
+    if not isinstance(value, list):
+        return ""
+    return " ".join(str(item) for item in value)
 
 
 def _blueprint_retrieval_signals(manifest: dict[str, Any]) -> dict[str, Any]:

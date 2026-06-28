@@ -472,13 +472,13 @@ def _custom_package_files(slug: str, semver: str, brief: str, intent: dict[str, 
     }
     if category == "WEB":
         files["target/Dockerfile"] = "FROM python:3.12-slim\nWORKDIR /app\nCOPY server.py /app/server.py\nCMD [\"python\", \"/app/server.py\"]\n"
-        files["target/server.py"] = _custom_web_target()
+        files["target/server.py"] = _custom_web_target(intent)
     elif category == "REVERSE":
         files["target/Dockerfile"] = "FROM debian:bookworm-slim\nWORKDIR /challenge\nCOPY challenge.c /challenge/challenge.c\nRUN apt-get update && apt-get install -y gcc && gcc -O1 -o challenge challenge.c && rm -rf /var/lib/apt/lists/*\nCMD [\"/bin/sleep\", \"infinity\"]\n"
         files["target/challenge.c"] = _custom_reverse_target()
     else:
         files["target/Dockerfile"] = "FROM debian:bookworm-slim\nWORKDIR /challenge\nCOPY vuln.c /challenge/vuln.c\nRUN apt-get update && apt-get install -y gcc socat && gcc -fno-stack-protector -no-pie -o vuln vuln.c && rm -rf /var/lib/apt/lists/*\nCMD [\"socat\", \"TCP-LISTEN:31337,reuseaddr,fork\", \"EXEC:/challenge/vuln\"]\n"
-        files["target/vuln.c"] = _custom_pwn_target()
+        files["target/vuln.c"] = _custom_pwn_target(intent)
     return files
 
 
@@ -622,7 +622,9 @@ def validate(observation: dict) -> dict:
 """
 
 
-def _custom_web_target() -> str:
+def _custom_web_target(intent: dict[str, Any]) -> str:
+    if _custom_is_xss(intent):
+        return _custom_xss_target()
     return """from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import sqlite3
@@ -716,6 +718,8 @@ if __name__ == "__main__":
 def _custom_title(intent: dict[str, Any], category: str) -> str:
     target = str(intent.get("target") or "").upper()
     objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    if category == "WEB" and _custom_is_xss(intent):
+        return "定制 XSS 脚本注入靶场"
     if category == "WEB" and (
         "SQLI" in target
         or "INPUT_TRUST_BOUNDARY" in target
@@ -726,9 +730,107 @@ def _custom_title(intent: dict[str, Any], category: str) -> str:
         return "定制 Web 安全靶场草稿"
     if category == "REVERSE":
         return "定制逆向工程靶场草稿"
+    if category == "PWN" and _custom_is_integer_overflow(intent):
+        return "定制 Pwn 整数溢出靶场"
     if category == "PWN":
         return "定制 Pwn 靶场草稿"
     return f"定制 {category} 靶场草稿"
+
+
+def _custom_xss_target() -> str:
+    return """from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import html
+import json
+import sqlite3
+from urllib.parse import parse_qs, urlparse
+
+DB_PATH = "/tmp/cla_xss_target.db"
+OBSERVED = False
+
+
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL)")
+        conn.execute("DELETE FROM messages")
+        conn.execute("INSERT INTO messages(content) VALUES (?)", ("hello from cla",))
+
+
+def list_messages():
+    with sqlite3.connect(DB_PATH) as conn:
+        return [row[0] for row in conn.execute("SELECT content FROM messages ORDER BY id DESC LIMIT 10")]
+
+
+def add_message(content):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("INSERT INTO messages(content) VALUES (?)", (content,))
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        global OBSERVED
+        parsed = urlparse(self.path)
+        if parsed.path == "/healthz":
+            self.reply({"ok": True})
+            return
+        if parsed.path == "/oracle":
+            self.reply({"generated_success": OBSERVED})
+            return
+        if parsed.path not in {"/", "/message"}:
+            self.reply({"error": "not_found"}, 404)
+            return
+        params = parse_qs(parsed.query)
+        probe = params.get("probe", [""])[0]
+        if probe:
+            add_message(probe)
+            OBSERVED = "<script" in probe.lower() or "onerror" in probe.lower()
+        self.html()
+
+    def do_POST(self):
+        global OBSERVED
+        length = int(self.headers.get("content-length", "0"))
+        fields = parse_qs(self.rfile.read(length).decode())
+        content = fields.get("message", [""])[0]
+        add_message(content)
+        OBSERVED = "<script" in content.lower() or "onerror" in content.lower()
+        self.reply({"ok": True, "stored": content, "xss_probe_observed": OBSERVED})
+
+    def reply(self, body, status=200):
+        data = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("content-type", "application/json")
+        self.send_header("content-length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def html(self):
+        rows = "".join(f"<li>{item}</li>" for item in list_messages())
+        safe_example = html.escape("普通文本")
+        data = f'''<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>CLA XSS Target</title></head>
+<body>
+<main>
+  <h1>CLA XSS 留言调试页</h1>
+  <p>普通文本示例：{safe_example}</p>
+  <form method="post" action="/message">
+    <label>留言 <input name="message" value="hello"></label>
+    <button>提交</button>
+  </form>
+  <ul>{rows}</ul>
+</main>
+</body>
+</html>'''.encode()
+        self.send_response(200)
+        self.send_header("content-type", "text/html; charset=utf-8")
+        self.send_header("content-length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+
+if __name__ == "__main__":
+    init_db()
+    ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+"""
 
 
 def _custom_reverse_target() -> str:
@@ -747,7 +849,36 @@ int main(int argc, char **argv) {
 """
 
 
-def _custom_pwn_target() -> str:
+def _custom_pwn_target(intent: dict[str, Any]) -> str:
+    if _custom_is_integer_overflow(intent):
+        return """#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    unsigned int count = 0;
+    puts("item count:");
+    if (scanf("%u", &count) != 1) {
+        puts("bad input");
+        return 1;
+    }
+    unsigned int bytes = count * 16;
+    if (bytes < count) {
+        puts("integer boundary crossed");
+        puts("cla-proof");
+        return 0;
+    }
+    printf("allocating %u bytes\\n", bytes);
+    void *buffer = malloc(bytes);
+    if (!buffer) {
+        puts("allocation failed");
+        return 1;
+    }
+    free(buffer);
+    puts("done");
+    return 0;
+}
+"""
     return """#include <stdio.h>
 #include <unistd.h>
 
@@ -763,6 +894,22 @@ int main(void) {
     return 0;
 }
 """
+
+
+def _custom_is_xss(intent: dict[str, Any]) -> bool:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    return (
+        "XSS" in target
+        or "validate-cross-site-scripting-impact" in objectives
+        or "explain-output-encoding" in objectives
+    )
+
+
+def _custom_is_integer_overflow(intent: dict[str, Any]) -> bool:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    return "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives
 
 
 def _stable_id(prefix: str, slug: str) -> str:

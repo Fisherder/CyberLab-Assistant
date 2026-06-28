@@ -357,6 +357,199 @@ def test_authoring_retrieves_blueprints_and_builds_composition_plan(
     assert reverse_draft.json()["courseIntent"]["category"] == "REVERSE"
 
 
+def test_authoring_handles_common_security_briefs_with_target_specific_proposals(
+    client: TestClient,
+    teacher_token: str,
+) -> None:
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+
+    cases = [
+        {
+            "key": "brief-xss",
+            "brief": "创建一个经典的 XSS 漏洞题目",
+            "category": "WEB",
+            "target": "XSS",
+            "title": "XSS 输出编码与脚本注入实践",
+            "tag": "XSS",
+            "candidate": "web_xss",
+            "descriptionTerm": "输出编码",
+        },
+        {
+            "key": "brief-reverse-medium",
+            "brief": "创建一个经典的逆向工程中等难度题目",
+            "category": "REVERSE",
+            "target": "BINARY_ANALYSIS",
+            "difficulty": 3,
+            "title": "逆向校验逻辑分析实践",
+            "tag": "二进制分析",
+            "candidate": "reverse",
+            "descriptionTerm": "objdump",
+        },
+        {
+            "key": "brief-pwn-integer",
+            "brief": "创建一个整数类型溢出的 Pwn 题目",
+            "category": "PWN",
+            "target": "INTEGER_OVERFLOW",
+            "title": "Pwn 整数溢出利用实践",
+            "tag": "整数溢出",
+            "candidate": "pwn_integer",
+            "descriptionTerm": "整数",
+        },
+    ]
+    for case in cases:
+        draft_response = client.post(
+            "/api/v1/challenge-drafts",
+            headers={**auth(teacher_token), "Idempotency-Key": case["key"]},
+            json={
+                "courseId": DEV_IDS["course"],
+                "brief": case["brief"],
+                "constraints": {"internet": False, "maxDifficulty": 5, "workspaceType": "TERMINAL"},
+            },
+        )
+        assert draft_response.status_code == 201, draft_response.text
+        draft = draft_response.json()
+        assert draft["courseIntent"]["category"] == case["category"]
+        assert draft["courseIntent"]["target"] == case["target"]
+        if "difficulty" in case:
+            assert draft["courseIntent"]["difficulty"] == case["difficulty"]
+
+        candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+        assert candidates.status_code == 200, candidates.text
+        body = candidates.json()
+        assert body["candidates"]
+        assert case["candidate"] in body["candidates"][0]["candidateId"]
+        proposal = body["authoringProposal"]
+        assert proposal["mode"] in {"USE_EXISTING", "COMPOSE_EXISTING"}
+        assert proposal["title"] == case["title"]
+        assert case["tag"] in proposal["tags"]
+        assert "UNKNOWN" not in proposal["tags"]
+        assert case["brief"] not in proposal["description"]
+        assert case["descriptionTerm"] in proposal["description"]
+        assert "教师需求" not in proposal["description"]
+
+
+def test_model_parser_gui_tools_and_higher_isolation_still_retrieve_blueprints(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    settings = Settings(
+        database_url="sqlite+pysqlite:///:memory:",
+        dev_mode=True,
+        dev_oidc_secret="test-oidc-secret",
+        terminal_ticket_secret="test-terminal-secret",
+        oracle_shared_secret="test-oracle-secret",
+        internal_service_token="test-internal",
+        gateway_url="ws://gateway.test/ws/terminal",
+        transcript_object_root=str(tmp_path / "transcripts"),
+        challenge_artifact_object_root=str(tmp_path / "challenge-artifacts"),
+        transcript_encryption_key="test-transcript-key",
+        agent_runtime_enabled=True,
+        model_base_url="https://model.example/v1",
+        model_name="deepseekv4flash",
+        model_api_key="test-key",
+    )
+
+    def fake_parse(*args, brief: str, **kwargs) -> agent_runtime.AgentModelResult:
+        if "XSS" in brief:
+            output = {
+                "category": "WEB",
+                "target": "XSS",
+                "difficulty": 2,
+                "expectedMinutes": 30,
+                "workspaceType": "TERMINAL",
+                "isolationTier": 3,
+                "allowedTools": ["Firefox", "Burp Suite", "python", "pwntools"],
+                "learningObjectives": ["XSS", "OUTPUT_ENCODING"],
+                "uncertainFields": [],
+                "confidence": 0.88,
+            }
+        elif "逆向" in brief:
+            output = {
+                "category": "REVERSE",
+                "target": "REV_UNK",
+                "difficulty": 3,
+                "expectedMinutes": 45,
+                "workspaceType": "TERMINAL",
+                "isolationTier": 3,
+                "allowedTools": ["IDA Pro", "Ghidra", "gdb", "pwntools"],
+                "learningObjectives": ["逆向分析", "算法还原"],
+                "uncertainFields": [],
+                "confidence": 0.82,
+            }
+        else:
+            output = {
+                "category": "PWN",
+                "target": "INTEGER_OVERFLOW",
+                "difficulty": 3,
+                "expectedMinutes": 60,
+                "workspaceType": "TERMINAL",
+                "isolationTier": 3,
+                "allowedTools": ["pwntools", "gdb", "objdump", "readelf", "strings"],
+                "learningObjectives": ["INTEGER_OVERFLOW"],
+                "uncertainFields": [],
+                "confidence": 0.81,
+            }
+        return agent_runtime.AgentModelResult(
+            output=output,
+            usage={"provider": "openai-compatible", "model": "deepseekv4flash"},
+        )
+
+    monkeypatch.setattr(agent_runtime, "parse_course_intent_with_model", fake_parse)
+
+    client = TestClient(create_app(settings))
+    teacher_token = create_dev_token(settings, subject="teacher@example.edu", roles=["teacher"])
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+
+    cases = [
+        (
+            "model-xss",
+            "创建一个经典的 XSS 漏洞题目",
+            "XSS",
+            "web_xss",
+            {"firefox", "burp suite", "pwntools"},
+        ),
+        (
+            "model-reverse",
+            "创建一个经典的逆向工程中等难度题目",
+            "BINARY_ANALYSIS",
+            "reverse",
+            {"ida pro", "ghidra", "pwntools"},
+        ),
+        (
+            "model-pwn-int",
+            "创建一个整数类型溢出的 Pwn 题目",
+            "INTEGER_OVERFLOW",
+            "pwn_integer",
+            {"objdump", "readelf", "strings"},
+        ),
+    ]
+    for key, brief, expected_target, expected_candidate, forbidden_tools in cases:
+        draft_response = client.post(
+            "/api/v1/challenge-drafts",
+            headers={**auth(teacher_token), "Idempotency-Key": key},
+            json={
+                "courseId": DEV_IDS["course"],
+                "brief": brief,
+                "constraints": {"internet": False, "maxDifficulty": 5, "workspaceType": "TERMINAL"},
+            },
+        )
+        assert draft_response.status_code == 201, draft_response.text
+        draft = draft_response.json()
+        assert draft["courseIntent"]["target"] == expected_target
+        normalized_tools = {tool.lower() for tool in draft["courseIntent"]["allowedTools"]}
+        assert not (normalized_tools & forbidden_tools)
+
+        candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+        assert candidates.status_code == 200, candidates.text
+        body = candidates.json()
+        assert body["candidates"]
+        assert expected_candidate in body["candidates"][0]["candidateId"]
+        assert body["authoringProposal"]["mode"] in {"USE_EXISTING", "COMPOSE_EXISTING"}
+        assert body["authoringProposal"]["requiresCustomGeneration"] is False
+
+
 def test_custom_package_generation_when_no_candidate_matches(
     client: TestClient,
     teacher_token: str,
@@ -449,6 +642,74 @@ def test_custom_package_generation_when_no_candidate_matches(
     assert followup_body["candidates"]
     assert followup_body["candidates"][0]["candidateId"] == DEV_IDS["challenge_version"]
     assert followup_body["candidates"][0]["candidateId"] != body["challengeVersionId"]
+
+
+def test_custom_package_generation_uses_target_specific_templates(
+    client: TestClient,
+    teacher_token: str,
+    settings: Settings,
+) -> None:
+    cases = [
+        {
+            "key": "custom-xss-template",
+            "brief": "创建一个经典的 XSS 漏洞题目，但要求 1 分钟内完成以触发定制生成。",
+            "expectedTitle": "定制 XSS 脚本注入靶场",
+            "path": "target/server.py",
+            "terms": ["CLA XSS 留言调试页", "CREATE TABLE IF NOT EXISTS messages", "xss_probe_observed"],
+        },
+        {
+            "key": "custom-pwn-integer-template",
+            "brief": "创建一个整数类型溢出的 Pwn 题目，但要求 1 分钟内完成以触发定制生成。",
+            "expectedTitle": "定制 Pwn 整数溢出靶场",
+            "path": "target/vuln.c",
+            "terms": ["integer boundary crossed", "unsigned int bytes = count * 16", "cla-proof"],
+        },
+    ]
+    for case in cases:
+        draft_response = client.post(
+            "/api/v1/challenge-drafts",
+            headers={**auth(teacher_token), "Idempotency-Key": case["key"]},
+            json={
+                "courseId": DEV_IDS["course"],
+                "brief": case["brief"],
+                "constraints": {
+                    "internet": False,
+                    "maxDifficulty": 5,
+                    "maxExpectedMinutes": 1,
+                    "workspaceType": "TERMINAL",
+                },
+            },
+        )
+        assert draft_response.status_code == 201, draft_response.text
+        draft = draft_response.json()
+        candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+        assert candidates.status_code == 200, candidates.text
+        assert candidates.json()["authoringProposal"]["mode"] == "GENERATE_CUSTOM"
+
+        generated = client.post(
+            f"/api/v1/challenge-drafts/{draft['draftId']}/generate-custom-package",
+            headers=auth(teacher_token),
+        )
+        assert generated.status_code == 200, generated.text
+        body = generated.json()
+        assert body["modelDraft"]["title"] == case["expectedTitle"]
+
+        with client.app.state.SessionLocal() as db:
+            artifact = db.scalar(
+                select(models.ChallengeArtifact)
+                .where(models.ChallengeArtifact.version_id == body["challengeVersionId"])
+                .where(models.ChallengeArtifact.artifact_type == "generated-challenge-package")
+            )
+        assert artifact is not None
+        archive_path = Path(settings.challenge_artifact_object_root) / artifact.object_ref.removeprefix(
+            "local://challenge-artifacts/"
+        )
+        with tarfile.open(archive_path) as archive:
+            source = archive.extractfile(case["path"])
+            assert source is not None
+            text = source.read().decode("utf-8")
+        for term in case["terms"]:
+            assert term in text
 
 
 def test_model_brief_parser_and_version_generation_are_audited(tmp_path, monkeypatch) -> None:

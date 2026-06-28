@@ -15,6 +15,7 @@ htmlcov/
 
 node_modules/
 apps/web/.next/
+apps/web/.next-build/
 apps/web/out/
 apps/web/tsconfig.tsbuildinfo
 *.tsbuildinfo

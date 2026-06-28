@@ -67,6 +67,7 @@ def parse_course_intent_with_model(
                     "hardRules": [
                         "一期默认 workspaceType 为 TERMINAL。",
                         "REMOTE_DESKTOP 和 SIMULATED 只能在教师明确要求时出现。",
+                        "allowedTools 只能列终端工具，例如 curl、python、gdb、objdump、readelf、strings、pwntools；不要列浏览器、IDA Pro、Ghidra、Burp Suite 等 GUI 或未启用工具。",
                         "不确定字段必须写入 uncertainFields，不能假装高置信。",
                     ],
                     "brief": _redact_sensitive_text(brief),
