@@ -1,8 +1,26 @@
 # 该文件由 tools/generate_authoritative_blueprint_catalog.py 生成。
-# 请修改生成脚本后重新生成，不要手工维护 300 条条目。
+# 请修改生成脚本后重新生成，不要手工维护条目。
 catalogVersion: 2026.06-authoritative-blueprints
 description: CLA 权威来源题型蓝图库。该文件记录题型、知识点、组合关系和生成模板，不复制外部平台题面、附件、flag 或题解。
 sources:
+- id: owasp-top10
+  name: OWASP Top 10
+  url: https://owasp.org/Top10/
+  domains:
+  - WEB
+  usageNote: 只引用公开风险分类和教学方向，不复制文章原文、示例 payload 或第三方素材。
+- id: owasp-api-security-top10
+  name: OWASP API Security Top 10
+  url: https://owasp.org/API-Security/
+  domains:
+  - WEB
+  usageNote: 只引用 API 风险分类和安全控制点，不复制具体题面或平台内容。
+- id: owasp-juice-shop
+  name: OWASP Juice Shop
+  url: https://owasp.org/www-project-juice-shop/
+  domains:
+  - WEB
+  usageNote: 只引用教学靶场覆盖方向，不复制题面、答案、附件、flag 或平台素材。
 - id: portswigger-web-security-academy
   name: PortSwigger Web Security Academy
   url: https://portswigger.net/web-security/all-labs
@@ -2786,6 +2804,1361 @@ entries:
     parameters:
       archetype: api
       variant: Webhook 签名缺陷
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-csrf-01
+  title: CSRF 与浏览器信任边界：状态变更表单
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: csrf
+  variant: 状态变更表单
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - csrf
+  - 状态变更表单
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 csrf 题型中的 状态变更表单 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: csrf:状态变更表单
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-csrf
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-race
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: csrf
+      variant: 状态变更表单
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-csrf-02
+  title: CSRF 与浏览器信任边界：SameSite 边界
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: csrf
+  variant: SameSite 边界
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - csrf
+  - samesite-边界
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 csrf 题型中的 SameSite 边界 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: csrf:SameSite 边界
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-csrf
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-race
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: csrf
+      variant: SameSite 边界
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-csrf-03
+  title: CSRF 与浏览器信任边界：Referer 校验缺失
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: csrf
+  variant: Referer 校验缺失
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - csrf
+  - referer-校验缺失
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 csrf 题型中的 Referer 校验缺失 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: csrf:Referer 校验缺失
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-csrf
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-race
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: csrf
+      variant: Referer 校验缺失
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-csrf-04
+  title: CSRF 与浏览器信任边界：双提交 Cookie 缺陷
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: csrf
+  variant: 双提交 Cookie 缺陷
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - csrf
+  - 双提交-cookie-缺陷
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 csrf 题型中的 双提交 Cookie 缺陷 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: csrf:双提交 Cookie 缺陷
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-csrf
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-race
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: csrf
+      variant: 双提交 Cookie 缺陷
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-csrf-05
+  title: CSRF 与浏览器信任边界：JSON CSRF
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: csrf
+  variant: JSON CSRF
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - csrf
+  - json-csrf
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 csrf 题型中的 JSON CSRF 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: csrf:JSON CSRF
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-csrf
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-race
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: csrf
+      variant: JSON CSRF
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-deserialization-01
+  title: 反序列化与对象注入：Python Pickle 对象注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  - owasp-webgoat
+  archetype: deserialization
+  variant: Python Pickle 对象注入
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - deserialization
+  - python-pickle-对象注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 deserialization 题型中的 Python Pickle 对象注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: deserialization:Python Pickle 对象注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-deserialization
+    complexity: 2
+    compatibleGroups:
+    - web-file
+    - web-command
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: deserialization
+      variant: Python Pickle 对象注入
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-deserialization-02
+  title: 反序列化与对象注入：Java gadget 链线索
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  - owasp-webgoat
+  archetype: deserialization
+  variant: Java gadget 链线索
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - deserialization
+  - java-gadget-链线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 deserialization 题型中的 Java gadget 链线索 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: deserialization:Java gadget 链线索
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-deserialization
+    complexity: 3
+    compatibleGroups:
+    - web-file
+    - web-command
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: deserialization
+      variant: Java gadget 链线索
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-deserialization-03
+  title: 反序列化与对象注入：PHP Phar 元数据
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  - owasp-webgoat
+  archetype: deserialization
+  variant: PHP Phar 元数据
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - deserialization
+  - php-phar-元数据
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 deserialization 题型中的 PHP Phar 元数据 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: deserialization:PHP Phar 元数据
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-deserialization
+    complexity: 4
+    compatibleGroups:
+    - web-file
+    - web-command
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: deserialization
+      variant: PHP Phar 元数据
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-deserialization-04
+  title: 反序列化与对象注入：签名缺失会话对象
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  - owasp-webgoat
+  archetype: deserialization
+  variant: 签名缺失会话对象
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - deserialization
+  - 签名缺失会话对象
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 deserialization 题型中的 签名缺失会话对象 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: deserialization:签名缺失会话对象
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-deserialization
+    complexity: 5
+    compatibleGroups:
+    - web-file
+    - web-command
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: deserialization
+      variant: 签名缺失会话对象
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-deserialization-05
+  title: 反序列化与对象注入：类型混淆反序列化
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  - owasp-webgoat
+  archetype: deserialization
+  variant: 类型混淆反序列化
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - deserialization
+  - 类型混淆反序列化
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 deserialization 题型中的 类型混淆反序列化 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: deserialization:类型混淆反序列化
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-deserialization
+    complexity: 1
+    compatibleGroups:
+    - web-file
+    - web-command
+    - web-auth
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: deserialization
+      variant: 类型混淆反序列化
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-command-01
+  title: 命令注入与服务端执行：Shell 拼接执行
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: command
+  variant: Shell 拼接执行
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - command
+  - shell-拼接执行
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 command 题型中的 Shell 拼接执行 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: command:Shell 拼接执行
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-command
+    complexity: 3
+    compatibleGroups:
+    - web-file
+    - web-ssti
+    - web-nosql
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: command
+      variant: Shell 拼接执行
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-command-02
+  title: 命令注入与服务端执行：参数注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: command
+  variant: 参数注入
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - command
+  - 参数注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 command 题型中的 参数注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: command:参数注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-command
+    complexity: 4
+    compatibleGroups:
+    - web-file
+    - web-ssti
+    - web-nosql
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: command
+      variant: 参数注入
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-command-03
+  title: 命令注入与服务端执行：环境变量污染
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: command
+  variant: 环境变量污染
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - command
+  - 环境变量污染
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 command 题型中的 环境变量污染 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: command:环境变量污染
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-command
+    complexity: 5
+    compatibleGroups:
+    - web-file
+    - web-ssti
+    - web-nosql
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: command
+      variant: 环境变量污染
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-command-04
+  title: 命令注入与服务端执行：换行命令分隔
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: command
+  variant: 换行命令分隔
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - command
+  - 换行命令分隔
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 command 题型中的 换行命令分隔 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: command:换行命令分隔
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-command
+    complexity: 1
+    compatibleGroups:
+    - web-file
+    - web-ssti
+    - web-nosql
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: command
+      variant: 换行命令分隔
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-command-05
+  title: 命令注入与服务端执行：文件名命令注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-top10
+  archetype: command
+  variant: 文件名命令注入
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - command
+  - 文件名命令注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 command 题型中的 文件名命令注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: command:文件名命令注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-command
+    complexity: 2
+    compatibleGroups:
+    - web-file
+    - web-ssti
+    - web-nosql
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: command
+      variant: 文件名命令注入
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-nosql-01
+  title: NoSQL 注入与查询对象：Mongo 查询对象注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: nosql
+  variant: Mongo 查询对象注入
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - nosql
+  - mongo-查询对象注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 nosql 题型中的 Mongo 查询对象注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: nosql:Mongo 查询对象注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-nosql
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-sqli
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: nosql
+      variant: Mongo 查询对象注入
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-nosql-02
+  title: NoSQL 注入与查询对象：正则条件绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: nosql
+  variant: 正则条件绕过
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - nosql
+  - 正则条件绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 nosql 题型中的 正则条件绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: nosql:正则条件绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-nosql
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-sqli
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: nosql
+      variant: 正则条件绕过
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-nosql-03
+  title: NoSQL 注入与查询对象：JSON 类型混淆
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: nosql
+  variant: JSON 类型混淆
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - nosql
+  - json-类型混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 nosql 题型中的 JSON 类型混淆 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: nosql:JSON 类型混淆
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-nosql
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-sqli
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: nosql
+      variant: JSON 类型混淆
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-nosql-04
+  title: NoSQL 注入与查询对象：聚合管道滥用
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: nosql
+  variant: 聚合管道滥用
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - nosql
+  - 聚合管道滥用
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 nosql 题型中的 聚合管道滥用 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: nosql:聚合管道滥用
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-nosql
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-sqli
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: nosql
+      variant: 聚合管道滥用
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-nosql-05
+  title: NoSQL 注入与查询对象：认证查询绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: nosql
+  variant: 认证查询绕过
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - nosql
+  - 认证查询绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 nosql 题型中的 认证查询绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: nosql:认证查询绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-nosql
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-sqli
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: nosql
+      variant: 认证查询绕过
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-jwt-01
+  title: JWT 与身份令牌安全：none 算法拒绝
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: jwt
+  variant: none 算法拒绝
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - jwt
+  - none-算法拒绝
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 jwt 题型中的 none 算法拒绝 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: jwt:none 算法拒绝
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-jwt
+    complexity: 5
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: jwt
+      variant: none 算法拒绝
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-jwt-02
+  title: JWT 与身份令牌安全：弱密钥爆破
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: jwt
+  variant: 弱密钥爆破
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - WEB
+  - jwt
+  - 弱密钥爆破
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 jwt 题型中的 弱密钥爆破 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: jwt:弱密钥爆破
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-jwt
+    complexity: 1
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: jwt
+      variant: 弱密钥爆破
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-jwt-03
+  title: JWT 与身份令牌安全：kid 路径注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: jwt
+  variant: kid 路径注入
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - WEB
+  - jwt
+  - kid-路径注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 jwt 题型中的 kid 路径注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: jwt:kid 路径注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-jwt
+    complexity: 2
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: jwt
+      variant: kid 路径注入
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-jwt-04
+  title: JWT 与身份令牌安全：JWK 注入
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: jwt
+  variant: JWK 注入
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - WEB
+  - jwt
+  - jwk-注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 jwt 题型中的 JWK 注入 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: jwt:JWK 注入
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-jwt
+    complexity: 3
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: jwt
+      variant: JWK 注入
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: web-jwt-05
+  title: JWT 与身份令牌安全：声明边界绕过
+  category: WEB
+  sourceRefs:
+  - portswigger-web-security-academy
+  - owasp-api-security-top10
+  archetype: jwt
+  variant: 声明边界绕过
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - WEB
+  - jwt
+  - 声明边界绕过
+  - authoritative-blueprint
+  learningObjectives:
+  - 定位输入信任边界
+  - 构造最小验证请求
+  - 解释漏洞影响和修复建议
+  - 掌握 jwt 题型中的 声明边界绕过 变体
+  prerequisites:
+  - HTTP 基础
+  - 浏览器请求模型
+  - 服务端输入处理
+  workspaceCapabilities:
+  - curl
+  - python
+  components:
+    target: HTTP 服务 + 数据存储/业务状态
+    vulnerability: jwt:声明边界绕过
+    oracle: 外部 HTTP 观测与服务端状态检查
+    workspace: 受限终端工具容器
+  composition:
+    group: web-jwt
+    complexity: 4
+    compatibleGroups:
+    - web-auth
+    - web-api
+    - web-access
+    canBeSubChallenge: true
+    combinationNotes: 可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。
+  generator:
+    kind: parameterized-template
+    template: web-python-service
+    parameters:
+      archetype: jwt
+      variant: 声明边界绕过
       difficulty: 4
   safety:
     noExternalInternetRequired: true
@@ -16917,6 +18290,1226 @@ entries:
       archetype: encoding
       variant: 多层编码识别
       difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-cloud-01
+  title: 云服务与身份配置：IAM 最小权限
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: cloud
+  variant: IAM 最小权限
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - cloud
+  - iam-最小权限
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 cloud 题型中的 IAM 最小权限 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: cloud:IAM 最小权限
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-cloud
+    complexity: 1
+    compatibleGroups:
+    - misc-container
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: cloud
+      variant: IAM 最小权限
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-cloud-02
+  title: 云服务与身份配置：对象存储公开读
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: cloud
+  variant: 对象存储公开读
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - cloud
+  - 对象存储公开读
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 cloud 题型中的 对象存储公开读 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: cloud:对象存储公开读
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-cloud
+    complexity: 2
+    compatibleGroups:
+    - misc-container
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: cloud
+      variant: 对象存储公开读
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-cloud-03
+  title: 云服务与身份配置：元数据凭据边界
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: cloud
+  variant: 元数据凭据边界
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - cloud
+  - 元数据凭据边界
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 cloud 题型中的 元数据凭据边界 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: cloud:元数据凭据边界
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-cloud
+    complexity: 3
+    compatibleGroups:
+    - misc-container
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: cloud
+      variant: 元数据凭据边界
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-cloud-04
+  title: 云服务与身份配置：临时凭证过期
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: cloud
+  variant: 临时凭证过期
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - cloud
+  - 临时凭证过期
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 cloud 题型中的 临时凭证过期 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: cloud:临时凭证过期
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-cloud
+    complexity: 4
+    compatibleGroups:
+    - misc-container
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: cloud
+      variant: 临时凭证过期
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-cloud-05
+  title: 云服务与身份配置：策略条件误配
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: cloud
+  variant: 策略条件误配
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - cloud
+  - 策略条件误配
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 cloud 题型中的 策略条件误配 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: cloud:策略条件误配
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-cloud
+    complexity: 5
+    compatibleGroups:
+    - misc-container
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: cloud
+      variant: 策略条件误配
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-k8s-01
+  title: Kubernetes 与容器编排安全：ServiceAccount Token 暴露
+  category: MISC
+  sourceRefs:
+  - pwn-college
+  - root-me-challenges
+  archetype: k8s
+  variant: ServiceAccount Token 暴露
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - k8s
+  - serviceaccount-token-暴露
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 k8s 题型中的 ServiceAccount Token 暴露 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: k8s:ServiceAccount Token 暴露
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-k8s
+    complexity: 2
+    compatibleGroups:
+    - misc-container
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: k8s
+      variant: ServiceAccount Token 暴露
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-k8s-02
+  title: Kubernetes 与容器编排安全：RBAC 过宽
+  category: MISC
+  sourceRefs:
+  - pwn-college
+  - root-me-challenges
+  archetype: k8s
+  variant: RBAC 过宽
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - k8s
+  - rbac-过宽
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 k8s 题型中的 RBAC 过宽 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: k8s:RBAC 过宽
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-k8s
+    complexity: 3
+    compatibleGroups:
+    - misc-container
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: k8s
+      variant: RBAC 过宽
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-k8s-03
+  title: Kubernetes 与容器编排安全：Secret 错误挂载
+  category: MISC
+  sourceRefs:
+  - pwn-college
+  - root-me-challenges
+  archetype: k8s
+  variant: Secret 错误挂载
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - k8s
+  - secret-错误挂载
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 k8s 题型中的 Secret 错误挂载 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: k8s:Secret 错误挂载
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-k8s
+    complexity: 4
+    compatibleGroups:
+    - misc-container
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: k8s
+      variant: Secret 错误挂载
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-k8s-04
+  title: Kubernetes 与容器编排安全：NetworkPolicy 缺失
+  category: MISC
+  sourceRefs:
+  - pwn-college
+  - root-me-challenges
+  archetype: k8s
+  variant: NetworkPolicy 缺失
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - k8s
+  - networkpolicy-缺失
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 k8s 题型中的 NetworkPolicy 缺失 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: k8s:NetworkPolicy 缺失
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-k8s
+    complexity: 5
+    compatibleGroups:
+    - misc-container
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: k8s
+      variant: NetworkPolicy 缺失
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-k8s-05
+  title: Kubernetes 与容器编排安全：镜像准入失败
+  category: MISC
+  sourceRefs:
+  - pwn-college
+  - root-me-challenges
+  archetype: k8s
+  variant: 镜像准入失败
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - k8s
+  - 镜像准入失败
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 k8s 题型中的 镜像准入失败 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: k8s:镜像准入失败
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-k8s
+    complexity: 1
+    compatibleGroups:
+    - misc-container
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: k8s
+      variant: 镜像准入失败
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-ad-01
+  title: Active Directory 与企业身份基础：Kerberos 票据基础
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: ad
+  variant: Kerberos 票据基础
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - ad
+  - kerberos-票据基础
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 ad 题型中的 Kerberos 票据基础 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: ad:Kerberos 票据基础
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-ad
+    complexity: 3
+    compatibleGroups:
+    - misc-network
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: ad
+      variant: Kerberos 票据基础
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-ad-02
+  title: Active Directory 与企业身份基础：LDAP 查询过滤
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: ad
+  variant: LDAP 查询过滤
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - ad
+  - ldap-查询过滤
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 ad 题型中的 LDAP 查询过滤 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: ad:LDAP 查询过滤
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-ad
+    complexity: 4
+    compatibleGroups:
+    - misc-network
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: ad
+      variant: LDAP 查询过滤
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-ad-03
+  title: Active Directory 与企业身份基础：弱口令喷洒日志
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: ad
+  variant: 弱口令喷洒日志
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - ad
+  - 弱口令喷洒日志
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 ad 题型中的 弱口令喷洒日志 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: ad:弱口令喷洒日志
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-ad
+    complexity: 5
+    compatibleGroups:
+    - misc-network
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: ad
+      variant: 弱口令喷洒日志
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-ad-04
+  title: Active Directory 与企业身份基础：组权限继承
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: ad
+  variant: 组权限继承
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - ad
+  - 组权限继承
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 ad 题型中的 组权限继承 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: ad:组权限继承
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-ad
+    complexity: 1
+    compatibleGroups:
+    - misc-network
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: ad
+      variant: 组权限继承
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-ad-05
+  title: Active Directory 与企业身份基础：共享目录线索
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: ad
+  variant: 共享目录线索
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - ad
+  - 共享目录线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 ad 题型中的 共享目录线索 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: ad:共享目录线索
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-ad
+    complexity: 2
+    compatibleGroups:
+    - misc-network
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: ad
+      variant: 共享目录线索
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-supply-01
+  title: 软件供应链与依赖安全：依赖锁文件漂移
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: supply
+  variant: 依赖锁文件漂移
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - supply
+  - 依赖锁文件漂移
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 supply 题型中的 依赖锁文件漂移 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: supply:依赖锁文件漂移
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-supply
+    complexity: 4
+    compatibleGroups:
+    - misc-container
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: supply
+      variant: 依赖锁文件漂移
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-supply-02
+  title: 软件供应链与依赖安全：恶意安装脚本
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: supply
+  variant: 恶意安装脚本
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - supply
+  - 恶意安装脚本
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 supply 题型中的 恶意安装脚本 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: supply:恶意安装脚本
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-supply
+    complexity: 5
+    compatibleGroups:
+    - misc-container
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: supply
+      variant: 恶意安装脚本
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-supply-03
+  title: 软件供应链与依赖安全：SBOM 组件定位
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: supply
+  variant: SBOM 组件定位
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - supply
+  - sbom-组件定位
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 supply 题型中的 SBOM 组件定位 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: supply:SBOM 组件定位
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-supply
+    complexity: 1
+    compatibleGroups:
+    - misc-container
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: supply
+      variant: SBOM 组件定位
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-supply-04
+  title: 软件供应链与依赖安全：镜像 digest 校验
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: supply
+  variant: 镜像 digest 校验
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - supply
+  - 镜像-digest-校验
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 supply 题型中的 镜像 digest 校验 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: supply:镜像 digest 校验
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-supply
+    complexity: 2
+    compatibleGroups:
+    - misc-container
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: supply
+      variant: 镜像 digest 校验
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-supply-05
+  title: 软件供应链与依赖安全：CI Secret 暴露痕迹
+  category: MISC
+  sourceRefs:
+  - root-me-challenges
+  - ctf101
+  archetype: supply
+  variant: CI Secret 暴露痕迹
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - supply
+  - ci-secret-暴露痕迹
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 supply 题型中的 CI Secret 暴露痕迹 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: supply:CI Secret 暴露痕迹
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-supply
+    complexity: 3
+    compatibleGroups:
+    - misc-container
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: supply
+      variant: CI Secret 暴露痕迹
+      difficulty: 3
   safety:
     noExternalInternetRequired: true
     noDynamicSecretInPrompt: true

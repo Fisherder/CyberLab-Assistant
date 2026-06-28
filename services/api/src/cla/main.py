@@ -25,6 +25,7 @@ from cla.authoring import (
     import_local_challenge_packages,
     list_challenge_registry,
     parse_course_intent_for_draft,
+    run_three_layer_authoring_pipeline,
     search_challenge_candidates,
     validate_selected_challenge_package,
 )
@@ -44,6 +45,8 @@ from cla.schemas import (
     AssignmentLiveView,
     AssignmentView,
     AuthTokenResponse,
+    AuthoringPipelineRunRequest,
+    AuthoringPipelineRunView,
     AttemptResponse,
     AttemptView,
     ChallengeApprovalView,
@@ -1074,6 +1077,52 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "count": len(visible_items),
             "items": [_challenge_bank_item_view(db, item) for item in visible_items],
         }
+
+    @app.post(
+        "/api/v1/teacher/challenge-bank/authoring-run",
+        response_model=AuthoringPipelineRunView,
+    )
+    def run_challenge_bank_authoring_pipeline(
+        body: AuthoringPipelineRunRequest,
+        principal: Principal = Depends(get_principal),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        course = _get_course_or_404(db, body.courseId)
+        _require_course_same_tenant(principal, course)
+        require_course_role(db, principal, course.id, {"TEACHER", "TA"})
+        version = _get_published_challenge_version_or_error(db, principal, body.challengeVersionId)
+        challenge = db.get(models.Challenge, version.challenge_id)
+        if challenge is None:
+            raise api_error(404, "NOT_FOUND", "Challenge not found")
+        manifest = challenge_manifest(version, challenge)
+        result = run_three_layer_authoring_pipeline(
+            challenge=challenge,
+            version=version,
+            manifest=manifest,
+            preview={
+                "courseId": body.courseId,
+                "challengeVersionId": body.challengeVersionId,
+                "title": body.title,
+                "summary": body.summary,
+                "description": body.description,
+                "requirements": body.requirements,
+                "tags": _normalized_tags(body.tags),
+                "publish": body.publish,
+                "publishWindow": jsonable_encoder(body.publishWindow) if body.publishWindow else None,
+            },
+            layer_one_prompt=body.layerOnePrompt,
+            candidate_context=body.candidateContext,
+        )
+        _audit(
+            db,
+            principal,
+            "challenge_bank.authoring_run",
+            "challenge_version",
+            version.id,
+            "ALLOW",
+            after_ref=result["status"],
+        )
+        return result
 
     @app.post(
         "/api/v1/teacher/challenge-bank",

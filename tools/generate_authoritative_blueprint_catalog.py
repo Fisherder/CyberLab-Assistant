@@ -17,6 +17,27 @@ class NoAliasDumper(yaml.SafeDumper):
 
 SOURCES = [
     {
+        "id": "owasp-top10",
+        "name": "OWASP Top 10",
+        "url": "https://owasp.org/Top10/",
+        "domains": ["WEB"],
+        "usageNote": "只引用公开风险分类和教学方向，不复制文章原文、示例 payload 或第三方素材。",
+    },
+    {
+        "id": "owasp-api-security-top10",
+        "name": "OWASP API Security Top 10",
+        "url": "https://owasp.org/API-Security/",
+        "domains": ["WEB"],
+        "usageNote": "只引用 API 风险分类和安全控制点，不复制具体题面或平台内容。",
+    },
+    {
+        "id": "owasp-juice-shop",
+        "name": "OWASP Juice Shop",
+        "url": "https://owasp.org/www-project-juice-shop/",
+        "domains": ["WEB"],
+        "usageNote": "只引用教学靶场覆盖方向，不复制题面、答案、附件、flag 或平台素材。",
+    },
+    {
         "id": "portswigger-web-security-academy",
         "name": "PortSwigger Web Security Academy",
         "url": "https://portswigger.net/web-security/all-labs",
@@ -114,6 +135,11 @@ WEB_ARCHETYPES = [
     ("xxe", "XML 与解析器安全", ["portswigger-web-security-academy", "owasp-webgoat"], ["curl", "python"]),
     ("race", "竞态、缓存与业务逻辑", ["portswigger-web-security-academy"], ["curl", "python"]),
     ("api", "API 与云原生 Web 安全", ["portswigger-web-security-academy", "picoctf-practice"], ["curl", "python"]),
+    ("csrf", "CSRF 与浏览器信任边界", ["portswigger-web-security-academy", "owasp-top10"], ["curl", "python"]),
+    ("deserialization", "反序列化与对象注入", ["portswigger-web-security-academy", "owasp-top10", "owasp-webgoat"], ["curl", "python"]),
+    ("command", "命令注入与服务端执行", ["portswigger-web-security-academy", "owasp-top10"], ["curl", "python"]),
+    ("nosql", "NoSQL 注入与查询对象", ["portswigger-web-security-academy", "owasp-api-security-top10"], ["curl", "python"]),
+    ("jwt", "JWT 与身份令牌安全", ["portswigger-web-security-academy", "owasp-api-security-top10"], ["curl", "python"]),
 ]
 
 WEB_VARIANTS = {
@@ -127,6 +153,11 @@ WEB_VARIANTS = {
     "xxe": ["本地文件读取", "盲 XXE 回连", "XInclude 注入", "JSON/XML 差异解析", "实体膨胀防护"],
     "race": ["优惠券竞态", "库存扣减竞态", "Web Cache Poisoning", "Cache Deception", "状态机跳步"],
     "api": ["GraphQL 过度暴露", "Mass Assignment", "CORS 错配", "速率限制绕过", "Webhook 签名缺陷"],
+    "csrf": ["状态变更表单", "SameSite 边界", "Referer 校验缺失", "双提交 Cookie 缺陷", "JSON CSRF"],
+    "deserialization": ["Python Pickle 对象注入", "Java gadget 链线索", "PHP Phar 元数据", "签名缺失会话对象", "类型混淆反序列化"],
+    "command": ["Shell 拼接执行", "参数注入", "环境变量污染", "换行命令分隔", "文件名命令注入"],
+    "nosql": ["Mongo 查询对象注入", "正则条件绕过", "JSON 类型混淆", "聚合管道滥用", "认证查询绕过"],
+    "jwt": ["none 算法拒绝", "弱密钥爆破", "kid 路径注入", "JWK 注入", "声明边界绕过"],
 }
 
 REVERSE_ARCHETYPES = [
@@ -245,6 +276,10 @@ MISC_ARCHETYPES = [
     ("data", "数据格式与结构化处理", ["picoctf-practice", "ctf101"]),
     ("network", "网络基础工具", ["picoctf-practice", "overthewire-wargames", "ctf101"]),
     ("encoding", "通用编码解码", ["picoctf-practice", "ctf101"]),
+    ("cloud", "云服务与身份配置", ["root-me-challenges", "ctf101"]),
+    ("k8s", "Kubernetes 与容器编排安全", ["pwn-college", "root-me-challenges"]),
+    ("ad", "Active Directory 与企业身份基础", ["root-me-challenges", "ctf101"]),
+    ("supply", "软件供应链与依赖安全", ["root-me-challenges", "ctf101"]),
 ]
 
 MISC_VARIANTS = {
@@ -258,6 +293,10 @@ MISC_VARIANTS = {
     "data": ["JSON jq 查询", "CSV 聚合", "YAML 配置阅读", "SQLite 查询", "二进制结构解析"],
     "network": ["nc 交互", "端口探测", "HTTP Header 观察", "DNS 查询", "TLS 证书查看"],
     "encoding": ["Base64 解码", "URL 编码", "Hex 转换", "二进制转文本", "多层编码识别"],
+    "cloud": ["IAM 最小权限", "对象存储公开读", "元数据凭据边界", "临时凭证过期", "策略条件误配"],
+    "k8s": ["ServiceAccount Token 暴露", "RBAC 过宽", "Secret 错误挂载", "NetworkPolicy 缺失", "镜像准入失败"],
+    "ad": ["Kerberos 票据基础", "LDAP 查询过滤", "弱口令喷洒日志", "组权限继承", "共享目录线索"],
+    "supply": ["依赖锁文件漂移", "恶意安装脚本", "SBOM 组件定位", "镜像 digest 校验", "CI Secret 暴露痕迹"],
 }
 
 
@@ -290,7 +329,7 @@ def main() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(
         "# 该文件由 tools/generate_authoritative_blueprint_catalog.py 生成。\n"
-        "# 请修改生成脚本后重新生成，不要手工维护 300 条条目。\n"
+        "# 请修改生成脚本后重新生成，不要手工维护条目。\n"
         + yaml.dump(
             catalog,
             Dumper=NoAliasDumper,
@@ -467,6 +506,11 @@ def _compatible_groups(category: str, slug: str) -> list[str]:
         "xxe": ["web-ssrf", "web-file", "web-api"],
         "race": ["web-auth", "web-api", "web-access"],
         "api": ["web-auth", "web-access", "web-race"],
+        "csrf": ["web-auth", "web-race", "web-api"],
+        "deserialization": ["web-file", "web-command", "web-auth"],
+        "command": ["web-file", "web-ssti", "web-nosql"],
+        "nosql": ["web-auth", "web-api", "web-sqli"],
+        "jwt": ["web-auth", "web-api", "web-access"],
     }
     reverse = {
         "strings": ["reverse-keygen", "reverse-crypto"],
@@ -527,6 +571,10 @@ def _compatible_groups(category: str, slug: str) -> list[str]:
         "data": ["misc-scripting", "crypto-encoding"],
         "network": ["forensics-pcap", "web-api"],
         "encoding": ["crypto-encoding", "misc-data"],
+        "cloud": ["misc-container", "misc-network"],
+        "k8s": ["misc-container", "misc-permission"],
+        "ad": ["misc-network", "misc-regex"],
+        "supply": ["misc-container", "forensics-logs"],
     }
     return {
         "WEB": web,

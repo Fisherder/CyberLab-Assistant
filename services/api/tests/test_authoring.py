@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from cla import agent_runtime
 from cla import models
+from cla.challenge_catalog import catalog_entries, load_blueprint_catalog
 from cla.main import create_app
 from cla.security import create_dev_token
 from cla.seed import DEV_IDS
@@ -276,16 +277,16 @@ def test_authoritative_blueprint_catalog_imports_large_database(
     assert imported.status_code == 202, imported.text
     body = imported.json()
     assert body["skipped"] == []
-    assert len(body["imported"]) == 300
+    assert len(body["imported"]) == 345
     assert body["summary"]["valid"] is True
-    assert body["summary"]["total"] == 300
+    assert body["summary"]["total"] == 345
     assert body["summary"]["counts"] == {
-        "WEB": 50,
+        "WEB": 75,
         "REVERSE": 50,
         "PWN": 50,
         "CRYPTO": 50,
         "FORENSICS": 50,
-        "MISC": 50,
+        "MISC": 70,
     }
 
     validation = client.get(
@@ -307,10 +308,10 @@ def test_authoritative_blueprint_catalog_imports_large_database(
         assert counts == {
             "CRYPTO": 50,
             "FORENSICS": 50,
-            "MISC": 50,
+            "MISC": 70,
             "PWN": 50,
             "REVERSE": 50,
-            "WEB": 50,
+            "WEB": 75,
         }
         assert (
             db.scalar(
@@ -318,7 +319,7 @@ def test_authoritative_blueprint_catalog_imports_large_database(
                     models.ChallengeArtifact.artifact_type == "blueprint-catalog-entry"
                 )
             )
-            == 300
+            == 345
         )
 
 
@@ -786,6 +787,74 @@ def test_authoring_common_security_topic_matrix_retrieves_blueprints(
         assert proposal["requiresCustomGeneration"] is False, key
         assert "UNKNOWN" not in proposal["tags"], key
         assert expected_tag in "".join(proposal["tags"]) + proposal["title"], key
+
+
+def test_authoring_entire_authoritative_catalog_is_retrievable(
+    client: TestClient,
+    teacher_token: str,
+) -> None:
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+    entries = catalog_entries(load_blueprint_catalog())
+    assert len(entries) >= 345
+
+    category_label = {
+        "WEB": "Web 安全",
+        "REVERSE": "逆向工程",
+        "PWN": "Pwn",
+        "CRYPTO": "密码学",
+        "FORENSICS": "数字取证",
+        "MISC": "通用技能",
+    }
+    failures: list[str] = []
+    for entry in entries:
+        entry_id = str(entry["id"])
+        category = str(entry["category"])
+        brief = (
+            f"创建一个{category_label[category]}题目：{entry['title']}。"
+            f"难度 {entry['difficulty']}，预计 {entry['expectedMinutes']} 分钟，终端实践。"
+        )
+        draft_response = client.post(
+            "/api/v1/challenge-drafts",
+            headers={**auth(teacher_token), "Idempotency-Key": f"catalog-full-{entry_id}"},
+            json={
+                "courseId": DEV_IDS["course"],
+                "brief": brief,
+                "constraints": {
+                    "internet": False,
+                    "maxDifficulty": 5,
+                    "maxIsolationTier": 3,
+                    "workspaceType": "TERMINAL",
+                },
+            },
+        )
+        if draft_response.status_code != 201:
+            failures.append(f"{entry_id}: draft {draft_response.status_code} {draft_response.text}")
+            continue
+        draft = draft_response.json()
+        if draft["courseIntent"]["category"] != category:
+            failures.append(f"{entry_id}: category {draft['courseIntent']['category']} != {category}")
+            continue
+
+        candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+        if candidates.status_code != 200:
+            failures.append(f"{entry_id}: candidates {candidates.status_code} {candidates.text}")
+            continue
+        body = candidates.json()
+        if not body["candidates"]:
+            failures.append(f"{entry_id}: no candidates")
+            continue
+        candidate_id = body["candidates"][0]["candidateId"].lower()
+        expected = entry_id.replace("-", "_").lower()
+        if expected not in candidate_id:
+            failures.append(f"{entry_id}: top {candidate_id}")
+        proposal = body["authoringProposal"]
+        if proposal["requiresCustomGeneration"]:
+            failures.append(f"{entry_id}: unexpected custom generation")
+        if "UNKNOWN" in proposal["tags"]:
+            failures.append(f"{entry_id}: UNKNOWN tag")
+
+    assert failures == [], "\n".join(failures)
 
 
 def test_custom_package_generation_when_no_candidate_matches(

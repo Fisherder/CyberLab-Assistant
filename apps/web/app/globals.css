@@ -940,8 +940,17 @@ input {
   border: 1px solid color-mix(in srgb, var(--good) 34%, var(--line));
   border-radius: 8px;
   color: var(--good);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 12px;
   padding: 10px 12px;
+}
+
+.status-note a {
+  color: var(--good);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .appeal-textarea {
@@ -1758,6 +1767,119 @@ input {
   padding: 10px;
 }
 
+.authoring-pipeline-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.pipeline-summary {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.pipeline-timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.pipeline-step {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.pipeline-step.needs_revision {
+  background: color-mix(in srgb, var(--warning) 10%, var(--panel));
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--line));
+}
+
+.pipeline-step.running,
+.pipeline-step.waiting {
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+}
+
+.pipeline-step-head {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.pipeline-step-head strong {
+  min-width: 0;
+}
+
+.pipeline-step-head span {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pipeline-step p,
+.pipeline-step li {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.pipeline-step ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.pipeline-artifacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pipeline-artifacts code {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 3px 6px;
+}
+
+.pipeline-result-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pipeline-result-grid > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.pipeline-result-grid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1100px) {
   .shell {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -1820,6 +1942,19 @@ input {
 
   .agent-chat-panel {
     position: static;
+  }
+
+  .pipeline-step-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .pipeline-step-head span {
+    grid-column: 2;
+    white-space: normal;
+  }
+
+  .pipeline-result-grid {
+    grid-template-columns: 1fr;
   }
 
   .session-table-head,

@@ -238,6 +238,42 @@ class CreateChallengeBankItemRequest(BaseModel):
     publishWindow: ChallengeBankPublishWindow | None = None
 
 
+class AuthoringPipelineRunRequest(BaseModel):
+    courseId: str = Field(min_length=1, max_length=64)
+    challengeVersionId: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=240)
+    summary: str = Field(min_length=1, max_length=1000)
+    description: str = Field(min_length=1, max_length=8000)
+    requirements: str = Field(min_length=1, max_length=8000)
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    layerOnePrompt: str = Field(default="", max_length=12000)
+    candidateContext: dict = Field(default_factory=dict)
+    publish: bool = False
+    publishWindow: ChallengeBankPublishWindow | None = None
+
+
+class AuthoringPipelineStepView(BaseModel):
+    layer: str
+    agent: str
+    iteration: int
+    status: str
+    title: str
+    detail: str
+    artifacts: list[str] = Field(default_factory=list)
+    feedback: list[str] = Field(default_factory=list)
+
+
+class AuthoringPipelineRunView(BaseModel):
+    runId: str
+    status: str
+    layerOnePrompt: str
+    summary: str
+    generatedFiles: list[str] = Field(default_factory=list)
+    validationChecks: list[dict] = Field(default_factory=list)
+    rubric: dict
+    steps: list[AuthoringPipelineStepView]
+
+
 class UpdateChallengeBankItemRequest(BaseModel):
     courseId: str | None = Field(default=None, min_length=1, max_length=64)
     title: str | None = Field(default=None, min_length=1, max_length=240)

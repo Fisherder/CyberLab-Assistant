@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Bot, CalendarClock, Plus, Send, UploadCloud } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, CheckCircle2, CircleAlert, Loader2, Plus, Send, UploadCloud } from "lucide-react";
 import {
   createChallengeBankItem,
   createChallengeDraft,
   fetchChallengeCandidates,
   generateCustomChallengePackage,
   hasAuthToken,
+  runChallengeAuthoringPipeline,
+  type AuthoringPipelineRunResponse,
+  type AuthoringPipelineStepResponse,
   type ChallengeDraftResponse,
-  type ChallengeCandidateSearchResponse
+  type ChallengeCandidateSearchResponse,
+  type ChallengeBankItemResponse
 } from "../lib/api";
 import {
   applyPreviewFieldUpdate,
@@ -47,6 +51,9 @@ export function TeacherChallengeCreatePage() {
   const [publishWindow, setPublishWindow] = useState<PublishWindow>(() => emptyWindow());
   const [candidateSearch, setCandidateSearch] = useState<ChallengeCandidateSearchResponse | null>(null);
   const [courseIntent, setCourseIntent] = useState<ChallengeDraftResponse["courseIntent"] | null>(null);
+  const [pipelineSteps, setPipelineSteps] = useState<AuthoringPipelineStepResponse[]>([]);
+  const [pipelineRun, setPipelineRun] = useState<AuthoringPipelineRunResponse | null>(null);
+  const [createdItem, setCreatedItem] = useState<ChallengeBankItemResponse | null>(null);
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -143,12 +150,43 @@ export function TeacherChallengeCreatePage() {
   async function createItem(nextPublish: boolean) {
     setError("");
     setMessage("");
+    setCreatedItem(null);
+    setPipelineRun(null);
     if (nextPublish && !publishWindowReady) {
       setError("请先设置完整的开始时间和结束时间。");
       return;
     }
+    const tags = parseTags(preview.tags);
+    const layerOnePrompt = buildLayerOnePrompt(preview, messages, candidateSearch, nextPublish);
+    setPipelineSteps(initialPipelineSteps(preview.title));
     setLoading(nextPublish ? "publish" : "create");
     try {
+      const run = await runChallengeAuthoringPipeline({
+        courseId: preview.courseId.trim(),
+        challengeVersionId: preview.challengeVersionId.trim(),
+        title: preview.title.trim(),
+        summary: preview.summary.trim(),
+        description: preview.description.trim(),
+        requirements: preview.requirements.trim(),
+        tags,
+        layerOnePrompt,
+        candidateContext: {
+          mode: authoringProposal?.mode ?? "UNKNOWN",
+          proposalTitle: authoringProposal?.title ?? "",
+          candidateIds: authoringProposal?.candidateIds ?? [],
+          bestCandidateId: bestCandidate?.candidateId ?? "",
+          bestCandidateTitle: bestCandidate?.title ?? "",
+          courseIntent,
+        },
+        publish: nextPublish,
+        publishWindow: nextPublish ? toApiWindow(publishWindow) : null
+      });
+      setPipelineRun(run);
+      setPipelineSteps(run.steps);
+      if (run.status !== "PASS") {
+        setError("三层出题 Agent 验证未通过，已停止创建。请根据过程反馈继续修改题面。");
+        return;
+      }
       const item = await createChallengeBankItem({
         courseId: preview.courseId.trim(),
         challengeVersionId: preview.challengeVersionId.trim(),
@@ -156,12 +194,12 @@ export function TeacherChallengeCreatePage() {
         summary: preview.summary.trim(),
         description: preview.description.trim(),
         requirements: preview.requirements.trim(),
-        tags: parseTags(preview.tags),
+        tags,
         publish: nextPublish,
         publishWindow: nextPublish ? toApiWindow(publishWindow) : null
       });
-      setMessage(nextPublish ? "题目已创建并发布。" : "题目已创建为未发布草稿。");
-      window.location.href = `/teacher/challenge-bank?created=${encodeURIComponent(item.itemId)}`;
+      setCreatedItem(item);
+      setMessage(nextPublish ? "题目已创建并发布，三层 Agent 验证过程如下。" : "题目已创建为未发布草稿，三层 Agent 验证过程如下。");
     } catch (err) {
       setError(readError(err));
     } finally {
@@ -183,7 +221,16 @@ export function TeacherChallengeCreatePage() {
         </header>
 
         {error ? <div className="error banner">{error}</div> : null}
-        {message ? <div className="status-note">{message}</div> : null}
+        {message ? (
+          <div className="status-note">
+            {message}
+            {createdItem ? (
+              <Link href={`/teacher/challenge-bank?created=${encodeURIComponent(createdItem.itemId)}`}>
+                查看题库条目
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
         <section className="teacher-create-layout">
           <article className="challenge-preview-card">
@@ -266,6 +313,52 @@ export function TeacherChallengeCreatePage() {
                 <UploadCloud size={16} /> 创建并发布
               </button>
             </footer>
+
+            {pipelineSteps.length ? (
+              <section className="authoring-pipeline-panel">
+                <div className="authoring-title">
+                  {loading === "create" || loading === "publish" ? <Loader2 className="spin" size={17} /> : <CheckCircle2 size={17} />}
+                  <h3>三层出题 Agent 过程</h3>
+                </div>
+                <p className="pipeline-summary">
+                  {pipelineRun?.summary ?? "正在执行需求对齐、环境构建、模拟做题验证和评分标准生成。"}
+                </p>
+                <div className="pipeline-timeline">
+                  {pipelineSteps.map((step, index) => (
+                    <article className={`pipeline-step ${step.status.toLowerCase()}`} key={`${step.layer}-${step.iteration}-${index}`}>
+                      <div className="pipeline-step-head">
+                        {step.status === "NEEDS_REVISION" ? <CircleAlert size={16} /> : <CheckCircle2 size={16} />}
+                        <strong>{step.title}</strong>
+                        <span>{step.agent} · 第 {step.iteration} 轮 · {step.status}</span>
+                      </div>
+                      <p>{step.detail}</p>
+                      {step.feedback.length ? <ul>{step.feedback.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+                      {step.artifacts.length ? (
+                        <div className="pipeline-artifacts">
+                          {step.artifacts.slice(0, 8).map((artifact) => <code key={artifact}>{artifact}</code>)}
+                        </div>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+                {pipelineRun ? (
+                  <div className="pipeline-result-grid">
+                    <div>
+                      <strong>验证检查</strong>
+                      <span>{pipelineRun.validationChecks.length} 项通过</span>
+                    </div>
+                    <div>
+                      <strong>生成资产</strong>
+                      <span>{pipelineRun.generatedFiles.length} 个文件</span>
+                    </div>
+                    <div>
+                      <strong>评分标准</strong>
+                      <span>{rubricTotal(pipelineRun.rubric)} 分 · {rubricCriteriaCount(pipelineRun.rubric)} 项</span>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
           </article>
 
           <aside className="agent-chat-panel">
@@ -335,6 +428,79 @@ function buildConversationBrief(items: ChatMessage[]): string {
   return teacherTurns
     .map((item, index) => `教师第 ${index + 1} 轮：${item.content}`)
     .join("\n");
+}
+
+function buildLayerOnePrompt(
+  preview: PreviewState,
+  messages: ChatMessage[],
+  candidateSearch: ChallengeCandidateSearchResponse | null,
+  publish: boolean
+): string {
+  const conversation = messages.map((item) => `${item.role === "teacher" ? "教师" : "Agent"}：${item.content}`).join("\n");
+  const candidates = (candidateSearch?.candidates ?? [])
+    .slice(0, 5)
+    .map((item, index) => `${index + 1}. ${item.title} (${item.challengeVersionId}) 匹配 ${Math.round(item.score * 100)}%`)
+    .join("\n");
+  return [
+    "第一层需求 Agent 已将教师对话收敛为第二层环境构建任务。",
+    `发布模式：${publish ? "创建并发布" : "创建未发布草稿"}`,
+    `课程 ID：${preview.courseId}`,
+    `题目版本 ID：${preview.challengeVersionId}`,
+    `题目标题：${preview.title}`,
+    `列表摘要：${preview.summary}`,
+    `题目说明：${preview.description}`,
+    `完成要求：${preview.requirements}`,
+    `标签：${preview.tags}`,
+    "教师和 Agent 对话：",
+    conversation || "无额外对话",
+    "题库候选：",
+    candidates || "无候选，按定制靶场草稿处理",
+    "第二层必须生成可审核的完整题目环境，第三层必须模拟真实学生解题并生成评分标准。"
+  ].join("\n");
+}
+
+function initialPipelineSteps(title: string): AuthoringPipelineStepResponse[] {
+  return [
+    {
+      layer: "L1_REQUIREMENT_AGENT",
+      agent: "需求对齐 Agent",
+      iteration: 1,
+      status: "DONE",
+      title: "锁定教师需求与出题提示词",
+      detail: `已准备将“${title}”交给第二层环境构建 Agent。`,
+      artifacts: ["authoring_prompt.md"],
+      feedback: []
+    },
+    {
+      layer: "L2_BUILDER_AGENT",
+      agent: "环境构建 Agent",
+      iteration: 1,
+      status: "RUNNING",
+      title: "生成题目环境",
+      detail: "正在生成目标服务/程序、工作区、拓扑、验证器和参考测试。",
+      artifacts: [],
+      feedback: []
+    },
+    {
+      layer: "L3_TESTER_AGENT",
+      agent: "做题验证 Agent",
+      iteration: 1,
+      status: "WAITING",
+      title: "等待模拟做题验证",
+      detail: "第二层生成完成后会按学生视角验证入口、漏洞路径、提交材料和评分标准。",
+      artifacts: [],
+      feedback: []
+    }
+  ];
+}
+
+function rubricTotal(rubric: Record<string, unknown>): number {
+  const value = rubric.totalScore;
+  return typeof value === "number" ? value : 0;
+}
+
+function rubricCriteriaCount(rubric: Record<string, unknown>): number {
+  return Array.isArray(rubric.criteria) ? rubric.criteria.length : 0;
 }
 
 function formatAgentReply(

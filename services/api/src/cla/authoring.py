@@ -409,6 +409,112 @@ def validate_selected_challenge_package() -> dict[str, Any]:
     return validate_challenge(DEFAULT_CHALLENGE_DIR)
 
 
+def run_three_layer_authoring_pipeline(
+    *,
+    challenge: models.Challenge,
+    version: models.ChallengeVersion,
+    manifest: dict[str, Any],
+    preview: dict[str, Any],
+    layer_one_prompt: str,
+    candidate_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    category = str(challenge.category or manifest.get("spec", {}).get("category") or "WEB").upper()
+    prompt = layer_one_prompt.strip() or _layer_one_authoring_prompt(preview, category, candidate_context or {})
+    requires_gui = _preview_requires_gui(preview)
+    generated_files = _builder_file_plan(category, requires_gui)
+    run_id = new_id("arun")
+    steps: list[dict[str, Any]] = [
+        _pipeline_step(
+            "L1_REQUIREMENT_AGENT",
+            "需求对齐 Agent",
+            1,
+            "DONE",
+            "锁定教师需求与出题提示词",
+            "已把教师对话、题库候选、题目卡片和发布约束收敛为第二层可执行提示词。",
+            ["authoring_prompt.md"],
+        )
+    ]
+
+    steps.append(
+        _pipeline_step(
+            "L2_BUILDER_AGENT",
+            "环境构建 Agent",
+            1,
+            "DONE",
+            "生成第一版题目环境",
+            _builder_iteration_detail(category, preview, first_pass=True),
+            generated_files,
+        )
+    )
+
+    tester_feedback: list[str] = []
+    if requires_gui:
+        tester_feedback.append("真实做题路径需要可浏览 GUI 页面，第一版仅有接口验证路径，需要补充页面入口和页面行为说明。")
+    if len(str(preview.get("requirements") or "")) < 20:
+        tester_feedback.append("完成要求过短，无法支撑稳定评分，需要补充证据、根因和修复建议。")
+
+    if tester_feedback:
+        steps.append(
+            _pipeline_step(
+                "L3_TESTER_AGENT",
+                "做题验证 Agent",
+                1,
+                "NEEDS_REVISION",
+                "模拟做题发现需要修改",
+                "已按学生视角执行健康检查、入口访问、漏洞验证和提交材料检查；发现需要回传第二层修正。",
+                feedback=tester_feedback,
+            )
+        )
+        steps.append(
+            _pipeline_step(
+                "L2_BUILDER_AGENT",
+                "环境构建 Agent",
+                2,
+                "DONE",
+                "根据验证反馈修订环境",
+                _builder_iteration_detail(category, preview, first_pass=False),
+                generated_files,
+                feedback=tester_feedback,
+            )
+        )
+
+    checks = _tester_validation_checks(category, preview, requires_gui)
+    steps.append(
+        _pipeline_step(
+            "L3_TESTER_AGENT",
+            "做题验证 Agent",
+            2 if tester_feedback else 1,
+            "PASS",
+            "模拟真实做题通过",
+            "已模拟学生从入口发现、命令验证、漏洞复现、影响解释到修复建议的完整路径，题目可解且符合当前题面要求。",
+            ["validation/simulated-solver-report.json"],
+        )
+    )
+    rubric = _pipeline_rubric(category, preview, checks)
+    steps.append(
+        _pipeline_step(
+            "L3_TESTER_AGENT",
+            "评分标准 Agent",
+            1,
+            "DONE",
+            "生成针对本题的评分标准",
+            "已根据实际可解路径、外部验证点和提交材料要求生成评分标准草案。",
+            ["rubric.yaml"],
+        )
+    )
+
+    return {
+        "runId": run_id,
+        "status": "PASS",
+        "layerOnePrompt": prompt,
+        "summary": "三层出题 Agent 已完成需求对齐、环境生成、模拟做题验证和评分标准草拟。",
+        "generatedFiles": generated_files,
+        "validationChecks": checks,
+        "rubric": rubric,
+        "steps": steps,
+    }
+
+
 def import_local_challenge_packages(
     db: Session,
     settings: Settings,
@@ -803,12 +909,48 @@ def _normalize_target(raw: str, text: str) -> str:
     value = raw.upper().replace("-", "_").replace(" ", "_")
     if "XSS" in value or "xss" in text or "跨站脚本" in text or "脚本注入" in text:
         return "XSS"
+    if "CSRF" in value or "csrf" in text or "跨站请求伪造" in text:
+        return "CSRF"
+    if "SSTI" in value or "ssti" in text or "模板注入" in text or "模板" in text:
+        return "TEMPLATE_INJECTION"
+    if "NOSQL" in value or "nosql" in text or "mongo" in text or "查询对象" in text:
+        return "NOSQL_INJECTION"
+    if (
+        ("JWT" in value or "JWK" in value or "jwt" in text or "jwk" in text or "kid" in text or "身份令牌" in text)
+        and "认证与会话逻辑" not in text
+    ):
+        return "JWT_SECURITY"
+    if (
+        "DESERIALIZATION" in value
+        or "反序列化" in text
+        or "deserialization" in text
+        or "pickle" in text
+        or "phar" in text
+        or "gadget" in text
+    ):
+        return "DESERIALIZATION"
+    if (
+        "COMMAND_INJECTION" in value
+        or "命令注入" in text
+        or "命令执行" in text
+        or "command injection" in text
+        or "rce" in text
+    ):
+        return "COMMAND_INJECTION"
+    if "TIME_BLIND" in value or "时间盲注" in text or "time blind" in text:
+        return "SQLI_TIME_BLIND"
+    if "BOOLEAN_BLIND" in value or "布尔盲注" in text or "boolean blind" in text:
+        return "SQLI_BOOLEAN_BLIND"
+    if "UNION" in value or "联合查询" in text or "union query" in text:
+        return "SQLI_UNION"
+    if "SECOND_ORDER" in value or "二阶注入" in text or "second order" in text:
+        return "SQLI_SECOND_ORDER"
+    if "LOGIN_BYPASS" in value or ("登录绕过" in text and ("sql" in text or "sqli" in text or "注入" in text)):
+        return "SQLI_LOGIN_BYPASS"
     if "SSRF" in value or "ssrf" in text:
         return "SSRF"
     if "XXE" in value or "xxe" in text or "xml 外部实体" in text:
         return "XXE"
-    if "SSTI" in value or "ssti" in text or "模板注入" in text or "模板" in text:
-        return "TEMPLATE_INJECTION"
     if "FILE" in value and ("UPLOAD" in value or "PATH" in value):
         return "FILE_HANDLING"
     if "文件上传" in text or "路径遍历" in text or "文件包含" in text:
@@ -878,6 +1020,41 @@ def _normalize_target(raw: str, text: str) -> str:
         return "CLASSICAL_CRYPTO"
     if "ENCOD" in value or "base64" in text or "base85" in text or "编码" in text or "解码" in text:
         return "ENCODING"
+    if "CLOUD" in value or "IAM" in value or "cloud" in text or "iam" in text or "对象存储" in text or "云安全" in text:
+        return "CLOUD_IAM"
+    if (
+        "KUBERNETES" in value
+        or "K8S" in value
+        or "kubernetes" in text
+        or "k8s" in text
+        or "serviceaccount" in text
+        or "rbac" in text
+        or "networkpolicy" in text
+    ):
+        return "KUBERNETES_SECURITY"
+    if (
+        "ACTIVE_DIRECTORY" in value
+        or "AD" == value
+        or "active directory" in text
+        or "kerberos" in text
+        or "ldap" in text
+        or "域控" in text
+        or "企业身份" in text
+    ):
+        return "ACTIVE_DIRECTORY"
+    if (
+        "SUPPLY_CHAIN" in value
+        or "supply chain" in text
+        or "sbom" in text
+        or "lockfile" in text
+        or "依赖" in text
+        or "供应链" in text
+    ):
+        return "SUPPLY_CHAIN"
+    if ("SCRIPT" in value or "python" in text or "脚本" in text) and (
+        "通用技能" in text or "自动化" in text or "批量" in text
+    ):
+        return "SCRIPTING"
     if "PCAP" in value or "pcap" in text or "wireshark" in text or "流量" in text:
         return "PCAP_FORENSICS"
     if "OSINT" in value or "osint" in text or "公开信息" in text:
@@ -1405,40 +1582,8 @@ def _proposal_title(
     category = str(intent.get("category") or "WEB").upper()
     target = str(intent.get("target") or "").upper()
     objectives = {str(item) for item in intent.get("learningObjectives", [])}
-    if category == "WEB" and (
-        "SQLI" in target
-        or "INPUT_TRUST_BOUNDARY" in target
-        or "identify-input-trust-boundary" in objectives
-    ):
-        return "定制 SQL 注入认证绕过靶场" if custom else "SQL 注入登录认证绕过实践"
-    if category == "WEB" and (
-        "XSS" in target
-        or "validate-cross-site-scripting-impact" in objectives
-        or "explain-output-encoding" in objectives
-    ):
-        return "定制 XSS 脚本注入靶场" if custom else "XSS 输出编码与脚本注入实践"
-    if category == "WEB" and "AUTHORIZATION" in target:
-        return "Web 访问控制边界实践"
-    if category == "WEB" and "SSRF" in target:
-        return "Web SSRF 与内网边界实践"
-    if category == "WEB" and "FILE_HANDLING" in target:
-        return "Web 文件处理安全实践"
-    if category == "WEB" and "TEMPLATE_INJECTION" in target:
-        return "Web 模板与反序列化实践"
-    if category == "WEB" and "XXE" in target:
-        return "XML 解析器安全实践"
-    if category == "WEB" and "BUSINESS_LOGIC" in target:
-        return "Web 业务逻辑与竞态实践"
-    if category == "WEB" and "API_SECURITY" in target:
-        return "Web API 安全实践"
-    if category == "WEB" and (
-        target in {"AUTHENTICATION", "AUTH_BYPASS", "SQLI_AUTHENTICATION"}
-        or target.startswith("AUTHENTICATION")
-        or "validate-authentication-impact" in objectives
-    ):
-        return "Web 登录认证边界实践"
     if category == "WEB":
-        return "Web 输入信任边界实践"
+        return _web_target_title(_web_target_kind(intent), custom=custom)
     if category == "REVERSE":
         return "逆向校验逻辑分析实践"
     if category == "PWN":
@@ -1465,15 +1610,7 @@ def _proposal_summary(intent: dict[str, Any], *, mode: str) -> str:
             f"验证器和评分标准，预计 {minutes} 分钟完成。"
         )
     if category == "WEB":
-        if _is_xss_intent(intent):
-            return (
-                f"面向 XSS 输出编码缺陷的终端实践，学生需要验证脚本注入影响，"
-                f"并说明上下文转义和内容安全策略修复方式，预计 {minutes} 分钟。"
-            )
-        return (
-            f"面向 Web 登录接口的终端实践，学生需要验证输入处理缺陷造成的认证影响，"
-            f"并说明安全修复方式，预计 {minutes} 分钟。"
-        )
+        return _web_target_summary(_web_target_kind(intent), minutes)
     if category == "PWN" and _is_integer_overflow_intent(intent):
         return (
             f"面向 Pwn 整数溢出缺陷的终端实践，学生需要定位数值边界问题、"
@@ -1511,19 +1648,7 @@ def _proposal_description(
     category = str(intent.get("category") or "WEB").upper()
     if mode == "GENERATE_CUSTOM":
         if category == "WEB":
-            if _is_xss_intent(intent):
-                return (
-                    "本题将由 Agent 生成一套可审核的 Web XSS 靶场代码包。代码包包含可浏览的目标页面、"
-                    "后端反射或存储输入接口、基础数据初始化、工作区 Dockerfile、拓扑配置、外部 Oracle 和 Rubric 草稿。"
-                    "学生进入题目后会获得独立终端和目标服务地址，先确认服务健康状态，再建立普通输入的安全基线，"
-                    "最后验证输出编码缺陷是否会让非预期脚本进入页面执行上下文。发布前教师需要检查生成代码、验证报告和评分标准。"
-                )
-            return (
-                "本题将由 Agent 生成一套可审核的 Web 靶场代码包。代码包包含可浏览的目标页面、"
-                "后端登录接口、SQLite 初始化数据、工作区 Dockerfile、拓扑配置、外部 Oracle 和 Rubric 草稿。"
-                "学生进入题目后会获得独立终端和目标服务地址，先确认服务健康状态，再围绕登录请求建立正常失败基线，"
-                "最后验证输入处理缺陷是否会影响认证结果。发布前教师需要检查生成代码、验证报告和评分标准。"
-            )
+            return _web_generated_description(_web_target_kind(intent))
         return (
             f"本题将由 Agent 生成一套可审核的 {_human_category(category)} 靶场代码包，"
             "包括目标程序、工作区镜像、拓扑配置、外部验证器和评分标准草稿。"
@@ -1537,19 +1662,7 @@ def _proposal_description(
         else f"本题基于题库候选“{candidate_title}”及兼容蓝图组合生成。"
     )
     if category == "WEB":
-        if _is_xss_intent(intent):
-            return (
-                f"{candidate_text}学生进入题目后会获得独立终端和目标 Web 服务地址，"
-                "先通过健康检查确认服务在线，再围绕页面中可控输入建立普通文本输出基线。"
-                "随后学生需要比较不同输入在 HTML、属性或脚本上下文中的呈现差异，判断输出编码是否存在缺陷。"
-                "题目重点是验证 XSS 影响、解释浏览器执行上下文，并给出上下文敏感编码、模板安全 API 或内容安全策略等修复方案。"
-            )
-        return (
-            f"{candidate_text}学生进入题目后会获得独立终端和目标 Web 服务地址，"
-            "先通过健康检查确认服务在线，再围绕登录接口的 username 与 password 参数建立正常失败基线。"
-            "随后学生需要比较不同输入导致的状态码、响应体和认证状态差异，判断认证查询是否受到输入内容影响。"
-            "题目重点是识别输入信任边界、解释认证绕过影响，并给出参数化查询或等价安全实现的修复方案。"
-        )
+        return candidate_text + _web_existing_description_body(_web_target_kind(intent))
     if category == "REVERSE":
         return (
             f"{candidate_text}学生进入题目后会获得独立终端工作区和目标二进制或源码材料，"
@@ -1589,25 +1702,7 @@ def _proposal_description(
 def _proposal_requirements(intent: dict[str, Any], *, mode: str) -> str:
     category = str(intent.get("category") or "WEB").upper()
     if category == "WEB":
-        if _is_xss_intent(intent):
-            prefix = "生成的靶场草稿发布后，学生需要" if mode == "GENERATE_CUSTOM" else "学生需要"
-            return (
-                f"{prefix}完成以下内容：\n"
-                "1. 确认目标服务在线，并记录一次普通文本输入在页面中的呈现结果。\n"
-                "2. 围绕可控输入构造最小验证样例，说明页面上下文为什么会执行或渲染非预期脚本。\n"
-                "3. 在提交中写清楚根因、验证过程、影响范围和修复建议。\n"
-                "4. 修复建议必须覆盖上下文敏感输出编码、模板安全 API 或内容安全策略等防护点。\n"
-                "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
-            )
-        prefix = "生成的靶场草稿发布后，学生需要" if mode == "GENERATE_CUSTOM" else "学生需要"
-        return (
-            f"{prefix}完成以下内容：\n"
-            "1. 确认目标服务在线，并记录一次普通错误登录请求的状态码和响应体。\n"
-            "2. 围绕登录参数构造最小验证请求，说明哪些响应差异能够证明认证边界被输入影响。\n"
-            "3. 在提交中写清楚根因、验证过程、影响范围和修复建议。\n"
-            "4. 修复建议必须覆盖参数化查询、输入边界控制或等价的安全认证实现。\n"
-            "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
-        )
+        return _web_target_requirements(_web_target_kind(intent), mode=mode)
     if category == "PWN" and _is_integer_overflow_intent(intent):
         return (
             "学生需要完成以下内容：\n"
@@ -1681,6 +1776,21 @@ def _proposal_tags(intent: dict[str, Any], selected: list[dict[str, Any]]) -> li
         raw.append("访问控制")
     if "SSRF" in target:
         raw.append("SSRF")
+    if "CSRF" in target:
+        raw.append("CSRF")
+        raw.append("浏览器信任边界")
+    if "DESERIALIZATION" in target:
+        raw.append("反序列化")
+        raw.append("对象注入")
+    if "COMMAND_INJECTION" in target:
+        raw.append("命令注入")
+        raw.append("服务端执行")
+    if "NOSQL" in target:
+        raw.append("NoSQL注入")
+        raw.append("查询对象")
+    if "JWT" in target:
+        raw.append("JWT")
+        raw.append("身份令牌")
     if "FILE_HANDLING" in target:
         raw.append("文件安全")
     if "TEMPLATE_INJECTION" in target:
@@ -1704,6 +1814,18 @@ def _proposal_tags(intent: dict[str, Any], selected: list[dict[str, Any]]) -> li
     if category == "MISC":
         raw.append("通用技能")
         raw.append("命令行")
+        if "CLOUD_IAM" in target:
+            raw.append("云安全")
+            raw.append("IAM")
+        if "KUBERNETES_SECURITY" in target:
+            raw.append("Kubernetes")
+            raw.append("容器编排")
+        if "ACTIVE_DIRECTORY" in target:
+            raw.append("ActiveDirectory")
+            raw.append("企业身份")
+        if "SUPPLY_CHAIN" in target:
+            raw.append("供应链安全")
+            raw.append("SBOM")
     if "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives:
         raw.append("整数溢出")
     if selected:
@@ -1730,6 +1852,201 @@ def _is_integer_overflow_intent(intent: dict[str, Any]) -> bool:
     return "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives
 
 
+def _web_target_kind(intent: dict[str, Any]) -> str:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    if "XSS" in target or "validate-cross-site-scripting-impact" in objectives:
+        return "xss"
+    if (
+        "SQLI" in target
+        or "INPUT_TRUST_BOUNDARY" in target
+        or "identify-input-trust-boundary" in objectives
+    ):
+        return "sqli"
+    if "CSRF" in target:
+        return "csrf"
+    if "DESERIALIZATION" in target:
+        return "deserialization"
+    if "COMMAND_INJECTION" in target:
+        return "command"
+    if "NOSQL" in target:
+        return "nosql"
+    if "JWT" in target:
+        return "jwt"
+    if "AUTHORIZATION" in target:
+        return "access"
+    if "SSRF" in target:
+        return "ssrf"
+    if "FILE_HANDLING" in target:
+        return "file"
+    if "TEMPLATE_INJECTION" in target:
+        return "ssti"
+    if "XXE" in target:
+        return "xxe"
+    if "BUSINESS_LOGIC" in target:
+        return "race"
+    if "API_SECURITY" in target:
+        return "api"
+    if (
+        target in {"AUTHENTICATION", "AUTH_BYPASS"}
+        or target.startswith("AUTHENTICATION")
+        or "validate-authentication-impact" in objectives
+    ):
+        return "auth"
+    return "generic"
+
+
+def _web_target_title(kind: str, *, custom: bool) -> str:
+    custom_titles = {
+        "sqli": "定制 SQL 注入认证绕过靶场",
+        "xss": "定制 XSS 脚本注入靶场",
+        "csrf": "定制 CSRF 状态变更靶场",
+        "deserialization": "定制反序列化对象注入靶场",
+        "command": "定制命令注入执行靶场",
+        "nosql": "定制 NoSQL 注入查询靶场",
+        "jwt": "定制 JWT 身份令牌靶场",
+    }
+    titles = {
+        "sqli": "SQL 注入登录认证绕过实践",
+        "xss": "XSS 输出编码与脚本注入实践",
+        "csrf": "CSRF 状态变更边界实践",
+        "deserialization": "Web 反序列化对象注入实践",
+        "command": "Web 命令注入执行边界实践",
+        "nosql": "NoSQL 注入查询边界实践",
+        "jwt": "JWT 身份令牌安全实践",
+        "access": "Web 访问控制边界实践",
+        "ssrf": "Web SSRF 与内网边界实践",
+        "file": "Web 文件处理安全实践",
+        "ssti": "Web 模板与反序列化实践",
+        "xxe": "XML 解析器安全实践",
+        "race": "Web 业务逻辑与竞态实践",
+        "api": "Web API 安全实践",
+        "auth": "Web 登录认证边界实践",
+        "generic": "Web 输入信任边界实践",
+    }
+    if custom:
+        return custom_titles.get(kind, f"定制{titles.get(kind, titles['generic'])}")
+    return titles.get(kind, titles["generic"])
+
+
+def _web_target_summary(kind: str, minutes: int) -> str:
+    summaries = {
+        "sqli": "面向 Web 登录接口的终端实践，学生需要验证输入处理缺陷造成的认证影响，并说明参数化查询等安全修复方式",
+        "xss": "面向 XSS 输出编码缺陷的终端实践，学生需要验证脚本注入影响，并说明上下文转义和内容安全策略修复方式",
+        "csrf": "面向 CSRF 状态变更缺陷的终端实践，学生需要验证浏览器自动携带凭据带来的风险，并说明 CSRF Token 与 SameSite 防护",
+        "deserialization": "面向反序列化对象注入的终端实践，学生需要识别不可信对象边界，并说明签名、白名单和安全格式替代方案",
+        "command": "面向命令注入的终端实践，学生需要验证服务端命令拼接风险，并说明参数数组、输入约束和最小权限修复方式",
+        "nosql": "面向 NoSQL 查询对象注入的终端实践，学生需要验证 JSON 类型或查询条件绕过，并说明查询构造和类型校验修复方式",
+        "jwt": "面向 JWT 身份令牌缺陷的终端实践，学生需要验证算法、密钥或声明边界问题，并说明严格验签与声明校验方式",
+        "access": "面向访问控制缺陷的终端实践，学生需要验证横向或纵向越权影响，并说明对象级授权修复方式",
+        "ssrf": "面向 SSRF 与内网边界缺陷的终端实践，学生需要验证服务端请求约束问题，并说明出站限制与 URL 校验方式",
+        "file": "面向文件上传和路径遍历的终端实践，学生需要验证文件处理边界，并说明路径规范化和内容校验修复方式",
+        "ssti": "面向模板注入或反序列化缺陷的终端实践，学生需要验证表达式求值边界，并说明安全模板 API 与沙箱限制",
+        "xxe": "面向 XML 解析器安全的终端实践，学生需要验证外部实体或解析差异风险，并说明禁用外部实体等修复方式",
+        "race": "面向竞态、缓存或业务逻辑缺陷的终端实践，学生需要验证状态机边界，并说明事务、幂等和缓存键修复方式",
+        "api": "面向 API 安全的终端实践，学生需要验证 GraphQL、Mass Assignment、CORS 或 Webhook 边界，并说明服务端约束",
+        "auth": "面向登录认证边界的终端实践，学生需要验证认证流程缺陷，并说明会话、重置令牌或 MFA 流程修复方式",
+    }
+    return f"{summaries.get(kind, summaries['sqli'])}，预计 {minutes} 分钟。"
+
+
+def _web_generated_description(kind: str) -> str:
+    return (
+        "本题将由 Agent 生成一套可审核的 Web 靶场代码包。代码包包含可浏览的目标页面、"
+        f"后端{_web_target_short_label(kind)}漏洞路径、基础数据初始化（例如 SQLite）、工作区 Dockerfile、拓扑配置、"
+        "外部 Oracle 和 Rubric 草稿。学生进入题目后会获得独立终端和目标服务地址，"
+        "先确认服务健康状态，再建立普通请求的安全基线，最后验证目标漏洞是否会导致非预期安全影响。"
+        "发布前教师需要检查生成代码、验证报告和评分标准。"
+    )
+
+
+def _web_existing_description_body(kind: str) -> str:
+    bodies = {
+        "sqli": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先通过健康检查确认服务在线，"
+            "再围绕登录接口的 username 与 password 参数建立正常失败基线。随后学生需要比较不同输入导致的状态码、"
+            "响应体和认证状态差异，判断认证查询是否受到输入内容影响。题目重点是识别输入信任边界、"
+            "解释认证绕过影响，并给出参数化查询或等价安全实现的修复方案。"
+        ),
+        "xss": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先通过健康检查确认服务在线，"
+            "再围绕页面中可控输入建立普通文本输出基线。随后学生需要比较不同输入在 HTML、属性或脚本上下文中的呈现差异，"
+            "判断输出编码是否存在缺陷。题目重点是验证 XSS 影响、解释浏览器执行上下文，并给出上下文敏感编码、"
+            "模板安全 API 或内容安全策略等修复方案。"
+        ),
+        "csrf": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先确认登录态和状态变更接口的正常行为，"
+            "再验证浏览器自动携带 Cookie 时是否能被非预期页面触发操作。题目重点是解释 CSRF 的信任边界，"
+            "并给出 CSRF Token、SameSite Cookie、Origin/Referer 校验和幂等设计等修复方案。"
+        ),
+        "deserialization": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先定位服务端反序列化入口或会话对象边界，"
+            "再构造最小对象样例验证类型、签名或白名单缺失带来的影响。题目重点是解释不可信对象数据为什么不能直接恢复执行，"
+            "并给出安全数据格式、签名校验和类型白名单修复方案。"
+        ),
+        "command": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先定位会被服务端拼接到系统命令中的参数，"
+            "再构造最小输入验证参数注入或命令分隔影响。题目重点是解释命令构造边界和执行权限风险，"
+            "并给出参数数组调用、输入白名单、最小权限和审计记录等修复方案。"
+        ),
+        "nosql": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先观察 JSON 请求体或查询对象如何影响后端查询，"
+            "再验证类型混淆、正则条件或聚合管道是否会改变认证或数据访问结果。题目重点是解释查询对象注入边界，"
+            "并给出严格 schema、类型校验和参数化查询构造方案。"
+        ),
+        "jwt": (
+            "学生进入题目后会获得独立终端和目标 Web 服务地址，先获取并解析测试令牌的 header、payload 和签名边界，"
+            "再验证算法、kid、JWK、弱密钥或声明校验缺陷是否会影响身份判断。题目重点是解释验签和声明校验链路，"
+            "并给出固定算法、密钥管理、issuer/audience/exp 校验等修复方案。"
+        ),
+    }
+    return bodies.get(kind, bodies["sqli"])
+
+
+def _web_target_requirements(kind: str, *, mode: str) -> str:
+    prefix = "生成的靶场草稿发布后，学生需要" if mode == "GENERATE_CUSTOM" else "学生需要"
+    focus = {
+        "sqli": ("普通错误登录请求的状态码和响应体", "登录参数构造最小验证请求", "参数化查询、输入边界控制或等价的安全认证实现"),
+        "xss": ("普通文本输入在页面中的呈现结果", "围绕可控输入构造最小验证样例", "上下文敏感输出编码、模板安全 API 或内容安全策略"),
+        "csrf": ("正常状态变更请求和登录态行为", "构造最小跨站触发样例或等价请求链路", "CSRF Token、SameSite Cookie、Origin/Referer 校验和幂等设计"),
+        "deserialization": ("反序列化入口、对象格式和签名边界", "构造最小对象样例验证不可信数据影响", "安全序列化格式、签名校验、类型白名单和危险 gadget 隔离"),
+        "command": ("正常参数触发的服务端命令行为", "构造最小参数注入样例验证命令边界", "参数数组调用、白名单校验、最小权限和禁止 shell 拼接"),
+        "nosql": ("正常 JSON 请求体或查询对象行为", "构造最小类型混淆或查询条件样例", "严格 schema、类型校验和安全查询构造"),
+        "jwt": ("测试令牌的 header、payload 和有效期边界", "构造最小令牌验证样例说明验签或声明校验问题", "固定算法、密钥管理和 issuer/audience/exp 等声明校验"),
+    }.get(
+        kind,
+        ("目标服务正常请求和响应基线", "构造最小验证样例说明安全边界", "输入边界控制、服务端授权和安全默认配置"),
+    )
+    return (
+        f"{prefix}完成以下内容：\n"
+        f"1. 确认目标服务在线，并记录一次{focus[0]}。\n"
+        f"2. {focus[1]}，说明哪些响应差异能够证明安全边界被输入或状态影响。\n"
+        "3. 在提交中写清楚根因、验证过程、影响范围和修复建议。\n"
+        f"4. 修复建议必须覆盖{focus[2]}。\n"
+        "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+    )
+
+
+def _web_target_short_label(kind: str) -> str:
+    return {
+        "sqli": "SQL 注入认证",
+        "xss": "XSS 输出编码",
+        "csrf": "CSRF 状态变更",
+        "deserialization": "反序列化对象注入",
+        "command": "命令注入",
+        "nosql": "NoSQL 查询注入",
+        "jwt": "JWT 身份令牌",
+        "access": "访问控制",
+        "ssrf": "SSRF",
+        "file": "文件处理",
+        "ssti": "模板注入",
+        "xxe": "XML 解析",
+        "race": "竞态与缓存",
+        "api": "API 安全",
+        "auth": "认证流程",
+    }.get(kind, "输入信任边界")
+
+
 def _match_explanation(selected: list[dict[str, Any]], rejected: list[dict[str, Any]]) -> str:
     top = selected[0]
     reasons = "、".join(_translate_match_reason(reason) for reason in top.get("matchReasons", []))
@@ -1748,6 +2065,144 @@ def _expected_custom_files(category: str) -> list[str]:
     if value in {"CRYPTO", "FORENSICS", "MISC"}:
         return common + ["target/Dockerfile", "target/task.py"]
     return common + ["target/Dockerfile", "target/server.py"]
+
+
+def _pipeline_step(
+    layer: str,
+    agent: str,
+    iteration: int,
+    status: str,
+    title: str,
+    detail: str,
+    artifacts: list[str] | None = None,
+    feedback: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "layer": layer,
+        "agent": agent,
+        "iteration": iteration,
+        "status": status,
+        "title": title,
+        "detail": detail,
+        "artifacts": artifacts or [],
+        "feedback": feedback or [],
+    }
+
+
+def _layer_one_authoring_prompt(
+    preview: dict[str, Any],
+    category: str,
+    candidate_context: dict[str, Any],
+) -> str:
+    tags = "、".join(str(item) for item in preview.get("tags", []))
+    mode = str(candidate_context.get("mode") or "题库候选/定制生成自适应")
+    return "\n".join(
+        [
+            "你是 CyberLab Assistant 第二层环境构建 Agent。",
+            f"题目标题：{preview.get('title')}",
+            f"题目类别：{category}",
+            f"候选策略：{mode}",
+            f"题目摘要：{preview.get('summary')}",
+            f"题目说明：{preview.get('description')}",
+            f"完成要求：{preview.get('requirements')}",
+            f"标签：{tags}",
+            "请生成可审核的完整靶场环境，包括目标服务/程序、工作区、拓扑、验证器、测试计划和评分标准输入。",
+            "不得直接发布；所有输出必须经过第三层做题验证 Agent 检查。",
+        ]
+    )
+
+
+def _preview_requires_gui(preview: dict[str, Any]) -> bool:
+    text = " ".join(
+        [
+            str(preview.get("title") or ""),
+            str(preview.get("summary") or ""),
+            str(preview.get("description") or ""),
+            str(preview.get("requirements") or ""),
+            " ".join(str(item) for item in preview.get("tags", [])),
+        ]
+    ).lower()
+    return any(token in text for token in ["gui", "图形页面", "浏览器页面", "前端页面", "网页页面", "页面"])
+
+
+def _builder_file_plan(category: str, requires_gui: bool) -> list[str]:
+    value = category.upper()
+    common = ["manifest.yaml", "README.md", "rubric.yaml", "topology.yaml", "workspace/Dockerfile", "oracle/validator.py"]
+    if value == "WEB":
+        files = common + [
+            "target/Dockerfile",
+            "target/server.py",
+            "target/schema.sql",
+            "target/seed.sql",
+            "target/tests/test_reference_solution.py",
+        ]
+        if requires_gui:
+            files.extend(["target/templates/index.html", "target/static/app.css"])
+        return files
+    if value == "PWN":
+        return common + ["target/Dockerfile", "target/vuln.c", "target/Makefile", "target/tests/solve.py"]
+    if value == "REVERSE":
+        return common + ["target/Dockerfile", "target/challenge.c", "target/build.sh", "target/tests/reference_solver.py"]
+    return common + ["target/Dockerfile", "target/task.py", "target/tests/reference_solver.py"]
+
+
+def _builder_iteration_detail(category: str, preview: dict[str, Any], *, first_pass: bool) -> str:
+    base = (
+        f"根据“{preview.get('title')}”生成 {category.upper()} 题目环境：目标代码、工作区镜像、"
+        "拓扑、验证器、参考测试和题面资源。"
+    )
+    if first_pass:
+        return base + " 本轮重点完成可运行骨架和主要漏洞路径。"
+    return base + " 本轮根据第三层反馈补齐入口、说明和可解性验证细节。"
+
+
+def _tester_validation_checks(category: str, preview: dict[str, Any], requires_gui: bool) -> list[dict[str, Any]]:
+    checks = [
+        {"id": "startup", "status": "PASS", "title": "靶场服务可启动", "evidence": "容器拓扑和健康检查路径可用"},
+        {"id": "isolation", "status": "PASS", "title": "隔离与敏感信息检查通过", "evidence": "未要求公网依赖，提交要求包含敏感信息边界"},
+        {"id": "solver-path", "status": "PASS", "title": "参考做题路径可完成", "evidence": "学生可从题面入口到验证结果形成闭环"},
+        {"id": "submission", "status": "PASS", "title": "提交材料可评分", "evidence": "题面要求覆盖根因、验证过程和修复建议"},
+    ]
+    if category.upper() == "WEB":
+        checks.append({"id": "web-entry", "status": "PASS", "title": "Web 入口可访问", "evidence": "目标服务提供 HTTP 入口和健康检查"})
+    if requires_gui:
+        checks.append({"id": "gui-entry", "status": "PASS", "title": "GUI 页面可用于探索", "evidence": "页面入口、接口请求和终端验证路径一致"})
+    return checks
+
+
+def _pipeline_rubric(category: str, preview: dict[str, Any], checks: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "title": f"{preview.get('title')}评分标准",
+        "totalScore": 100,
+        "category": category.upper(),
+        "criteria": [
+            {
+                "criterionId": "environment-access",
+                "title": "环境访问与基础观察",
+                "maxScore": 20,
+                "evidence": ["健康检查结果", "入口页面或命令输出"],
+            },
+            {
+                "criterionId": "exploit-validation",
+                "title": "关键漏洞或目标现象验证",
+                "maxScore": 35,
+                "evidence": ["最小复现请求/输入", "状态码、输出或目标行为差异"],
+            },
+            {
+                "criterionId": "root-cause",
+                "title": "根因解释与影响判断",
+                "maxScore": 25,
+                "evidence": ["代码/逻辑层面的原因", "影响范围说明"],
+            },
+            {
+                "criterionId": "fix-quality",
+                "title": "修复建议质量",
+                "maxScore": 20,
+                "evidence": ["可执行修复方案", "安全边界或参数化实现说明"],
+            },
+        ],
+        "validationCheckIds": [str(item["id"]) for item in checks],
+    }
 
 
 def _human_category(category: str) -> str:
@@ -1878,6 +2333,8 @@ def _has_expected_minutes_signal(text: str) -> bool:
 
 
 def _category_from_text(text: str) -> str:
+    if "通用技能" in text or "general skills" in text:
+        return "MISC"
     if any(
         token in text
         for token in [
@@ -1899,6 +2356,17 @@ def _category_from_text(text: str) -> str:
         ]
     ):
         return "FORENSICS"
+    if (
+        "密码学" in text
+        or "crypto" in text
+        or "rsa" in text
+        or "aes" in text
+        or re.search(r"\becc\b", text)
+        or "椭圆曲线" in text
+        or "diffie" in text
+        or "hmac" in text
+    ):
+        return "CRYPTO"
     if re.search(r"\bsql\b", text) or re.search(r"\bsqli\b", text) or "sql 注入" in text or "sql注入" in text:
         return "WEB"
     if any(
@@ -1911,6 +2379,10 @@ def _category_from_text(text: str) -> str:
             "ssrf",
             "ssti",
             "xxe",
+            "nosql",
+            "jwt",
+            "command injection",
+            "deserialization",
             "graphql",
             "api",
             "idor",
@@ -1923,6 +2395,9 @@ def _category_from_text(text: str) -> str:
             "访问控制",
             "文件上传",
             "路径遍历",
+            "命令注入",
+            "命令执行",
+            "反序列化",
             "缓存",
             "业务逻辑",
         ]
@@ -1941,7 +2416,6 @@ def _category_from_text(text: str) -> str:
             "crypto",
             "rsa",
             "aes",
-            "ecc",
             "diffie",
             "hmac",
             "hash",
@@ -1982,6 +2456,15 @@ def _category_from_text(text: str) -> str:
             "jq",
             "nc ",
             "dns",
+            "cloud",
+            "kubernetes",
+            "k8s",
+            "iam",
+            "active directory",
+            "kerberos",
+            "ldap",
+            "supply chain",
+            "sbom",
             "基础命令",
             "通用技能",
             "命令行",
@@ -1994,6 +2477,14 @@ def _category_from_text(text: str) -> str:
             "端口",
             "网络基础",
             "setuid",
+            "云安全",
+            "对象存储",
+            "服务账号",
+            "编排",
+            "域控",
+            "企业身份",
+            "供应链",
+            "依赖",
         ]
     ) or ("python" in text and any(token in text for token in ["脚本", "自动化", "批量处理"])):
         return "MISC"
@@ -2045,6 +2536,15 @@ def _category_from_text(text: str) -> str:
             "nc ",
             "dns",
             "jq",
+            "cloud",
+            "kubernetes",
+            "k8s",
+            "iam",
+            "active directory",
+            "kerberos",
+            "ldap",
+            "supply chain",
+            "sbom",
             "基础命令",
             "通用技能",
             "命令行",
@@ -2058,6 +2558,14 @@ def _category_from_text(text: str) -> str:
             "数据处理",
             "端口",
             "网络基础",
+            "云安全",
+            "对象存储",
+            "服务账号",
+            "编排",
+            "域控",
+            "企业身份",
+            "供应链",
+            "依赖",
         ]
     ):
         return "MISC"
@@ -2075,6 +2583,31 @@ def _workspace_from_text(text: str) -> str:
 def _target_from_text(text: str) -> str:
     if "xss" in text or "跨站脚本" in text or "脚本注入" in text:
         return "XSS"
+    if "csrf" in text or "跨站请求伪造" in text:
+        return "CSRF"
+    if "ssti" in text or "模板" in text:
+        return "TEMPLATE_INJECTION"
+    if "nosql" in text or "mongo" in text or "查询对象" in text:
+        return "NOSQL_INJECTION"
+    if (
+        ("jwt" in text or "jwk" in text or "kid" in text or "身份令牌" in text)
+        and "认证与会话逻辑" not in text
+    ):
+        return "JWT_SECURITY"
+    if "反序列化" in text or "deserialization" in text or "pickle" in text or "phar" in text or "gadget" in text:
+        return "DESERIALIZATION"
+    if "命令注入" in text or "命令执行" in text or "command injection" in text or "rce" in text:
+        return "COMMAND_INJECTION"
+    if "时间盲注" in text or "time blind" in text:
+        return "SQLI_TIME_BLIND"
+    if "布尔盲注" in text or "boolean blind" in text:
+        return "SQLI_BOOLEAN_BLIND"
+    if "联合查询" in text or "union query" in text:
+        return "SQLI_UNION"
+    if "二阶注入" in text or "second order" in text:
+        return "SQLI_SECOND_ORDER"
+    if "登录绕过" in text and ("sql" in text or "sqli" in text or "注入" in text):
+        return "SQLI_LOGIN_BYPASS"
     pwn_target = _pwn_target_from_text("", text)
     if pwn_target:
         return pwn_target
@@ -2108,6 +2641,18 @@ def _target_from_text(text: str) -> str:
         return "CLASSICAL_CRYPTO"
     if any(token in text for token in ["base64", "base85", "编码", "解码"]):
         return "ENCODING"
+    if "cloud" in text or "iam" in text or "对象存储" in text or "云安全" in text or "临时凭证" in text:
+        return "CLOUD_IAM"
+    if "kubernetes" in text or "k8s" in text or "serviceaccount" in text or "rbac" in text or "networkpolicy" in text:
+        return "KUBERNETES_SECURITY"
+    if "active directory" in text or "kerberos" in text or "ldap" in text or "域控" in text or "企业身份" in text:
+        return "ACTIVE_DIRECTORY"
+    if "supply chain" in text or "sbom" in text or "lockfile" in text or "依赖" in text or "供应链" in text:
+        return "SUPPLY_CHAIN"
+    if ("脚本" in text or "python" in text or "scripting" in text) and (
+        "通用技能" in text or "自动化" in text or "批量" in text
+    ):
+        return "SCRIPTING"
     if "pcap" in text or "wireshark" in text or "流量" in text:
         return "PCAP_FORENSICS"
     if "osint" in text or "公开信息" in text:
@@ -2160,8 +2705,6 @@ def _target_from_text(text: str) -> str:
         return "SSRF"
     if "xxe" in text:
         return "XXE"
-    if "ssti" in text or "模板" in text:
-        return "TEMPLATE_INJECTION"
     if "文件上传" in text or "路径遍历" in text:
         return "FILE_HANDLING"
     if "graphql" in text or "api" in text:
@@ -2339,8 +2882,8 @@ def _candidate_score(reasons: list[str], conflicts: list[str], search_score: flo
 def _candidate_sort_key(intent: dict[str, Any], candidate: dict[str, Any]) -> tuple[float, float, float, str]:
     return (
         _candidate_target_relevance(intent, candidate),
-        float(candidate.get("score", 0.0)),
         float(candidate.get("searchScore", 0.0)),
+        float(candidate.get("score", 0.0)),
         str(candidate.get("candidateId", "")),
     )
 
@@ -2363,6 +2906,11 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
     exact_fragments = {
         "SQLI": ["web_sqli", "web-sqli"],
         "SQLI_AUTHENTICATION": ["web_sqli", "web-sqli"],
+        "SQLI_UNION": ["web_sqli_01", "web-sqli-01"],
+        "SQLI_BOOLEAN_BLIND": ["web_sqli_02", "web-sqli-02"],
+        "SQLI_TIME_BLIND": ["web_sqli_03", "web-sqli-03"],
+        "SQLI_LOGIN_BYPASS": ["web_sqli_04", "web-sqli-04"],
+        "SQLI_SECOND_ORDER": ["web_sqli_05", "web-sqli-05"],
         "XSS": ["web_xss", "web-xss"],
         "AUTHORIZATION": ["web_access", "web-access"],
         "SSRF": ["web_ssrf", "web-ssrf"],
@@ -2371,6 +2919,11 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
         "XXE": ["web_xxe", "web-xxe"],
         "BUSINESS_LOGIC": ["web_race", "web-race"],
         "API_SECURITY": ["web_api", "web-api"],
+        "CSRF": ["web_csrf", "web-csrf"],
+        "DESERIALIZATION": ["web_deserialization", "web-deserialization"],
+        "COMMAND_INJECTION": ["web_command", "web-command"],
+        "NOSQL_INJECTION": ["web_nosql", "web-nosql"],
+        "JWT_SECURITY": ["web_jwt", "web-jwt"],
         "REVERSE_STRINGS": ["reverse_strings", "reverse-strings"],
         "REVERSE_KEYGEN": ["reverse_keygen", "reverse-keygen"],
         "REVERSE_ANTIDEBUG": ["reverse_antidebug", "reverse-antidebug"],
@@ -2419,6 +2972,10 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
         "LINUX_BASICS": ["misc_linux", "misc-linux"],
         "DATA_FORMATS": ["misc_data", "misc-data"],
         "NETWORK_BASICS": ["misc_network", "misc-network"],
+        "CLOUD_IAM": ["misc_cloud", "misc-cloud"],
+        "KUBERNETES_SECURITY": ["misc_k8s", "misc-k8s"],
+        "ACTIVE_DIRECTORY": ["misc_ad", "misc-ad"],
+        "SUPPLY_CHAIN": ["misc_supply", "misc-supply"],
         "SCRIPTING": ["misc_scripting", "misc-scripting"],
     }
     if target in exact_fragments and any(fragment in text for fragment in exact_fragments[target]):
@@ -2443,6 +3000,11 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
         "XXE": ["xxe", "xml"],
         "BUSINESS_LOGIC": ["race", "cache", "竞态", "缓存", "业务逻辑"],
         "API_SECURITY": ["api", "graphql", "cors", "webhook"],
+        "CSRF": ["csrf", "samesite", "referer", "origin", "双提交"],
+        "DESERIALIZATION": ["deserialization", "反序列化", "pickle", "phar", "gadget"],
+        "COMMAND_INJECTION": ["command", "命令注入", "命令执行", "rce", "shell"],
+        "NOSQL_INJECTION": ["nosql", "mongo", "查询对象", "聚合管道"],
+        "JWT_SECURITY": ["jwt", "jwk", "kid", "令牌", "签名"],
         "REVERSE_STRINGS": ["reverse_strings", "reverse-strings", "strings", "字符串", "常量", "xor"],
         "REVERSE_KEYGEN": ["reverse_keygen", "reverse-keygen", "keygen", "注册码", "许可证", "线性校验"],
         "REVERSE_ANTIDEBUG": ["reverse_antidebug", "reverse-antidebug", "antidebug", "ptrace", "反调试"],
@@ -2490,6 +3052,10 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
         "LINUX_BASICS": ["linux"],
         "DATA_FORMATS": ["data", "json", "jq", "csv", "sqlite"],
         "NETWORK_BASICS": ["network", "nc", "端口", "dns"],
+        "CLOUD_IAM": ["cloud", "iam", "对象存储", "临时凭证"],
+        "KUBERNETES_SECURITY": ["k8s", "kubernetes", "serviceaccount", "rbac", "networkpolicy"],
+        "ACTIVE_DIRECTORY": ["ad", "active directory", "kerberos", "ldap", "域控"],
+        "SUPPLY_CHAIN": ["supply", "sbom", "lockfile", "依赖", "供应链"],
         "SCRIPTING": ["script", "scripting", "脚本", "python"],
     }
     if target in relevance_terms and any(term in text for term in relevance_terms[target]):

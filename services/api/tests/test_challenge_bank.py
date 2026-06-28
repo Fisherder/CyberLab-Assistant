@@ -43,6 +43,64 @@ def _create_bank_item(
     return response.json()
 
 
+def test_teacher_runs_three_layer_authoring_pipeline_before_bank_create(
+    client: TestClient,
+    teacher_token: str,
+    student_token: str,
+) -> None:
+    forbidden = client.post(
+        "/api/v1/teacher/challenge-bank/authoring-run",
+        headers=auth(student_token),
+        json={
+            **_bank_payload(
+                title="带 GUI 页面入口的 SQL 注入登录题",
+                summary="学生需要通过页面和终端验证登录认证边界。",
+                description="目标服务需要提供浏览器页面、登录接口和健康检查。",
+                requirements="学生需要说明根因、验证过程和修复建议。",
+                tags=["WEB", "SQL注入", "GUI页面"],
+            ),
+            "layerOnePrompt": "第一层 Agent 已确认教师希望创建带页面入口的 SQL 注入登录认证题。",
+            "candidateContext": {"mode": "USE_EXISTING", "candidateIds": [DEV_IDS["challenge_version"]]},
+            "publish": False,
+            "publishWindow": None,
+        },
+    )
+    assert forbidden.status_code == 403
+
+    response = client.post(
+        "/api/v1/teacher/challenge-bank/authoring-run",
+        headers=auth(teacher_token),
+        json={
+            **_bank_payload(
+                title="带 GUI 页面入口的 SQL 注入登录题",
+                summary="学生需要通过页面和终端验证登录认证边界。",
+                description="目标服务需要提供浏览器页面、登录接口和健康检查。",
+                requirements="学生需要说明根因、验证过程和修复建议。",
+                tags=["WEB", "SQL注入", "GUI页面"],
+            ),
+            "layerOnePrompt": "第一层 Agent 已确认教师希望创建带页面入口的 SQL 注入登录认证题。",
+            "candidateContext": {"mode": "USE_EXISTING", "candidateIds": [DEV_IDS["challenge_version"]]},
+            "publish": False,
+            "publishWindow": None,
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "PASS"
+    assert body["runId"].startswith("arun_")
+    assert "target/server.py" in body["generatedFiles"]
+    assert "target/templates/index.html" in body["generatedFiles"]
+    assert body["rubric"]["totalScore"] == 100
+    assert len(body["rubric"]["criteria"]) == 4
+    layers = [step["layer"] for step in body["steps"]]
+    assert "L1_REQUIREMENT_AGENT" in layers
+    assert "L2_BUILDER_AGENT" in layers
+    assert "L3_TESTER_AGENT" in layers
+    assert any(step["status"] == "NEEDS_REVISION" for step in body["steps"])
+    assert any(check["id"] == "gui-entry" for check in body["validationChecks"])
+    assert "第一层 Agent" in body["layerOnePrompt"]
+
+
 def test_teacher_bank_lifecycle_and_student_visibility(
     client: TestClient,
     teacher_token: str,

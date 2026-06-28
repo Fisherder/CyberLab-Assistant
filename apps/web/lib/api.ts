@@ -357,6 +357,28 @@ const ChallengeBankListResponse = z.object({
   items: z.array(ChallengeBankItemResponse)
 });
 
+const AuthoringPipelineStepResponse = z.object({
+  layer: z.string(),
+  agent: z.string(),
+  iteration: z.number(),
+  status: z.string(),
+  title: z.string(),
+  detail: z.string(),
+  artifacts: z.array(z.string()),
+  feedback: z.array(z.string())
+});
+
+const AuthoringPipelineRunResponse = z.object({
+  runId: z.string(),
+  status: z.string(),
+  layerOnePrompt: z.string(),
+  summary: z.string(),
+  generatedFiles: z.array(z.string()),
+  validationChecks: z.array(z.record(z.unknown())),
+  rubric: z.record(z.unknown()),
+  steps: z.array(AuthoringPipelineStepResponse)
+});
+
 const StudentChallengeBankItemResponse = z.object({
   itemId: z.string(),
   courseId: z.string(),
@@ -434,6 +456,8 @@ export type ChallengeAuthoringProposalResponse = z.infer<typeof ChallengeAuthori
 export type ChallengeGeneratedVersionResponse = z.infer<typeof ChallengeGeneratedVersionResponse>;
 export type ChallengeBankItemResponse = z.infer<typeof ChallengeBankItemResponse>;
 export type ChallengeBankListResponse = z.infer<typeof ChallengeBankListResponse>;
+export type AuthoringPipelineStepResponse = z.infer<typeof AuthoringPipelineStepResponse>;
+export type AuthoringPipelineRunResponse = z.infer<typeof AuthoringPipelineRunResponse>;
 export type StudentChallengeBankItemResponse = z.infer<typeof StudentChallengeBankItemResponse>;
 export type StudentChallengeBankListResponse = z.infer<typeof StudentChallengeBankListResponse>;
 export type StartChallengeBankItemResponse = z.infer<typeof StartChallengeBankItemResponse>;
@@ -677,6 +701,25 @@ export async function createChallengeBankItem(payload: {
   return api("/api/v1/teacher/challenge-bank", ChallengeBankItemResponse, {
     method: "POST",
     headers: { "Idempotency-Key": crypto.randomUUID() },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function runChallengeAuthoringPipeline(payload: {
+  courseId: string;
+  challengeVersionId: string;
+  title: string;
+  summary: string;
+  description: string;
+  requirements: string;
+  tags: string[];
+  layerOnePrompt: string;
+  candidateContext: Record<string, unknown>;
+  publish: boolean;
+  publishWindow?: { openAt: string; dueAt: string } | null;
+}): Promise<AuthoringPipelineRunResponse> {
+  return api("/api/v1/teacher/challenge-bank/authoring-run", AuthoringPipelineRunResponse, {
+    method: "POST",
     body: JSON.stringify(payload)
   });
 }
