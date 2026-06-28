@@ -3,13 +3,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "CLA Workbench",
-  description: "CLA 终端实践工作台"
+  description: "CLA 终端实践工作台",
+  other: {
+    "darkreader-lock": "true"
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
-      <body>{children}</body>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

@@ -222,6 +222,7 @@ export function TeacherChallengeBankPage() {
 
       {detailItem ? (
         <ChallengeDetailModal
+          key={detailItem.itemId}
           item={detailItem}
           loading={loading}
           onClose={() => setDetailId("")}
@@ -273,14 +274,28 @@ function ChallengeDetailModal({
     description: item.description,
     requirements: item.requirements,
     tags: item.tags.join(", "),
-    openAt: toLocalInput(item.openAt) || defaultWindow().openAt,
-    dueAt: toLocalInput(item.dueAt) || defaultWindow().dueAt
+    openAt: toLocalInput(item.openAt),
+    dueAt: toLocalInput(item.dueAt)
   }));
   const [windowValue, setWindowValue] = useState(() => ({
-    openAt: toLocalInput(item.openAt) || defaultWindow().openAt,
-    dueAt: toLocalInput(item.dueAt) || defaultWindow().dueAt
+    openAt: toLocalInput(item.openAt),
+    dueAt: toLocalInput(item.dueAt)
   }));
   const editable = item.actions.canEdit;
+  const publishWindowReady = form.openAt !== "" && form.dueAt !== "";
+
+  useEffect(() => {
+    const fallback = defaultWindow();
+    setForm((current) => ({
+      ...current,
+      openAt: current.openAt || fallback.openAt,
+      dueAt: current.dueAt || fallback.dueAt
+    }));
+    setWindowValue((current) => ({
+      openAt: current.openAt || fallback.openAt,
+      dueAt: current.dueAt || fallback.dueAt
+    }));
+  }, []);
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -390,7 +405,7 @@ function ChallengeDetailModal({
             className="iconbutton"
             type="button"
             onClick={() => onSave(item, form)}
-            disabled={!item.actions.canEdit || loading !== ""}
+            disabled={!item.actions.canEdit || loading !== "" || !publishWindowReady}
           >
             保存修改
           </button>
@@ -398,7 +413,7 @@ function ChallengeDetailModal({
             className="iconbutton primary"
             type="button"
             onClick={() => onPublish(item, form.openAt, form.dueAt)}
-            disabled={!item.actions.canPublish || loading !== ""}
+            disabled={!item.actions.canPublish || loading !== "" || !publishWindowReady}
           >
             <UploadCloud size={16} /> 发布
           </button>

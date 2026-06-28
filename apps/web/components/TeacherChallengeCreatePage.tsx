@@ -30,6 +30,11 @@ type PreviewState = {
   tags: string;
 };
 
+type PublishWindow = {
+  openAt: string;
+  dueAt: string;
+};
+
 export function TeacherChallengeCreatePage() {
   const [preview, setPreview] = useState<PreviewState>(() => initialPreview());
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -42,11 +47,15 @@ export function TeacherChallengeCreatePage() {
   const [input, setInput] = useState(
     "创建一个 Web 登录认证绕过题，学生需要获取容器、访问目标地址、用终端或浏览器验证认证边界，并提交根因和修复建议。"
   );
-  const [publishWindow, setPublishWindow] = useState(defaultWindow());
+  const [publishWindow, setPublishWindow] = useState<PublishWindow>(() => emptyWindow());
   const [candidateSearch, setCandidateSearch] = useState<ChallengeCandidateSearchResponse | null>(null);
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setPublishWindow(defaultWindow());
+  }, []);
 
   useEffect(() => {
     if (!hasAuthToken()) {
@@ -57,6 +66,7 @@ export function TeacherChallengeCreatePage() {
   }, []);
 
   const bestCandidate = useMemo(() => candidateSearch?.candidates[0] ?? null, [candidateSearch]);
+  const publishWindowReady = publishWindow.openAt !== "" && publishWindow.dueAt !== "";
 
   async function sendToAgent() {
     const text = input.trim();
@@ -113,6 +123,10 @@ export function TeacherChallengeCreatePage() {
   async function createItem(nextPublish: boolean) {
     setError("");
     setMessage("");
+    if (nextPublish && !publishWindowReady) {
+      setError("请先设置完整的开始时间和结束时间。");
+      return;
+    }
     setLoading(nextPublish ? "publish" : "create");
     try {
       const item = await createChallengeBankItem({
@@ -227,7 +241,7 @@ export function TeacherChallengeCreatePage() {
                 className="iconbutton primary"
                 type="button"
                 onClick={() => createItem(true)}
-                disabled={loading !== ""}
+                disabled={loading !== "" || !publishWindowReady}
               >
                 <UploadCloud size={16} /> 创建并发布
               </button>
@@ -311,7 +325,11 @@ function defaultWindow() {
   return { openAt: toLocalInput(openAt.toISOString()), dueAt: toLocalInput(dueAt.toISOString()) };
 }
 
-function toApiWindow(value: { openAt: string; dueAt: string }) {
+function emptyWindow(): PublishWindow {
+  return { openAt: "", dueAt: "" };
+}
+
+function toApiWindow(value: PublishWindow) {
   return { openAt: toIso(value.openAt), dueAt: toIso(value.dueAt) };
 }
 
