@@ -410,6 +410,17 @@ def test_authoring_handles_common_security_briefs_with_target_specific_proposals
             "candidate": "pwn_integer",
             "descriptionTerm": "整数",
         },
+        {
+            "key": "brief-sqli-hard-deadline",
+            "brief": "创建一个难度较高的 SQL 注入题目，时间截止到下周。",
+            "category": "WEB",
+            "target": "SQLI",
+            "difficulty": 4,
+            "title": "SQL 注入登录认证绕过实践",
+            "tag": "SQL注入",
+            "candidate": "web_sqli",
+            "descriptionTerm": "输入信任边界",
+        },
     ]
     for case in cases:
         draft_response = client.post(
@@ -514,6 +525,46 @@ def test_authoring_agent_preserves_multiturn_context_and_uses_latest_updates(
     assert followup_intent["category"] == "PWN"
     assert followup_intent["target"] == "PWN_FORMAT"
     assert followup_intent["difficulty"] == 1
+
+    preserved_intent = {
+        "category": "WEB",
+        "target": "SQLI",
+        "difficulty": 5,
+        "expectedMinutes": 150,
+        "workspaceType": "TERMINAL",
+        "isolationTier": 1,
+        "allowedTools": ["curl", "python"],
+        "learningObjectives": ["identify-input-trust-boundary"],
+        "uncertainFields": [],
+        "confidence": 0.93,
+    }
+    preserve_conversation = [
+        {"role": "teacher", "content": "创建一个难度较高的 SQL 注入题目。"},
+        {"role": "agent", "content": "已生成高难 SQL 注入题面。"},
+        {"role": "teacher", "content": "标题改成 SQL 注入下周截止专项。标签增加 课程考核。"},
+    ]
+    preserved = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "multiturn-preserve-intent"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": "\n".join(item["content"] for item in preserve_conversation if item["role"] == "teacher"),
+            "constraints": {
+                "internet": False,
+                "maxDifficulty": 5,
+                "workspaceType": "TERMINAL",
+                "authoringConversation": preserve_conversation,
+                "latestTeacherMessage": "标题改成 SQL 注入下周截止专项。标签增加 课程考核。",
+                "currentCourseIntent": preserved_intent,
+            },
+        },
+    )
+    assert preserved.status_code == 201, preserved.text
+    preserved_body = preserved.json()["courseIntent"]
+    assert preserved_body["category"] == "WEB"
+    assert preserved_body["target"] == "SQLI"
+    assert preserved_body["difficulty"] == 5
+    assert preserved_body["expectedMinutes"] == 150
 
 
 def test_model_parser_gui_tools_and_higher_isolation_still_retrieve_blueprints(

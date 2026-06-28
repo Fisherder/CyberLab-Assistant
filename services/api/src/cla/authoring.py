@@ -38,17 +38,21 @@ DEFAULT_MODEL_POLICY = "cla-agent-runtime/openai-compatible"
 def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -> dict[str, Any]:
     constraints = constraints or {}
     context = _authoring_conversation_context(brief, constraints)
+    previous_intent = _previous_course_intent(constraints)
     text = context["effectiveBrief"].lower()
     latest_text = context["latestTeacherMessage"].lower()
     uncertain_fields: list[str] = []
 
     full_category = _category_from_text(text)
     latest_category = _category_from_text(latest_text) if latest_text else "UNKNOWN"
-    category = str(constraints.get("category") or (latest_category if latest_category != "UNKNOWN" else full_category))
+    category = str(
+        constraints.get("category")
+        or (latest_category if latest_category != "UNKNOWN" else previous_intent.get("category") or full_category)
+    )
     if category == "UNKNOWN":
         uncertain_fields.append("category")
 
-    workspace_type = str(constraints.get("workspaceType") or _workspace_from_text(text))
+    workspace_type = str(constraints.get("workspaceType") or previous_intent.get("workspaceType") or _workspace_from_text(text))
     if workspace_type not in {"TERMINAL", "REMOTE_DESKTOP", "SIMULATED"}:
         workspace_type = "TERMINAL"
         uncertain_fields.append("workspaceType")
@@ -60,13 +64,24 @@ def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -
         target = latest_target
     elif latest_category != "UNKNOWN" and latest_category != full_category:
         target = _default_target_for_category(category)
+    elif previous_intent.get("target"):
+        target = str(previous_intent["target"])
     else:
         target = _target_from_text(text)
     difficulty_text = latest_text if _has_difficulty_signal(latest_text) else text
     minutes_text = latest_text if _has_expected_minutes_signal(latest_text) else text
-    difficulty = int(constraints.get("difficulty") or _difficulty_from_text(difficulty_text))
-    expected_minutes = int(constraints.get("expectedMinutes") or _minutes_from_text(minutes_text) or 75)
-    isolation_tier = int(constraints.get("isolationTier") or 1)
+    difficulty = int(
+        constraints.get("difficulty")
+        or (_difficulty_from_text(difficulty_text) if _has_difficulty_signal(latest_text) else previous_intent.get("difficulty"))
+        or _difficulty_from_text(difficulty_text)
+    )
+    expected_minutes = int(
+        constraints.get("expectedMinutes")
+        or (_minutes_from_text(minutes_text) if _has_expected_minutes_signal(latest_text) else previous_intent.get("expectedMinutes"))
+        or _minutes_from_text(minutes_text)
+        or 75
+    )
+    isolation_tier = int(constraints.get("isolationTier") or previous_intent.get("isolationTier") or 1)
     allowed_tools = [str(tool) for tool in constraints.get("allowedTools", _tools_from_text(text, category))]
     learning_objectives = constraints.get("learningObjectives") or _objectives_from_text(text, category)
     confidence = 0.93 if not uncertain_fields else 0.62
@@ -83,6 +98,11 @@ def parse_course_intent(brief: str, constraints: dict[str, Any] | None = None) -
         "confidence": confidence,
     }
     return _postprocess_course_intent(intent, brief, constraints)
+
+
+def _previous_course_intent(constraints: dict[str, Any]) -> dict[str, Any]:
+    value = constraints.get("currentCourseIntent")
+    return value if isinstance(value, dict) else {}
 
 
 def _authoring_conversation_context(brief: str, constraints: dict[str, Any]) -> dict[str, str]:
@@ -1835,9 +1855,15 @@ def _has_difficulty_signal(text: str) -> bool:
             "低难度",
             "中等",
             "中级",
+            "较高",
+            "偏高",
+            "偏难",
+            "较难",
             "困难",
             "高级",
             "高难",
+            "非常难",
+            "专家",
         ]
     )
 
@@ -2160,7 +2186,9 @@ def _difficulty_from_text(text: str) -> int:
         return 1
     if any(token in text for token in ["medium", "intermediate", "中等", "中级"]):
         return 3
-    if any(token in text for token in ["advanced", "hard", "困难", "高级", "高难"]):
+    if any(token in text for token in ["expert", "very hard", "非常难", "专家"]):
+        return 5
+    if any(token in text for token in ["advanced", "hard", "困难", "高级", "高难", "较高", "偏高", "偏难", "较难"]):
         return 4
     return 2
 

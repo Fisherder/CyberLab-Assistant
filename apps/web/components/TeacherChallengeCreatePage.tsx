@@ -9,8 +9,17 @@ import {
   fetchChallengeCandidates,
   generateCustomChallengePackage,
   hasAuthToken,
+  type ChallengeDraftResponse,
   type ChallengeCandidateSearchResponse
 } from "../lib/api";
+import {
+  applyPreviewFieldUpdate,
+  inferAuthoringFieldUpdate,
+  toLocalInput,
+  type AuthoringFieldUpdate,
+  type AuthoringPreviewState,
+  type PublishWindow
+} from "../lib/authoringFieldUpdates";
 import { TeacherWorkspaceShell } from "./TeacherWorkspaceShell";
 
 const DEFAULT_COURSE_ID = "course_websec";
@@ -21,25 +30,7 @@ type ChatMessage = {
   content: string;
 };
 
-type PreviewState = {
-  courseId: string;
-  challengeVersionId: string;
-  title: string;
-  summary: string;
-  description: string;
-  requirements: string;
-  tags: string;
-};
-
-type PublishWindow = {
-  openAt: string;
-  dueAt: string;
-};
-
-type PublishWindowUpdate = {
-  window: PublishWindow;
-  label: string;
-};
+type PreviewState = AuthoringPreviewState;
 
 export function TeacherChallengeCreatePage() {
   const [preview, setPreview] = useState<PreviewState>(() => initialPreview());
@@ -55,6 +46,7 @@ export function TeacherChallengeCreatePage() {
   );
   const [publishWindow, setPublishWindow] = useState<PublishWindow>(() => emptyWindow());
   const [candidateSearch, setCandidateSearch] = useState<ChallengeCandidateSearchResponse | null>(null);
+  const [courseIntent, setCourseIntent] = useState<ChallengeDraftResponse["courseIntent"] | null>(null);
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -85,10 +77,11 @@ export function TeacherChallengeCreatePage() {
     setMessages(nextMessages);
     setInput("");
     try {
-      const publishUpdate = inferPublishWindowUpdate(text, publishWindow);
-      const activePublishWindow = publishUpdate?.window ?? publishWindow;
-      if (publishUpdate) {
-        setPublishWindow(publishUpdate.window);
+      const fieldUpdate = inferAuthoringFieldUpdate(text, preview, publishWindow);
+      const activePublishWindow = fieldUpdate.publish?.window ?? publishWindow;
+      const activePreview = applyPreviewFieldUpdate(preview, fieldUpdate.preview);
+      if (fieldUpdate.publish) {
+        setPublishWindow(fieldUpdate.publish.window);
       }
       const brief = buildConversationBrief(nextMessages);
       const draft = await createChallengeDraft(preview.courseId, brief, {
@@ -97,9 +90,11 @@ export function TeacherChallengeCreatePage() {
         workspaceType: "TERMINAL",
         authoringConversation: nextMessages,
         latestTeacherMessage: text,
-        currentPreview: preview,
+        currentPreview: activePreview,
+        currentCourseIntent: courseIntent,
         currentPublishWindow: activePublishWindow
       });
+      setCourseIntent(draft.courseIntent);
       const candidates = await fetchChallengeCandidates(draft.candidatesUrl);
       setCandidateSearch(candidates);
       const proposal = candidates.authoringProposal;
@@ -120,7 +115,7 @@ export function TeacherChallengeCreatePage() {
           .filter(Boolean)
           .join("\n");
       }
-      setPreview((current) => ({
+      setPreview((current) => applyPreviewFieldUpdate({
         ...current,
         challengeVersionId,
         title: proposal.title,
@@ -128,12 +123,12 @@ export function TeacherChallengeCreatePage() {
         description: proposal.description,
         requirements: proposal.requirements,
         tags: proposal.tags.join(", ")
-      }));
+      }, fieldUpdate.preview));
       setMessages((current) => [
         ...current,
         {
           role: "agent",
-          content: formatAgentReply(agentMessage, publishUpdate)
+          content: formatAgentReply(agentMessage, fieldUpdate)
         }
       ]);
     } catch (err) {
@@ -344,10 +339,12 @@ function buildConversationBrief(items: ChatMessage[]): string {
     .join("\n");
 }
 
-function formatAgentReply(agentMessage: string, publishUpdate: PublishWindowUpdate | null): string {
+function formatAgentReply(agentMessage: string, fieldUpdate: AuthoringFieldUpdate): string {
   const parts = [agentMessage.trim()];
-  if (publishUpdate) {
-    parts.push(`发布设置已更新：${publishUpdate.label}。`);
+  if (fieldUpdate.labels.length) {
+    parts.push(`已按你的明确指令更新：${fieldUpdate.labels.join("；")}。`);
+  } else if (fieldUpdate.publish) {
+    parts.push(`发布设置已更新：${fieldUpdate.publish.label}。`);
   }
   return parts.filter(Boolean).join("\n");
 }
@@ -368,82 +365,6 @@ function toApiWindow(value: PublishWindow) {
 
 function toIso(value: string): string {
   return new Date(value).toISOString();
-}
-
-function toLocalInput(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
-}
-
-function inferPublishWindowUpdate(text: string, current: PublishWindow): PublishWindowUpdate | null {
-  if (!/(发布|开放|截止|持续|时间)/.test(text)) return null;
-  const duration = parseDuration(text);
-  if (!duration) return null;
-  const openAt = current.openAt ? new Date(toIso(current.openAt)) : new Date();
-  const dueAt = addDuration(openAt, duration.amount, duration.unit);
-  const window = {
-    openAt: toLocalInput(openAt.toISOString()),
-    dueAt: toLocalInput(dueAt.toISOString())
-  };
-  return {
-    window,
-    label: `${formatLocalDateTime(window.openAt)} 至 ${formatLocalDateTime(window.dueAt)}`
-  };
-}
-
-function parseDuration(text: string): { amount: number; unit: "year" | "month" | "week" | "day" | "hour" } | null {
-  if (/半年/.test(text)) return { amount: 6, unit: "month" };
-  const match = text.match(/([0-9]+|[一二两三四五六七八九十]+)\s*(年|个月|月|周|星期|天|日|小时)/);
-  if (!match) return null;
-  const amount = parseDurationAmount(match[1]);
-  if (!amount) return null;
-  const unitText = match[2];
-  if (unitText === "年") return { amount, unit: "year" };
-  if (unitText === "个月" || unitText === "月") return { amount, unit: "month" };
-  if (unitText === "周" || unitText === "星期") return { amount, unit: "week" };
-  if (unitText === "小时") return { amount, unit: "hour" };
-  return { amount, unit: "day" };
-}
-
-function parseDurationAmount(value: string): number {
-  const numeric = Number(value);
-  if (Number.isFinite(numeric) && numeric > 0) return numeric;
-  const digits: Record<string, number> = {
-    一: 1,
-    二: 2,
-    两: 2,
-    三: 3,
-    四: 4,
-    五: 5,
-    六: 6,
-    七: 7,
-    八: 8,
-    九: 9
-  };
-  if (value === "十") return 10;
-  if (value.includes("十")) {
-    const [left, right] = value.split("十");
-    const tens = left ? digits[left] ?? 0 : 1;
-    const ones = right ? digits[right] ?? 0 : 0;
-    return tens * 10 + ones;
-  }
-  return digits[value] ?? 0;
-}
-
-function addDuration(date: Date, amount: number, unit: "year" | "month" | "week" | "day" | "hour"): Date {
-  const next = new Date(date.getTime());
-  if (unit === "year") next.setFullYear(next.getFullYear() + amount);
-  if (unit === "month") next.setMonth(next.getMonth() + amount);
-  if (unit === "week") next.setDate(next.getDate() + amount * 7);
-  if (unit === "day") next.setDate(next.getDate() + amount);
-  if (unit === "hour") next.setHours(next.getHours() + amount);
-  return next;
-}
-
-function formatLocalDateTime(value: string): string {
-  return value.replace("T", " ");
 }
 
 function parseTags(value: string): string[] {
