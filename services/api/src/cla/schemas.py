@@ -140,6 +140,23 @@ class ChallengeCandidateView(BaseModel):
     validationStatus: str
 
 
+class ChallengeAuthoringProposalView(BaseModel):
+    mode: Literal["USE_EXISTING", "COMPOSE_EXISTING", "GENERATE_CUSTOM"]
+    source: str
+    challengeVersionId: str | None = None
+    candidateIds: list[str] = Field(default_factory=list)
+    title: str
+    summary: str
+    description: str
+    requirements: str
+    tags: list[str] = Field(default_factory=list)
+    agentMessage: str
+    matchExplanation: str
+    requiresCustomGeneration: bool = False
+    generatedDraftUrl: str | None = None
+    generatedFiles: list[str] = Field(default_factory=list)
+
+
 class ChallengeCandidateSearchView(BaseModel):
     draftId: str
     status: str
@@ -147,6 +164,7 @@ class ChallengeCandidateSearchView(BaseModel):
     candidates: list[ChallengeCandidateView]
     rejectedCandidates: list[ChallengeCandidateView]
     compositionPlan: dict = Field(default_factory=dict)
+    authoringProposal: ChallengeAuthoringProposalView
 
 
 class ChallengeMaterializeView(BaseModel):

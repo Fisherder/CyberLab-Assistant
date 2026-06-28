@@ -242,11 +242,12 @@ def generate_custom_challenge_package(
         semver=semver,
         files=files,
     )
+    challenge_title = _custom_title(intent, category)
     challenge = models.Challenge(
         id=new_id("chal"),
         tenant_id=tenant_id,
         slug=slug,
-        title=f"定制 {category} 靶场草稿",
+        title=challenge_title,
         category=category,
         owner_id=actor_id,
     )
@@ -485,7 +486,7 @@ def _custom_manifest(slug: str, semver: str, intent: dict[str, Any], category: s
     return {
         "apiVersion": "cla.edu/v1",
         "kind": "CyberChallenge",
-        "metadata": {"id": slug, "version": semver, "title": f"定制 {category} 靶场草稿", "license": "internal-generated"},
+        "metadata": {"id": slug, "version": semver, "title": _custom_title(intent, category), "license": "internal-generated"},
         "spec": {
             "category": category,
             "modality": "REAL_LAB",
@@ -554,7 +555,26 @@ def _custom_student_access(category: str) -> dict[str, Any]:
 
 
 def _custom_readme(slug: str, brief: str, category: str) -> str:
-    return f"# {slug}\n\n本目录是 CLA 根据教师 Brief 生成的 {category} 定制靶场草稿。\n\n教师 Brief：\n\n{brief}\n\n发布前必须运行内容验证、参考求解和人工审核。\n"
+    return f"""# {slug}
+
+本目录是 CLA 根据教师需求生成的 {category} 定制靶场草稿。该目录面向教师审核和内容验证，不应直接作为学生题面发布。
+
+## 资产组成
+
+- `manifest.yaml`：题目版本、工作区、运行时、Oracle 与 Rubric 引用。
+- `workspace/Dockerfile`：学生终端工作区基础镜像。
+- `target/`：目标服务或目标程序源码。
+- `oracle/validator.py`：外部验证器草稿。
+- `rubric.yaml`：评分标准草稿。
+- `topology.yaml`：工作区与目标服务的网络拓扑草稿。
+
+## 审核要求
+
+1. 运行内容验证、参考求解和负例测试。
+2. 检查目标服务、数据库初始化、评分标准和资源限制是否符合课程目标。
+3. 确认题面、提示和日志不包含动态秘密、教师解法或最终 payload。
+4. 通过教师审批后再发布不可变题目版本。
+"""
 
 
 def _custom_rubric(category: str) -> str:
@@ -605,9 +625,34 @@ def validate(observation: dict) -> dict:
 def _custom_web_target() -> str:
     return """from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import sqlite3
 from urllib.parse import parse_qs
 
 SUCCESS = False
+DB_PATH = "/tmp/cla_target.db"
+
+
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT NOT NULL, role TEXT NOT NULL)")
+        conn.execute("DELETE FROM users")
+        conn.executemany(
+            "INSERT INTO users(username, password, role) VALUES (?, ?, ?)",
+            [
+                ("alice", "alice-password", "student"),
+                ("admin", "admin-password", "admin"),
+            ],
+        )
+
+
+def login_with_vulnerable_query(username, password):
+    query = "SELECT username, role FROM users WHERE username = '%s' AND password = '%s'" % (username, password)
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(query).fetchone()
+    if row is None:
+        return None
+    return {"username": row[0], "role": row[1]}
+
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -623,9 +668,14 @@ class Handler(BaseHTTPRequestHandler):
         global SUCCESS
         length = int(self.headers.get("content-length", "0"))
         fields = parse_qs(self.rfile.read(length).decode())
-        value = fields.get("input", [""])[0]
-        SUCCESS = "cla-proof" in value
-        self.reply({"accepted": SUCCESS})
+        username = fields.get("username", [""])[0]
+        password = fields.get("password", [""])[0]
+        user = login_with_vulnerable_query(username, password)
+        if user is None:
+            self.reply({"ok": False, "message": "invalid credentials"}, 401)
+            return
+        SUCCESS = user.get("role") == "admin"
+        self.reply({"ok": True, "user": user, "auth_bypass_observed": SUCCESS})
 
     def reply(self, body, status=200):
         data = json.dumps(body).encode()
@@ -641,9 +691,13 @@ class Handler(BaseHTTPRequestHandler):
 <head><meta charset="utf-8"><title>CLA Web Target</title></head>
 <body>
 <main>
-  <h1>CLA Web 调试页</h1>
-  <p>这是生成的 Web 目标入口。可先在浏览器中输入内容观察响应，再在终端中用 curl 复现。</p>
-  <form method="post"><input name="input" value="test"><button>提交</button></form>
+  <h1>CLA Web 登录调试页</h1>
+  <p>这是生成的 Web 目标入口。先用普通账号建立失败基线，再在终端中用 curl 复现登录请求并比较响应。</p>
+  <form method="post" action="/login">
+    <label>用户名 <input name="username" value="alice"></label>
+    <label>密码 <input name="password" value="wrong"></label>
+    <button>登录</button>
+  </form>
 </main>
 </body>
 </html>'''.encode()
@@ -654,8 +708,27 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 if __name__ == "__main__":
+    init_db()
     ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
 """
+
+
+def _custom_title(intent: dict[str, Any], category: str) -> str:
+    target = str(intent.get("target") or "").upper()
+    objectives = {str(item) for item in intent.get("learningObjectives", [])}
+    if category == "WEB" and (
+        "SQLI" in target
+        or "INPUT_TRUST_BOUNDARY" in target
+        or "identify-input-trust-boundary" in objectives
+    ):
+        return "定制 SQL 注入认证绕过靶场"
+    if category == "WEB":
+        return "定制 Web 安全靶场草稿"
+    if category == "REVERSE":
+        return "定制逆向工程靶场草稿"
+    if category == "PWN":
+        return "定制 Pwn 靶场草稿"
+    return f"定制 {category} 靶场草稿"
 
 
 def _custom_reverse_target() -> str:

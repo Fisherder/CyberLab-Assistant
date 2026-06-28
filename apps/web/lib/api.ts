@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const API_BASE = process.env.NEXT_PUBLIC_CLA_API_BASE ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_CLA_API_BASE ?? "";
 const ASSIGNMENT_ID = process.env.NEXT_PUBLIC_CLA_ASSIGNMENT_ID ?? "asg_web_sqli_auth";
 const AUTH_TOKEN_KEY = "claAuthToken";
 const DEV_TOKEN_KEY = "claDevToken";
@@ -284,13 +284,31 @@ const ChallengeCandidateResponse = z.object({
   validationStatus: z.string()
 });
 
+const ChallengeAuthoringProposalResponse = z.object({
+  mode: z.enum(["USE_EXISTING", "COMPOSE_EXISTING", "GENERATE_CUSTOM"]),
+  source: z.string(),
+  challengeVersionId: z.string().nullable(),
+  candidateIds: z.array(z.string()),
+  title: z.string(),
+  summary: z.string(),
+  description: z.string(),
+  requirements: z.string(),
+  tags: z.array(z.string()),
+  agentMessage: z.string(),
+  matchExplanation: z.string(),
+  requiresCustomGeneration: z.boolean(),
+  generatedDraftUrl: z.string().nullable(),
+  generatedFiles: z.array(z.string())
+});
+
 const ChallengeCandidateSearchResponse = z.object({
   draftId: z.string(),
   status: z.string(),
   courseIntent: CourseIntentResponse,
   candidates: z.array(ChallengeCandidateResponse),
   rejectedCandidates: z.array(ChallengeCandidateResponse),
-  compositionPlan: z.record(z.unknown()).optional()
+  compositionPlan: z.record(z.unknown()).optional(),
+  authoringProposal: ChallengeAuthoringProposalResponse
 });
 
 const ChallengeGeneratedVersionResponse = z.object({
@@ -412,6 +430,7 @@ export type ChallengeRegistryResponse = z.infer<typeof ChallengeRegistryResponse
 export type ChallengeImportResponse = z.infer<typeof ChallengeImportResponse>;
 export type ChallengeDraftResponse = z.infer<typeof ChallengeDraftResponse>;
 export type ChallengeCandidateSearchResponse = z.infer<typeof ChallengeCandidateSearchResponse>;
+export type ChallengeAuthoringProposalResponse = z.infer<typeof ChallengeAuthoringProposalResponse>;
 export type ChallengeGeneratedVersionResponse = z.infer<typeof ChallengeGeneratedVersionResponse>;
 export type ChallengeBankItemResponse = z.infer<typeof ChallengeBankItemResponse>;
 export type ChallengeBankListResponse = z.infer<typeof ChallengeBankListResponse>;

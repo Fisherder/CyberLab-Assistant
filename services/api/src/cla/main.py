@@ -9,6 +9,7 @@ import tarfile
 
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 import jwt
 from sqlalchemy import func, select
@@ -146,6 +147,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="CLA Terminal Practice API", version="0.1.0")
     app.state.settings = settings
     app.state.SessionLocal = SessionLocal
+    if settings.dev_mode:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[
+                "http://127.0.0.1:3000",
+                "http://localhost:3000",
+                "http://[::1]:3000",
+            ],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     def get_db() -> Session:
         yield from session_scope(SessionLocal)

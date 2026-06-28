@@ -83,6 +83,14 @@ def test_teacher_creates_brief_draft_and_gets_explainable_candidates(
     assert "category" in candidate["matchReasons"]
     assert "workspaceType" in candidate["matchReasons"]
     assert candidate["validationStatus"] == "PASS"
+    proposal = body["authoringProposal"]
+    assert proposal["mode"] == "USE_EXISTING"
+    assert proposal["challengeVersionId"] == DEV_IDS["challenge_version"]
+    assert proposal["title"] == "SQL 注入登录认证绕过实践"
+    assert "UNKNOWN" not in proposal["tags"]
+    assert "教师需求" not in proposal["description"]
+    assert "教师补充要求" not in proposal["requirements"]
+    assert proposal["requiresCustomGeneration"] is False
 
     with client.app.state.SessionLocal() as db:
         assert db.scalar(select(func.count(models.AgentRun.id))) == 0
@@ -93,6 +101,49 @@ def test_teacher_creates_brief_draft_and_gets_explainable_candidates(
             )
         )
         assert audit is not None
+
+
+def test_teacher_chinese_sqli_brief_is_rewritten_into_student_facing_proposal(
+    client: TestClient,
+    teacher_token: str,
+) -> None:
+    brief = "创建一个经典的 SQL 注入题目。"
+    draft_response = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "chinese-sqli-authoring"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": brief,
+            "constraints": {"internet": False, "maxDifficulty": 3, "workspaceType": "TERMINAL"},
+        },
+    )
+    assert draft_response.status_code == 201, draft_response.text
+    draft = draft_response.json()
+    assert draft["courseIntent"]["category"] == "WEB"
+    assert draft["courseIntent"]["target"] in {"SQLI", "SQLI_AUTHENTICATION", "INPUT_TRUST_BOUNDARY"}
+    assert "category" not in draft["courseIntent"]["uncertainFields"]
+
+    response = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidates"]
+    assert body["candidates"][0]["candidateId"] == DEV_IDS["challenge_version"]
+
+    proposal = body["authoringProposal"]
+    assert proposal["mode"] == "USE_EXISTING"
+    assert proposal["challengeVersionId"] == DEV_IDS["challenge_version"]
+    assert proposal["title"] == "SQL 注入登录认证绕过实践"
+    assert proposal["title"] != brief
+    assert "创建一个" not in proposal["title"]
+    assert "UNKNOWN" not in proposal["tags"]
+    assert "SQL注入" in proposal["tags"]
+    assert "题库" in proposal["agentMessage"]
+    assert brief not in proposal["description"]
+    assert brief not in proposal["requirements"]
+    assert "教师需求" not in proposal["description"]
+    assert "教师补充要求" not in proposal["requirements"]
+    assert "username" in proposal["description"]
+    assert "参数化查询" in proposal["requirements"]
 
 
 def test_authoring_hard_constraints_are_not_overridden(
@@ -333,6 +384,10 @@ def test_custom_package_generation_when_no_candidate_matches(
     candidate_body = candidates.json()
     assert candidate_body["candidates"] == []
     assert candidate_body["compositionPlan"]["mode"] == "custom-agent-scaffold"
+    assert candidate_body["authoringProposal"]["mode"] == "GENERATE_CUSTOM"
+    assert candidate_body["authoringProposal"]["requiresCustomGeneration"] is True
+    assert candidate_body["authoringProposal"]["challengeVersionId"] is None
+    assert "SQLite" in candidate_body["authoringProposal"]["description"]
 
     generated = client.post(
         f"/api/v1/challenge-drafts/{draft['draftId']}/generate-custom-package",
@@ -370,7 +425,30 @@ def test_custom_package_generation_when_no_candidate_matches(
         assert archive_path.is_file()
         with tarfile.open(archive_path) as archive:
             names = set(archive.getnames())
+            server_source = archive.extractfile("target/server.py")
+            assert server_source is not None
+            server_text = server_source.read().decode("utf-8")
         assert {"manifest.yaml", "workspace/Dockerfile", "target/server.py", "oracle/validator.py"} <= names
+        assert "sqlite3" in server_text
+        assert "CREATE TABLE IF NOT EXISTS users" in server_text
+        assert "def login_with_vulnerable_query" in server_text
+
+    followup = client.post(
+        "/api/v1/challenge-drafts",
+        headers={**auth(teacher_token), "Idempotency-Key": "custom-package-followup-sqli"},
+        json={
+            "courseId": DEV_IDS["course"],
+            "brief": "创建一个经典的 SQL 注入题目。",
+            "constraints": {"internet": False, "maxDifficulty": 3, "workspaceType": "TERMINAL"},
+        },
+    )
+    assert followup.status_code == 201, followup.text
+    followup_candidates = client.get(followup.json()["candidatesUrl"], headers=auth(teacher_token))
+    assert followup_candidates.status_code == 200, followup_candidates.text
+    followup_body = followup_candidates.json()
+    assert followup_body["candidates"]
+    assert followup_body["candidates"][0]["candidateId"] == DEV_IDS["challenge_version"]
+    assert followup_body["candidates"][0]["candidateId"] != body["challengeVersionId"]
 
 
 def test_model_brief_parser_and_version_generation_are_audited(tmp_path, monkeypatch) -> None:
@@ -400,10 +478,10 @@ def test_model_brief_parser_and_version_generation_are_audited(tmp_path, monkeyp
                 "expectedMinutes": 75,
                 "workspaceType": "TERMINAL",
                 "isolationTier": 1,
-                "allowedTools": ["curl", "python"],
+                "allowedTools": ["sqlmap", "curl"],
                 "learningObjectives": [
-                    "identify-input-trust-boundary",
-                    "validate-authentication-impact",
+                    "SQL_INJECTION",
+                    "DATABASE",
                 ],
                 "uncertainFields": [],
                 "confidence": 0.97,
@@ -442,6 +520,9 @@ def test_model_brief_parser_and_version_generation_are_audited(tmp_path, monkeyp
 
     draft = create_draft(client, teacher_token, key="model-draft")
     assert draft["courseIntent"]["confidence"] == 0.97
+    assert "sqlmap" not in [tool.lower() for tool in draft["courseIntent"]["allowedTools"]]
+    assert "curl" in draft["courseIntent"]["allowedTools"]
+    assert "identify-input-trust-boundary" in draft["courseIntent"]["learningObjectives"]
 
     candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
     assert candidates.status_code == 200, candidates.text

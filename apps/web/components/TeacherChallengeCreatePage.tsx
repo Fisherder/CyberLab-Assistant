@@ -7,6 +7,7 @@ import {
   createChallengeBankItem,
   createChallengeDraft,
   fetchChallengeCandidates,
+  generateCustomChallengePackage,
   hasAuthToken,
   type ChallengeCandidateSearchResponse
 } from "../lib/api";
@@ -66,6 +67,7 @@ export function TeacherChallengeCreatePage() {
   }, []);
 
   const bestCandidate = useMemo(() => candidateSearch?.candidates[0] ?? null, [candidateSearch]);
+  const authoringProposal = useMemo(() => candidateSearch?.authoringProposal ?? null, [candidateSearch]);
   const publishWindowReady = publishWindow.openAt !== "" && publishWindow.dueAt !== "";
 
   async function sendToAgent() {
@@ -89,24 +91,38 @@ export function TeacherChallengeCreatePage() {
       });
       const candidates = await fetchChallengeCandidates(draft.candidatesUrl);
       setCandidateSearch(candidates);
-      const candidate = candidates.candidates[0];
-      const intent = draft.courseIntent;
+      const proposal = candidates.authoringProposal;
+      let challengeVersionId = proposal.challengeVersionId ?? candidates.candidates[0]?.challengeVersionId ?? preview.challengeVersionId;
+      let agentMessage = proposal.agentMessage;
+      if (proposal.requiresCustomGeneration) {
+        const generated = await generateCustomChallengePackage(draft.draftId);
+        challengeVersionId = generated.challengeVersionId;
+        const generatedFiles = Array.isArray(generated.modelDraft.generatedFiles)
+          ? generated.modelDraft.generatedFiles.map(String)
+          : proposal.generatedFiles;
+        agentMessage = [
+          proposal.agentMessage,
+          `已生成定制靶场代码包草稿 ${generated.challengeVersionId}。`,
+          generatedFiles.length ? `生成文件：${generatedFiles.slice(0, 8).join("、")}。` : "",
+          "请在发布前查看验证报告并完成教师审核。"
+        ]
+          .filter(Boolean)
+          .join("\n");
+      }
       setPreview((current) => ({
         ...current,
-        challengeVersionId: candidate?.challengeVersionId ?? current.challengeVersionId,
-        title: titleFromBrief(text, candidate?.title ?? current.title),
-        summary: `面向 ${intent.target || "课程目标"} 的 ${intent.category} 终端实践，预计 ${intent.expectedMinutes || 75} 分钟。`,
-        description: buildDescription(text, candidate?.title ?? current.title),
-        requirements: buildRequirements(text),
-        tags: normalizeTags([intent.category, intent.target, "终端实践", "容器环境"])
+        challengeVersionId,
+        title: proposal.title,
+        summary: proposal.summary,
+        description: proposal.description,
+        requirements: proposal.requirements,
+        tags: proposal.tags.join(", ")
       }));
       setMessages((current) => [
         ...current,
         {
           role: "agent",
-          content: candidate
-            ? `已检索到候选版本 ${candidate.title}@${candidate.semver}，我已把题目详情卡片更新为可发布版本。`
-            : "没有找到完全匹配的候选题，我先保留当前默认题目版本，并根据你的描述更新题面。"
+          content: `${agentMessage}\n${proposal.matchExplanation}`
         }
       ]);
     } catch (err) {
@@ -268,6 +284,13 @@ export function TeacherChallengeCreatePage() {
                 <span>匹配 {Math.round(bestCandidate.score * 100)}%</span>
               </div>
             ) : null}
+            {authoringProposal ? (
+              <div className="candidate-summary">
+                <strong>Agent 提案</strong>
+                <span>{proposalModeLabel(authoringProposal.mode)}</span>
+                <span>{authoringProposal.title}</span>
+              </div>
+            ) : null}
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -297,26 +320,10 @@ function initialPreview(): PreviewState {
   };
 }
 
-function titleFromBrief(brief: string, fallback: string): string {
-  const trimmed = brief.replace(/[。.!！?？]/g, " ").trim();
-  if (trimmed.length >= 8 && trimmed.length <= 28) return trimmed;
-  return fallback;
-}
-
-function buildDescription(brief: string, candidateTitle: string): string {
-  return `题目基于“${candidateTitle}”版本创建。学生进入题目后先获取容器环境，再根据目标地址访问服务。教师需求：${brief}`;
-}
-
-function buildRequirements(brief: string): string {
-  return `学生需要完成操作验证，并提交根因说明、验证过程和修复建议。教师补充要求：${brief}`;
-}
-
-function normalizeTags(values: string[]): string {
-  return values
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .slice(0, 6)
-    .join(", ");
+function proposalModeLabel(value: string): string {
+  if (value === "GENERATE_CUSTOM") return "生成定制靶场";
+  if (value === "COMPOSE_EXISTING") return "组合题库候选";
+  return "使用题库候选";
 }
 
 function defaultWindow() {
