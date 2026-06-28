@@ -4,9 +4,12 @@
 
 ## 本轮完成
 
-- 已新增权威题型蓝图库：`content/challenge-blueprints/authoritative-catalog.yaml` 当前由脚本生成 150 条蓝图，覆盖 Web 安全、逆向工程、Pwn 三类，每类 50 条。
+- 已扩展权威题型蓝图库：`content/challenge-blueprints/authoritative-catalog.yaml` 当前由脚本生成 300 条蓝图，覆盖 Web 安全、逆向工程、Pwn、密码学、数字取证、通用技能六类，每类 50 条。
+- 已参考 PortSwigger Web Security Academy、picoCTF、CryptoHack、CTF101、Root-Me、OverTheWire、pwn.college、ROP Emporium、Microcorruption、crackmes.one、pwnable.kr 和 OWASP WebGoat 的公开分类体系补齐常见安全题型清单；仅提炼知识点和题型，不复制外部题面、附件、flag、payload、writeup 或解法。
+- 已扩展出题 Agent 的规则 fallback 和模型后处理能力，支持 Web 细分题型、逆向细分题型、Pwn 细分题型、密码学、数字取证和通用技能的类别、目标、工具、学习目标、标题、摘要、说明、完成要求和标签生成。
+- 已新增 60 场景出题矩阵测试，覆盖 SQL 注入、XSS、认证、访问控制、SSRF、文件安全、SSTI、XXE、竞态/API，逆向字符串/keygen/反调试/加壳/控制流混淆/VM/移动端/嵌入式，Pwn 栈/ROP/格式化字符串/堆/UAF/整数/shellcode/PIE/沙箱/内核风格，密码学编码/古典/XOR/哈希/对称/填充/RSA/DH/ECC/PRNG，取证文件/图片/PCAP/内存/磁盘/日志/恶意样本/音频/OSINT/文档，以及 MISC Linux/Shell/脚本/Git/正则/容器/权限/数据/网络/编码。
 - 已新增蓝图库生成脚本 `tools/generate_authoritative_blueprint_catalog.py`，来源策略只提炼公开题型、知识点和训练方向，不复制外部平台题面、附件、flag、payload、writeup 或教师解法。
-- 已新增 `POST /api/v1/challenge-registry/import-blueprints`，教师可把 150 条蓝图导入 Challenge Registry；导入会创建稳定 ID 的 `Challenge`、`ChallengeVersion`、`ValidationRun` 和 `ChallengeArtifact`。
+- 已新增 `POST /api/v1/challenge-registry/import-blueprints`，教师可把 300 条蓝图导入 Challenge Registry；导入会创建稳定 ID 的 `Challenge`、`ChallengeVersion`、`ValidationRun` 和 `ChallengeArtifact`。
 - 已新增蓝图验证报告 `content/validation/authoritative-blueprint.validation.json`，教师打开蓝图验证报告时不会再尝试把 YAML 当 JSON 解析。
 - 已增强候选检索：蓝图标签、archetype、variant、vulnerability、sourceRefs、composition group、compatible groups 和 generator template 会进入 BM25 文档与 `retrievalSignals`。
 - 已新增 `compositionPlan`：有候选时优先给出单题或组合现有蓝图方案；无候选时返回 `custom-agent-scaffold`，明确建议生成定制靶场代码包草稿。
@@ -80,16 +83,16 @@
 # 结果：Python 编译检查通过
 
 .venv/bin/python tools/generate_authoritative_blueprint_catalog.py
-# 结果：count=150，counts={'WEB': 50, 'REVERSE': 50, 'PWN': 50}
+# 结果：count=300，counts={'WEB': 50, 'REVERSE': 50, 'PWN': 50, 'CRYPTO': 50, 'FORENSICS': 50, 'MISC': 50}
 
 .venv/bin/pytest services/api/tests/test_authoring.py -q
-# 结果：8 passed in 1.53s，覆盖权威蓝图导入、每类 50 条数量门禁、蓝图验证报告、检索组合、逆向分类和无候选定制靶场 tar 包生成
+# 结果：13 passed，覆盖 300 条权威蓝图导入、六类各 50 条数量门禁、蓝图验证报告、检索组合、60 场景常见题型矩阵和无候选定制靶场 tar 包生成
 
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 结果：tsc --noEmit 通过，覆盖教师端 Registry 页面新增入口和 API 类型契约
 
 .venv/bin/pytest services/api/tests -q
-# 结果：73 passed, 1 skipped in 5.55s，确认权威蓝图库改动没有破坏既有 API 纵向切片
+# 结果：80 passed, 1 skipped，确认权威蓝图库和出题 Agent 改动没有破坏既有 API 纵向切片
 
 git diff --check
 # 结果：通过，无空白错误
@@ -100,7 +103,7 @@ scripts/restart-local-dev.sh
 PYTHONPATH=services/api/src .venv/bin/python - <<'PY'
 # 生成教师开发 token 后，通过本机 HTTP POST /api/v1/challenge-registry/import-blueprints
 PY
-# 结果：status=202，imported=150，skipped=0，summary={'WEB': 50, 'REVERSE': 50, 'PWN': 50}
+# 结果：status=202，imported=300，skipped=0，summary={'WEB': 50, 'REVERSE': 50, 'PWN': 50, 'CRYPTO': 50, 'FORENSICS': 50, 'MISC': 50}
 
 curl --noproxy '*' -sS http://127.0.0.1:8000/healthz
 # 结果：{"ok":true,"agentRuntimeEnabled":true}
@@ -130,7 +133,7 @@ env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/depende
 # 结果：tsc --noEmit 通过，覆盖教师题库页面、独立 Agent 创建页、教师侧边栏、学生题库销毁按钮和题库 API 前端封装
 
 .venv/bin/pytest services/api/tests
-# 结果：70 passed, 1 skipped in 4.71s，包含本地账号注册登录、模型出题、Registry 导入、对象资产和课堂题库测试
+# 结果：80 passed, 1 skipped，包含本地账号注册登录、模型出题、Registry 导入、对象资产、课堂题库和 60 场景常见题型矩阵测试
 
 env GOCACHE=/private/tmp/cla-go-cache /tmp/cla-go/go/bin/go test ./packages/sessionwire/... ./services/terminal-gateway/... ./services/environment-controller/... ./runtime/sessiond/...
 # packages/sessionwire：通过

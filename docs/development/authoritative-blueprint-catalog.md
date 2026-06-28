@@ -133,7 +133,7 @@ POST /api/v1/challenge-drafts/{draft_id}/generate-custom-package
 # 期望：count=150，WEB/REVERSE/PWN 各 50
 
 .venv/bin/pytest services/api/tests/test_authoring.py -q
-# 覆盖导入 150 条、蓝图验证报告、检索组合、逆向分类、无候选定制生成和 tar 包内容
+# 覆盖导入 300 条、蓝图验证报告、检索组合、60 场景常见题型矩阵、无候选定制生成和 tar 包内容
 
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web typecheck
 # 覆盖教师端 Registry 页面新增入口和类型契约

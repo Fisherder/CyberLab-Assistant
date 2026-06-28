@@ -53,7 +53,7 @@ def parse_course_intent_with_model(
                 {
                     "task": "把教师自然语言需求解析为 CourseIntent。",
                     "requiredSchema": {
-                        "category": "WEB|PWN|CRYPTO|REVERSE|FORENSICS|UNKNOWN",
+                        "category": "WEB|PWN|CRYPTO|REVERSE|FORENSICS|MISC|UNKNOWN",
                         "target": "短大写标识",
                         "difficulty": "1 到 5 的整数",
                         "expectedMinutes": "正整数",

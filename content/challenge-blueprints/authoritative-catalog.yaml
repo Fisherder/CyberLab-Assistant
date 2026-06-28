@@ -1,5 +1,5 @@
 # 该文件由 tools/generate_authoritative_blueprint_catalog.py 生成。
-# 请修改生成脚本后重新生成，不要手工维护 150 条条目。
+# 请修改生成脚本后重新生成，不要手工维护 300 条条目。
 catalogVersion: 2026.06-authoritative-blueprints
 description: CLA 权威来源题型蓝图库。该文件记录题型、知识点、组合关系和生成模板，不复制外部平台题面、附件、flag 或题解。
 sources:
@@ -22,7 +22,38 @@ sources:
   - WEB
   - REVERSE
   - PWN
+  - CRYPTO
+  - FORENSICS
+  - MISC
   usageNote: 只引用公开分类体系和题型覆盖方向，不复制题目材料。
+- id: cryptohack
+  name: CryptoHack Challenges
+  url: https://cryptohack.org/challenges/
+  domains:
+  - CRYPTO
+  usageNote: 只引用公开密码学训练分类，不复制具体题面、密文或解法。
+- id: ctf101
+  name: CTF101
+  url: https://ctf101.org/
+  domains:
+  - WEB
+  - REVERSE
+  - PWN
+  - CRYPTO
+  - FORENSICS
+  - MISC
+  usageNote: 只引用 CTF 入门知识分类，不复制练习材料或答案。
+- id: root-me-challenges
+  name: Root-Me Challenges
+  url: https://www.root-me.org/en/Challenges/
+  domains:
+  - WEB
+  - REVERSE
+  - PWN
+  - CRYPTO
+  - FORENSICS
+  - MISC
+  usageNote: 只引用公开挑战分类体系，不复制题面、附件、flag 或解法。
 - id: pwn-college
   name: pwn.college
   url: https://pwn.college/
@@ -55,6 +86,8 @@ sources:
   - PWN
   - REVERSE
   - WEB
+  - CRYPTO
+  - MISC
   usageNote: 只引用 wargame 训练类别，不复制关卡口令、题面或服务器内容。
 - id: pwnable-kr
   name: pwnable.kr
@@ -67,6 +100,9 @@ qualityGate:
     WEB: 50
     REVERSE: 50
     PWN: 50
+    CRYPTO: 50
+    FORENSICS: 50
+    MISC: 50
   copyPolicy: no-statement-no-flag-no-attachment-no-solution
   workspaceType: TERMINAL
 entries:
@@ -8290,6 +8326,8596 @@ entries:
     parameters:
       archetype: kernelish
       variant: 引用生命周期
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-encoding-01
+  title: 编码与表示：Base64/Base85 多层编码
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: Base64/Base85 多层编码
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - encoding
+  - base64/base85-多层编码
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 encoding 题型中的 Base64/Base85 多层编码 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: encoding:Base64/Base85 多层编码
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-encoding
+    complexity: 1
+    compatibleGroups:
+    - crypto-classical
+    - misc-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: encoding
+      variant: Base64/Base85 多层编码
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-encoding-02
+  title: 编码与表示：Hex 与字节序
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: Hex 与字节序
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - encoding
+  - hex-与字节序
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 encoding 题型中的 Hex 与字节序 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: encoding:Hex 与字节序
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-encoding
+    complexity: 2
+    compatibleGroups:
+    - crypto-classical
+    - misc-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: encoding
+      variant: Hex 与字节序
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-encoding-03
+  title: 编码与表示：Morse 与培根编码
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: Morse 与培根编码
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - encoding
+  - morse-与培根编码
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 encoding 题型中的 Morse 与培根编码 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: encoding:Morse 与培根编码
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-encoding
+    complexity: 3
+    compatibleGroups:
+    - crypto-classical
+    - misc-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: encoding
+      variant: Morse 与培根编码
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-encoding-04
+  title: 编码与表示：二维码与二进制表示
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: 二维码与二进制表示
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - encoding
+  - 二维码与二进制表示
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 encoding 题型中的 二维码与二进制表示 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: encoding:二维码与二进制表示
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-encoding
+    complexity: 4
+    compatibleGroups:
+    - crypto-classical
+    - misc-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: encoding
+      variant: 二维码与二进制表示
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-encoding-05
+  title: 编码与表示：Unicode 混淆
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: Unicode 混淆
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - encoding
+  - unicode-混淆
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 encoding 题型中的 Unicode 混淆 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: encoding:Unicode 混淆
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-encoding
+    complexity: 5
+    compatibleGroups:
+    - crypto-classical
+    - misc-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: encoding
+      variant: Unicode 混淆
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-classical-01
+  title: 古典密码：凯撒移位
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: classical
+  variant: 凯撒移位
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - classical
+  - 凯撒移位
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 classical 题型中的 凯撒移位 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: classical:凯撒移位
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-classical
+    complexity: 2
+    compatibleGroups:
+    - crypto-encoding
+    - crypto-xor
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: classical
+      variant: 凯撒移位
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-classical-02
+  title: 古典密码：维吉尼亚密钥恢复
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: classical
+  variant: 维吉尼亚密钥恢复
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - classical
+  - 维吉尼亚密钥恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 classical 题型中的 维吉尼亚密钥恢复 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: classical:维吉尼亚密钥恢复
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-classical
+    complexity: 3
+    compatibleGroups:
+    - crypto-encoding
+    - crypto-xor
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: classical
+      variant: 维吉尼亚密钥恢复
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-classical-03
+  title: 古典密码：替换密码频率分析
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: classical
+  variant: 替换密码频率分析
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - classical
+  - 替换密码频率分析
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 classical 题型中的 替换密码频率分析 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: classical:替换密码频率分析
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-classical
+    complexity: 4
+    compatibleGroups:
+    - crypto-encoding
+    - crypto-xor
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: classical
+      variant: 替换密码频率分析
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-classical-04
+  title: 古典密码：栅栏与置换密码
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: classical
+  variant: 栅栏与置换密码
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - classical
+  - 栅栏与置换密码
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 classical 题型中的 栅栏与置换密码 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: classical:栅栏与置换密码
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-classical
+    complexity: 5
+    compatibleGroups:
+    - crypto-encoding
+    - crypto-xor
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: classical
+      variant: 栅栏与置换密码
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-classical-05
+  title: 古典密码：仿射密码
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  - ctf101
+  archetype: classical
+  variant: 仿射密码
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - classical
+  - 仿射密码
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 classical 题型中的 仿射密码 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: classical:仿射密码
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-classical
+    complexity: 1
+    compatibleGroups:
+    - crypto-encoding
+    - crypto-xor
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: classical
+      variant: 仿射密码
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-xor-01
+  title: XOR 与流式异或：单字节 XOR
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: xor
+  variant: 单字节 XOR
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - xor
+  - 单字节-xor
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 xor 题型中的 单字节 XOR 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: xor:单字节 XOR
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-xor
+    complexity: 3
+    compatibleGroups:
+    - crypto-classical
+    - crypto-symmetric
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: xor
+      variant: 单字节 XOR
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-xor-02
+  title: XOR 与流式异或：重复密钥 XOR
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: xor
+  variant: 重复密钥 XOR
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - xor
+  - 重复密钥-xor
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 xor 题型中的 重复密钥 XOR 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: xor:重复密钥 XOR
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-xor
+    complexity: 4
+    compatibleGroups:
+    - crypto-classical
+    - crypto-symmetric
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: xor
+      variant: 重复密钥 XOR
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-xor-03
+  title: XOR 与流式异或：已知明文 XOR
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: xor
+  variant: 已知明文 XOR
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - xor
+  - 已知明文-xor
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 xor 题型中的 已知明文 XOR 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: xor:已知明文 XOR
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-xor
+    complexity: 5
+    compatibleGroups:
+    - crypto-classical
+    - crypto-symmetric
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: xor
+      variant: 已知明文 XOR
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-xor-04
+  title: XOR 与流式异或：多密文 Two-Time Pad
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: xor
+  variant: 多密文 Two-Time Pad
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - xor
+  - 多密文-two-time-pad
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 xor 题型中的 多密文 Two-Time Pad 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: xor:多密文 Two-Time Pad
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-xor
+    complexity: 1
+    compatibleGroups:
+    - crypto-classical
+    - crypto-symmetric
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: xor
+      variant: 多密文 Two-Time Pad
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-xor-05
+  title: XOR 与流式异或：流密钥复用
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: xor
+  variant: 流密钥复用
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - xor
+  - 流密钥复用
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 xor 题型中的 流密钥复用 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: xor:流密钥复用
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-xor
+    complexity: 2
+    compatibleGroups:
+    - crypto-classical
+    - crypto-symmetric
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: xor
+      variant: 流密钥复用
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-hash-01
+  title: 哈希与完整性：弱哈希碰撞
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: hash
+  variant: 弱哈希碰撞
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - hash
+  - 弱哈希碰撞
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 hash 题型中的 弱哈希碰撞 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - hashcat
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: hash:弱哈希碰撞
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-hash
+    complexity: 4
+    compatibleGroups:
+    - crypto-prng
+    - misc-scripting
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: hash
+      variant: 弱哈希碰撞
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-hash-02
+  title: 哈希与完整性：长度扩展攻击
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: hash
+  variant: 长度扩展攻击
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - hash
+  - 长度扩展攻击
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 hash 题型中的 长度扩展攻击 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - hashcat
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: hash:长度扩展攻击
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-hash
+    complexity: 5
+    compatibleGroups:
+    - crypto-prng
+    - misc-scripting
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: hash
+      variant: 长度扩展攻击
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-hash-03
+  title: 哈希与完整性：盐值缺失爆破
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: hash
+  variant: 盐值缺失爆破
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - hash
+  - 盐值缺失爆破
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 hash 题型中的 盐值缺失爆破 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - hashcat
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: hash:盐值缺失爆破
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-hash
+    complexity: 1
+    compatibleGroups:
+    - crypto-prng
+    - misc-scripting
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: hash
+      variant: 盐值缺失爆破
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-hash-04
+  title: 哈希与完整性：HMAC 用法错误
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: hash
+  variant: HMAC 用法错误
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - hash
+  - hmac-用法错误
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 hash 题型中的 HMAC 用法错误 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - hashcat
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: hash:HMAC 用法错误
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-hash
+    complexity: 2
+    compatibleGroups:
+    - crypto-prng
+    - misc-scripting
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: hash
+      variant: HMAC 用法错误
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-hash-05
+  title: 哈希与完整性：Merkle 树校验
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: hash
+  variant: Merkle 树校验
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - hash
+  - merkle-树校验
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 hash 题型中的 Merkle 树校验 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - hashcat
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: hash:Merkle 树校验
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-hash
+    complexity: 3
+    compatibleGroups:
+    - crypto-prng
+    - misc-scripting
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: hash
+      variant: Merkle 树校验
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-symmetric-01
+  title: 对称加密模式：AES ECB 模式识别
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: symmetric
+  variant: AES ECB 模式识别
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - symmetric
+  - aes-ecb-模式识别
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 symmetric 题型中的 AES ECB 模式识别 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: symmetric:AES ECB 模式识别
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-symmetric
+    complexity: 5
+    compatibleGroups:
+    - crypto-padding
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: symmetric
+      variant: AES ECB 模式识别
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-symmetric-02
+  title: 对称加密模式：CBC IV 复用
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: symmetric
+  variant: CBC IV 复用
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - symmetric
+  - cbc-iv-复用
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 symmetric 题型中的 CBC IV 复用 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: symmetric:CBC IV 复用
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-symmetric
+    complexity: 1
+    compatibleGroups:
+    - crypto-padding
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: symmetric
+      variant: CBC IV 复用
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-symmetric-03
+  title: 对称加密模式：CTR Nonce 复用
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: symmetric
+  variant: CTR Nonce 复用
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - symmetric
+  - ctr-nonce-复用
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 symmetric 题型中的 CTR Nonce 复用 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: symmetric:CTR Nonce 复用
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-symmetric
+    complexity: 2
+    compatibleGroups:
+    - crypto-padding
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: symmetric
+      variant: CTR Nonce 复用
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-symmetric-04
+  title: 对称加密模式：GCM Tag 校验错误
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: symmetric
+  variant: GCM Tag 校验错误
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - symmetric
+  - gcm-tag-校验错误
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 symmetric 题型中的 GCM Tag 校验错误 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: symmetric:GCM Tag 校验错误
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-symmetric
+    complexity: 3
+    compatibleGroups:
+    - crypto-padding
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: symmetric
+      variant: GCM Tag 校验错误
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-symmetric-05
+  title: 对称加密模式：密钥派生参数弱
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: symmetric
+  variant: 密钥派生参数弱
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - symmetric
+  - 密钥派生参数弱
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 symmetric 题型中的 密钥派生参数弱 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: symmetric:密钥派生参数弱
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-symmetric
+    complexity: 4
+    compatibleGroups:
+    - crypto-padding
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: symmetric
+      variant: 密钥派生参数弱
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-padding-01
+  title: 填充与模式 Oracle：PKCS#7 填充验证
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - ctf101
+  archetype: padding
+  variant: PKCS#7 填充验证
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - padding
+  - pkcs#7-填充验证
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 padding 题型中的 PKCS#7 填充验证 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: padding:PKCS#7 填充验证
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-padding
+    complexity: 1
+    compatibleGroups:
+    - crypto-symmetric
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: padding
+      variant: PKCS#7 填充验证
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-padding-02
+  title: 填充与模式 Oracle：CBC Padding Oracle
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - ctf101
+  archetype: padding
+  variant: CBC Padding Oracle
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - padding
+  - cbc-padding-oracle
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 padding 题型中的 CBC Padding Oracle 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: padding:CBC Padding Oracle
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-padding
+    complexity: 2
+    compatibleGroups:
+    - crypto-symmetric
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: padding
+      variant: CBC Padding Oracle
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-padding-03
+  title: 填充与模式 Oracle：错误消息侧信道
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - ctf101
+  archetype: padding
+  variant: 错误消息侧信道
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - padding
+  - 错误消息侧信道
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 padding 题型中的 错误消息侧信道 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: padding:错误消息侧信道
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-padding
+    complexity: 3
+    compatibleGroups:
+    - crypto-symmetric
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: padding
+      variant: 错误消息侧信道
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-padding-04
+  title: 填充与模式 Oracle：MAC-then-Encrypt
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - ctf101
+  archetype: padding
+  variant: MAC-then-Encrypt
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - padding
+  - mac-then-encrypt
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 padding 题型中的 MAC-then-Encrypt 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: padding:MAC-then-Encrypt
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-padding
+    complexity: 4
+    compatibleGroups:
+    - crypto-symmetric
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: padding
+      variant: MAC-then-Encrypt
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-padding-05
+  title: 填充与模式 Oracle：块边界构造
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - ctf101
+  archetype: padding
+  variant: 块边界构造
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - padding
+  - 块边界构造
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 padding 题型中的 块边界构造 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: padding:块边界构造
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-padding
+    complexity: 5
+    compatibleGroups:
+    - crypto-symmetric
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: padding
+      variant: 块边界构造
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-rsa-01
+  title: RSA 公钥密码：小指数广播
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: rsa
+  variant: 小指数广播
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - rsa
+  - 小指数广播
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 rsa 题型中的 小指数广播 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: rsa:小指数广播
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-rsa
+    complexity: 2
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: rsa
+      variant: 小指数广播
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-rsa-02
+  title: RSA 公钥密码：共模攻击
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: rsa
+  variant: 共模攻击
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - rsa
+  - 共模攻击
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 rsa 题型中的 共模攻击 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: rsa:共模攻击
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-rsa
+    complexity: 3
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: rsa
+      variant: 共模攻击
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-rsa-03
+  title: RSA 公钥密码：低熵素数
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: rsa
+  variant: 低熵素数
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - rsa
+  - 低熵素数
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 rsa 题型中的 低熵素数 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: rsa:低熵素数
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-rsa
+    complexity: 4
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: rsa
+      variant: 低熵素数
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-rsa-04
+  title: RSA 公钥密码：Wiener 小私钥
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: rsa
+  variant: Wiener 小私钥
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - rsa
+  - wiener-小私钥
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 rsa 题型中的 Wiener 小私钥 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: rsa:Wiener 小私钥
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-rsa
+    complexity: 5
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: rsa
+      variant: Wiener 小私钥
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-rsa-05
+  title: RSA 公钥密码：CRT 故障线索
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: rsa
+  variant: CRT 故障线索
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - rsa
+  - crt-故障线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 rsa 题型中的 CRT 故障线索 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: rsa:CRT 故障线索
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-rsa
+    complexity: 1
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: rsa
+      variant: CRT 故障线索
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-dh-01
+  title: Diffie-Hellman 密钥交换：小子群攻击
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: dh
+  variant: 小子群攻击
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - dh
+  - 小子群攻击
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 dh 题型中的 小子群攻击 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: dh:小子群攻击
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-dh
+    complexity: 3
+    compatibleGroups:
+    - crypto-ecc
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: dh
+      variant: 小子群攻击
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-dh-02
+  title: Diffie-Hellman 密钥交换：离散对数入门
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: dh
+  variant: 离散对数入门
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - dh
+  - 离散对数入门
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 dh 题型中的 离散对数入门 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: dh:离散对数入门
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-dh
+    complexity: 4
+    compatibleGroups:
+    - crypto-ecc
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: dh
+      variant: 离散对数入门
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-dh-03
+  title: Diffie-Hellman 密钥交换：参数注入
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: dh
+  variant: 参数注入
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - dh
+  - 参数注入
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 dh 题型中的 参数注入 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: dh:参数注入
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-dh
+    complexity: 5
+    compatibleGroups:
+    - crypto-ecc
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: dh
+      variant: 参数注入
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-dh-04
+  title: Diffie-Hellman 密钥交换：复用私钥
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: dh
+  variant: 复用私钥
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - dh
+  - 复用私钥
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 dh 题型中的 复用私钥 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: dh:复用私钥
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-dh
+    complexity: 1
+    compatibleGroups:
+    - crypto-ecc
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: dh
+      variant: 复用私钥
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-dh-05
+  title: Diffie-Hellman 密钥交换：中间人协商
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: dh
+  variant: 中间人协商
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - dh
+  - 中间人协商
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 dh 题型中的 中间人协商 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: dh:中间人协商
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-dh
+    complexity: 2
+    compatibleGroups:
+    - crypto-ecc
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: dh
+      variant: 中间人协商
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-ecc-01
+  title: 椭圆曲线密码：曲线参数识别
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: ecc
+  variant: 曲线参数识别
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - ecc
+  - 曲线参数识别
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 ecc 题型中的 曲线参数识别 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: ecc:曲线参数识别
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-ecc
+    complexity: 4
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: ecc
+      variant: 曲线参数识别
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-ecc-02
+  title: 椭圆曲线密码：点乘基础
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: ecc
+  variant: 点乘基础
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - ecc
+  - 点乘基础
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 ecc 题型中的 点乘基础 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: ecc:点乘基础
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-ecc
+    complexity: 5
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: ecc
+      variant: 点乘基础
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-ecc-03
+  title: 椭圆曲线密码：无效曲线攻击
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: ecc
+  variant: 无效曲线攻击
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - ecc
+  - 无效曲线攻击
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 ecc 题型中的 无效曲线攻击 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: ecc:无效曲线攻击
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-ecc
+    complexity: 1
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: ecc
+      variant: 无效曲线攻击
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-ecc-04
+  title: 椭圆曲线密码：ECDSA Nonce 重用
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: ecc
+  variant: ECDSA Nonce 重用
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - ecc
+  - ecdsa-nonce-重用
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 ecc 题型中的 ECDSA Nonce 重用 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: ecc:ECDSA Nonce 重用
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-ecc
+    complexity: 2
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: ecc
+      variant: ECDSA Nonce 重用
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-ecc-05
+  title: 椭圆曲线密码：EdDSA 签名线索
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  archetype: ecc
+  variant: EdDSA 签名线索
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - ecc
+  - eddsa-签名线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 ecc 题型中的 EdDSA 签名线索 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: ecc:EdDSA 签名线索
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-ecc
+    complexity: 3
+    compatibleGroups:
+    - crypto-dh
+    - crypto-prng
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: ecc
+      variant: EdDSA 签名线索
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-prng-01
+  title: 随机数与密钥生成：时间种子恢复
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: prng
+  variant: 时间种子恢复
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - prng
+  - 时间种子恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 prng 题型中的 时间种子恢复 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: prng:时间种子恢复
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-prng
+    complexity: 5
+    compatibleGroups:
+    - crypto-symmetric
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: prng
+      variant: 时间种子恢复
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-prng-02
+  title: 随机数与密钥生成：LCG 参数恢复
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: prng
+  variant: LCG 参数恢复
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - prng
+  - lcg-参数恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 prng 题型中的 LCG 参数恢复 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: prng:LCG 参数恢复
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-prng
+    complexity: 1
+    compatibleGroups:
+    - crypto-symmetric
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: prng
+      variant: LCG 参数恢复
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-prng-03
+  title: 随机数与密钥生成：Mersenne Twister 状态恢复
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: prng
+  variant: Mersenne Twister 状态恢复
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - prng
+  - mersenne-twister-状态恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 prng 题型中的 Mersenne Twister 状态恢复 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: prng:Mersenne Twister 状态恢复
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-prng
+    complexity: 2
+    compatibleGroups:
+    - crypto-symmetric
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: prng
+      variant: Mersenne Twister 状态恢复
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-prng-04
+  title: 随机数与密钥生成：Token 可预测
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: prng
+  variant: Token 可预测
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - prng
+  - token-可预测
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 prng 题型中的 Token 可预测 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: prng:Token 可预测
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-prng
+    complexity: 3
+    compatibleGroups:
+    - crypto-symmetric
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: prng
+      variant: Token 可预测
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: crypto-prng-05
+  title: 随机数与密钥生成：随机数偏差统计
+  category: CRYPTO
+  sourceRefs:
+  - cryptohack
+  - picoctf-practice
+  archetype: prng
+  variant: 随机数偏差统计
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - CRYPTO
+  - prng
+  - 随机数偏差统计
+  - authoritative-blueprint
+  learningObjectives:
+  - 识别密码原语
+  - 还原加解密或校验过程
+  - 给出可复现脚本证据
+  - 掌握 prng 题型中的 随机数偏差统计 变体
+  prerequisites:
+  - Python 基础
+  - 字节与编码
+  - 基础数论或离散数学
+  workspaceCapabilities:
+  - openssl
+  - python
+  - sage
+  components:
+    target: 密文、脚本或协议转录样本
+    vulnerability: prng:随机数偏差统计
+    oracle: 外部脚本验证恢复明文、密钥性质或校验关系
+    workspace: 密码学 CLI 工具容器
+  composition:
+    group: crypto-prng
+    complexity: 4
+    compatibleGroups:
+    - crypto-symmetric
+    - crypto-rsa
+    canBeSubChallenge: true
+    combinationNotes: 可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。
+  generator:
+    kind: parameterized-template
+    template: crypto-cli-task
+    parameters:
+      archetype: prng
+      variant: 随机数偏差统计
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-file-01
+  title: 文件格式与魔数：文件头修复
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: file
+  variant: 文件头修复
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - file
+  - 文件头修复
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 file 题型中的 文件头修复 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: file:文件头修复
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-file
+    complexity: 1
+    compatibleGroups:
+    - forensics-disk
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: file
+      variant: 文件头修复
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-file-02
+  title: 文件格式与魔数：嵌套归档识别
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: file
+  variant: 嵌套归档识别
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - file
+  - 嵌套归档识别
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 file 题型中的 嵌套归档识别 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: file:嵌套归档识别
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-file
+    complexity: 2
+    compatibleGroups:
+    - forensics-disk
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: file
+      variant: 嵌套归档识别
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-file-03
+  title: 文件格式与魔数：文件尾数据提取
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: file
+  variant: 文件尾数据提取
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - file
+  - 文件尾数据提取
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 file 题型中的 文件尾数据提取 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: file:文件尾数据提取
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-file
+    complexity: 3
+    compatibleGroups:
+    - forensics-disk
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: file
+      variant: 文件尾数据提取
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-file-04
+  title: 文件格式与魔数：多格式伪装
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: file
+  variant: 多格式伪装
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - file
+  - 多格式伪装
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 file 题型中的 多格式伪装 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: file:多格式伪装
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-file
+    complexity: 4
+    compatibleGroups:
+    - forensics-disk
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: file
+      variant: 多格式伪装
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-file-05
+  title: 文件格式与魔数：损坏压缩包修复
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: file
+  variant: 损坏压缩包修复
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - file
+  - 损坏压缩包修复
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 file 题型中的 损坏压缩包修复 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: file:损坏压缩包修复
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-file
+    complexity: 5
+    compatibleGroups:
+    - forensics-disk
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: file
+      variant: 损坏压缩包修复
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-image-01
+  title: 图片隐写与元数据：EXIF 元数据
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: image
+  variant: EXIF 元数据
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - image
+  - exif-元数据
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 image 题型中的 EXIF 元数据 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: image:EXIF 元数据
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-image
+    complexity: 2
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: image
+      variant: EXIF 元数据
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-image-02
+  title: 图片隐写与元数据：LSB 隐写
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: image
+  variant: LSB 隐写
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - image
+  - lsb-隐写
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 image 题型中的 LSB 隐写 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: image:LSB 隐写
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-image
+    complexity: 3
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: image
+      variant: LSB 隐写
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-image-03
+  title: 图片隐写与元数据：调色板异常
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: image
+  variant: 调色板异常
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - image
+  - 调色板异常
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 image 题型中的 调色板异常 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: image:调色板异常
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-image
+    complexity: 4
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: image
+      variant: 调色板异常
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-image-04
+  title: 图片隐写与元数据：Alpha 通道隐藏
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: image
+  variant: Alpha 通道隐藏
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - image
+  - alpha-通道隐藏
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 image 题型中的 Alpha 通道隐藏 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: image:Alpha 通道隐藏
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-image
+    complexity: 5
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: image
+      variant: Alpha 通道隐藏
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-image-05
+  title: 图片隐写与元数据：拼图与像素重排
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: image
+  variant: 拼图与像素重排
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - image
+  - 拼图与像素重排
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 image 题型中的 拼图与像素重排 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: image:拼图与像素重排
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-image
+    complexity: 1
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: image
+      variant: 拼图与像素重排
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-pcap-01
+  title: 网络流量取证：HTTP 会话重组
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: pcap
+  variant: HTTP 会话重组
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - pcap
+  - http-会话重组
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 pcap 题型中的 HTTP 会话重组 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - tcpdump
+  - tshark
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: pcap:HTTP 会话重组
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-pcap
+    complexity: 3
+    compatibleGroups:
+    - forensics-logs
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: pcap
+      variant: HTTP 会话重组
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-pcap-02
+  title: 网络流量取证：DNS 隧道线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: pcap
+  variant: DNS 隧道线索
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - pcap
+  - dns-隧道线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 pcap 题型中的 DNS 隧道线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - tcpdump
+  - tshark
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: pcap:DNS 隧道线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-pcap
+    complexity: 4
+    compatibleGroups:
+    - forensics-logs
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: pcap
+      variant: DNS 隧道线索
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-pcap-03
+  title: 网络流量取证：TLS SNI 与证书
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: pcap
+  variant: TLS SNI 与证书
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - pcap
+  - tls-sni-与证书
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 pcap 题型中的 TLS SNI 与证书 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - tcpdump
+  - tshark
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: pcap:TLS SNI 与证书
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-pcap
+    complexity: 5
+    compatibleGroups:
+    - forensics-logs
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: pcap
+      variant: TLS SNI 与证书
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-pcap-04
+  title: 网络流量取证：SMB/FTP 文件恢复
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: pcap
+  variant: SMB/FTP 文件恢复
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - pcap
+  - smb/ftp-文件恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 pcap 题型中的 SMB/FTP 文件恢复 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - tcpdump
+  - tshark
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: pcap:SMB/FTP 文件恢复
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-pcap
+    complexity: 1
+    compatibleGroups:
+    - forensics-logs
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: pcap
+      variant: SMB/FTP 文件恢复
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-pcap-05
+  title: 网络流量取证：异常扫描流量
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: pcap
+  variant: 异常扫描流量
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - pcap
+  - 异常扫描流量
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 pcap 题型中的 异常扫描流量 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - tcpdump
+  - tshark
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: pcap:异常扫描流量
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-pcap
+    complexity: 2
+    compatibleGroups:
+    - forensics-logs
+    - misc-network
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: pcap
+      variant: 异常扫描流量
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-memory-01
+  title: 内存取证：进程列表恢复
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: memory
+  variant: 进程列表恢复
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - memory
+  - 进程列表恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 memory 题型中的 进程列表恢复 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - volatility
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: memory:进程列表恢复
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-memory
+    complexity: 4
+    compatibleGroups:
+    - forensics-malware
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: memory
+      variant: 进程列表恢复
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-memory-02
+  title: 内存取证：网络连接定位
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: memory
+  variant: 网络连接定位
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - memory
+  - 网络连接定位
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 memory 题型中的 网络连接定位 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - volatility
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: memory:网络连接定位
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-memory
+    complexity: 5
+    compatibleGroups:
+    - forensics-malware
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: memory
+      variant: 网络连接定位
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-memory-03
+  title: 内存取证：命令历史提取
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: memory
+  variant: 命令历史提取
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - memory
+  - 命令历史提取
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 memory 题型中的 命令历史提取 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - volatility
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: memory:命令历史提取
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-memory
+    complexity: 1
+    compatibleGroups:
+    - forensics-malware
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: memory
+      variant: 命令历史提取
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-memory-04
+  title: 内存取证：恶意进程线索
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: memory
+  variant: 恶意进程线索
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - memory
+  - 恶意进程线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 memory 题型中的 恶意进程线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - volatility
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: memory:恶意进程线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-memory
+    complexity: 2
+    compatibleGroups:
+    - forensics-malware
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: memory
+      variant: 恶意进程线索
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-memory-05
+  title: 内存取证：凭据痕迹定位
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: memory
+  variant: 凭据痕迹定位
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - memory
+  - 凭据痕迹定位
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 memory 题型中的 凭据痕迹定位 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - volatility
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: memory:凭据痕迹定位
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-memory
+    complexity: 3
+    compatibleGroups:
+    - forensics-malware
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: memory
+      variant: 凭据痕迹定位
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-disk-01
+  title: 磁盘与文件系统：删除文件恢复
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: disk
+  variant: 删除文件恢复
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - disk
+  - 删除文件恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 disk 题型中的 删除文件恢复 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: disk:删除文件恢复
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-disk
+    complexity: 5
+    compatibleGroups:
+    - forensics-file
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: disk
+      variant: 删除文件恢复
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-disk-02
+  title: 磁盘与文件系统：分区表分析
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: disk
+  variant: 分区表分析
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - disk
+  - 分区表分析
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 disk 题型中的 分区表分析 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: disk:分区表分析
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-disk
+    complexity: 1
+    compatibleGroups:
+    - forensics-file
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: disk
+      variant: 分区表分析
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-disk-03
+  title: 磁盘与文件系统：文件系统时间线
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: disk
+  variant: 文件系统时间线
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - disk
+  - 文件系统时间线
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 disk 题型中的 文件系统时间线 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: disk:文件系统时间线
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-disk
+    complexity: 2
+    compatibleGroups:
+    - forensics-file
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: disk
+      variant: 文件系统时间线
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-disk-04
+  title: 磁盘与文件系统：隐藏目录线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: disk
+  variant: 隐藏目录线索
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - disk
+  - 隐藏目录线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 disk 题型中的 隐藏目录线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: disk:隐藏目录线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-disk
+    complexity: 3
+    compatibleGroups:
+    - forensics-file
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: disk
+      variant: 隐藏目录线索
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-disk-05
+  title: 磁盘与文件系统：镜像挂载检查
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: disk
+  variant: 镜像挂载检查
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - disk
+  - 镜像挂载检查
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 disk 题型中的 镜像挂载检查 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: disk:镜像挂载检查
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-disk
+    complexity: 4
+    compatibleGroups:
+    - forensics-file
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: disk
+      variant: 镜像挂载检查
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-logs-01
+  title: 日志时间线分析：认证失败时间线
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: logs
+  variant: 认证失败时间线
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - logs
+  - 认证失败时间线
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 logs 题型中的 认证失败时间线 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - awk
+  - file
+  - grep
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: logs:认证失败时间线
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-logs
+    complexity: 1
+    compatibleGroups:
+    - forensics-pcap
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: logs
+      variant: 认证失败时间线
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-logs-02
+  title: 日志时间线分析：Web 访问日志
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: logs
+  variant: Web 访问日志
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - logs
+  - web-访问日志
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 logs 题型中的 Web 访问日志 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - awk
+  - file
+  - grep
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: logs:Web 访问日志
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-logs
+    complexity: 2
+    compatibleGroups:
+    - forensics-pcap
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: logs
+      variant: Web 访问日志
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-logs-03
+  title: 日志时间线分析：容器日志关联
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: logs
+  variant: 容器日志关联
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - logs
+  - 容器日志关联
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 logs 题型中的 容器日志关联 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - awk
+  - file
+  - grep
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: logs:容器日志关联
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-logs
+    complexity: 3
+    compatibleGroups:
+    - forensics-pcap
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: logs
+      variant: 容器日志关联
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-logs-04
+  title: 日志时间线分析：系统审计事件
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: logs
+  variant: 系统审计事件
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - logs
+  - 系统审计事件
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 logs 题型中的 系统审计事件 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - awk
+  - file
+  - grep
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: logs:系统审计事件
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-logs
+    complexity: 4
+    compatibleGroups:
+    - forensics-pcap
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: logs
+      variant: 系统审计事件
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-logs-05
+  title: 日志时间线分析：多源时间偏移
+  category: FORENSICS
+  sourceRefs:
+  - ctf101
+  - root-me-challenges
+  archetype: logs
+  variant: 多源时间偏移
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - logs
+  - 多源时间偏移
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 logs 题型中的 多源时间偏移 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - awk
+  - file
+  - grep
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: logs:多源时间偏移
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-logs
+    complexity: 5
+    compatibleGroups:
+    - forensics-pcap
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: logs
+      variant: 多源时间偏移
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-malware-01
+  title: 恶意样本静态取证：字符串 IOC 提取
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: malware
+  variant: 字符串 IOC 提取
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - malware
+  - 字符串-ioc-提取
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 malware 题型中的 字符串 IOC 提取 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: malware:字符串 IOC 提取
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-malware
+    complexity: 2
+    compatibleGroups:
+    - forensics-memory
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: malware
+      variant: 字符串 IOC 提取
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-malware-02
+  title: 恶意样本静态取证：导入表分析
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: malware
+  variant: 导入表分析
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - malware
+  - 导入表分析
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 malware 题型中的 导入表分析 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: malware:导入表分析
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-malware
+    complexity: 3
+    compatibleGroups:
+    - forensics-memory
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: malware
+      variant: 导入表分析
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-malware-03
+  title: 恶意样本静态取证：配置块定位
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: malware
+  variant: 配置块定位
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - malware
+  - 配置块定位
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 malware 题型中的 配置块定位 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: malware:配置块定位
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-malware
+    complexity: 4
+    compatibleGroups:
+    - forensics-memory
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: malware
+      variant: 配置块定位
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-malware-04
+  title: 恶意样本静态取证：简单解包线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: malware
+  variant: 简单解包线索
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - malware
+  - 简单解包线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 malware 题型中的 简单解包线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: malware:简单解包线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-malware
+    complexity: 5
+    compatibleGroups:
+    - forensics-memory
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: malware
+      variant: 简单解包线索
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-malware-05
+  title: 恶意样本静态取证：沙箱行为摘要
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: malware
+  variant: 沙箱行为摘要
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - malware
+  - 沙箱行为摘要
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 malware 题型中的 沙箱行为摘要 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: malware:沙箱行为摘要
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-malware
+    complexity: 1
+    compatibleGroups:
+    - forensics-memory
+    - reverse-strings
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: malware
+      variant: 沙箱行为摘要
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-audio-01
+  title: 音频与信号取证：频谱图隐藏
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: audio
+  variant: 频谱图隐藏
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - audio
+  - 频谱图隐藏
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 audio 题型中的 频谱图隐藏 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: audio:频谱图隐藏
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-audio
+    complexity: 3
+    compatibleGroups:
+    - forensics-file
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: audio
+      variant: 频谱图隐藏
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-audio-02
+  title: 音频与信号取证：DTMF 识别
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: audio
+  variant: DTMF 识别
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - audio
+  - dtmf-识别
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 audio 题型中的 DTMF 识别 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: audio:DTMF 识别
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-audio
+    complexity: 4
+    compatibleGroups:
+    - forensics-file
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: audio
+      variant: DTMF 识别
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-audio-03
+  title: 音频与信号取证：反转音频
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: audio
+  variant: 反转音频
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - audio
+  - 反转音频
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 audio 题型中的 反转音频 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: audio:反转音频
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-audio
+    complexity: 5
+    compatibleGroups:
+    - forensics-file
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: audio
+      variant: 反转音频
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-audio-04
+  title: 音频与信号取证：采样率异常
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: audio
+  variant: 采样率异常
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - audio
+  - 采样率异常
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 audio 题型中的 采样率异常 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: audio:采样率异常
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-audio
+    complexity: 1
+    compatibleGroups:
+    - forensics-file
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: audio
+      variant: 采样率异常
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-audio-05
+  title: 音频与信号取证：无线调制线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: audio
+  variant: 无线调制线索
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - audio
+  - 无线调制线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 audio 题型中的 无线调制线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: audio:无线调制线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-audio
+    complexity: 2
+    compatibleGroups:
+    - forensics-file
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: audio
+      variant: 无线调制线索
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-osint-01
+  title: OSINT 线索分析：图片地理线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: osint
+  variant: 图片地理线索
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - osint
+  - 图片地理线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 osint 题型中的 图片地理线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: osint:图片地理线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-osint
+    complexity: 4
+    compatibleGroups:
+    - forensics-image
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: osint
+      variant: 图片地理线索
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-osint-02
+  title: OSINT 线索分析：公开用户名关联
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: osint
+  variant: 公开用户名关联
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - osint
+  - 公开用户名关联
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 osint 题型中的 公开用户名关联 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: osint:公开用户名关联
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-osint
+    complexity: 5
+    compatibleGroups:
+    - forensics-image
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: osint
+      variant: 公开用户名关联
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-osint-03
+  title: OSINT 线索分析：域名历史线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: osint
+  variant: 域名历史线索
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - osint
+  - 域名历史线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 osint 题型中的 域名历史线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: osint:域名历史线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-osint
+    complexity: 1
+    compatibleGroups:
+    - forensics-image
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: osint
+      variant: 域名历史线索
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-osint-04
+  title: OSINT 线索分析：时间地点推断
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: osint
+  variant: 时间地点推断
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - osint
+  - 时间地点推断
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 osint 题型中的 时间地点推断 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: osint:时间地点推断
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-osint
+    complexity: 2
+    compatibleGroups:
+    - forensics-image
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: osint
+      variant: 时间地点推断
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-osint-05
+  title: OSINT 线索分析：社交公开信息核验
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: osint
+  variant: 社交公开信息核验
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - osint
+  - 社交公开信息核验
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 osint 题型中的 社交公开信息核验 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: osint:社交公开信息核验
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-osint
+    complexity: 3
+    compatibleGroups:
+    - forensics-image
+    - forensics-document
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: osint
+      variant: 社交公开信息核验
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-document-01
+  title: 文档与元数据取证：PDF 元数据
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: document
+  variant: PDF 元数据
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - document
+  - pdf-元数据
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 document 题型中的 PDF 元数据 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: document:PDF 元数据
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-document
+    complexity: 5
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: document
+      variant: PDF 元数据
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-document-02
+  title: 文档与元数据取证：Office 宏线索
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: document
+  variant: Office 宏线索
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - document
+  - office-宏线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 document 题型中的 Office 宏线索 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: document:Office 宏线索
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-document
+    complexity: 1
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: document
+      variant: Office 宏线索
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-document-03
+  title: 文档与元数据取证：隐藏文本层
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: document
+  variant: 隐藏文本层
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - document
+  - 隐藏文本层
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 document 题型中的 隐藏文本层 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: document:隐藏文本层
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-document
+    complexity: 2
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: document
+      variant: 隐藏文本层
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-document-04
+  title: 文档与元数据取证：修订记录
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: document
+  variant: 修订记录
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - document
+  - 修订记录
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 document 题型中的 修订记录 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: document:修订记录
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-document
+    complexity: 3
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: document
+      variant: 修订记录
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: forensics-document-05
+  title: 文档与元数据取证：嵌入对象提取
+  category: FORENSICS
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  - root-me-challenges
+  archetype: document
+  variant: 嵌入对象提取
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - FORENSICS
+  - document
+  - 嵌入对象提取
+  - authoritative-blueprint
+  learningObjectives:
+  - 提取可信证据
+  - 还原事件线索
+  - 说明取证结论依据
+  - 掌握 document 题型中的 嵌入对象提取 变体
+  prerequisites:
+  - Linux 文件操作
+  - 证据链意识
+  - 常见文件和网络协议基础
+  workspaceCapabilities:
+  - binwalk
+  - exiftool
+  - file
+  - python
+  - strings
+  - xxd
+  components:
+    target: 取证镜像、流量包、日志或媒体文件
+    vulnerability: document:嵌入对象提取
+    oracle: 外部检查提取证据、时间线或 IOC 结构
+    workspace: 取证 CLI 工具容器
+  composition:
+    group: forensics-document
+    complexity: 4
+    compatibleGroups:
+    - forensics-file
+    - forensics-osint
+    canBeSubChallenge: true
+    combinationNotes: 可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。
+  generator:
+    kind: parameterized-template
+    template: forensics-cli-artifact
+    parameters:
+      archetype: document
+      variant: 嵌入对象提取
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-linux-01
+  title: Linux 基础与文件系统：目录遍历
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: linux
+  variant: 目录遍历
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - linux
+  - 目录遍历
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 linux 题型中的 目录遍历 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: linux:目录遍历
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-linux
+    complexity: 1
+    compatibleGroups:
+    - misc-shell
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: linux
+      variant: 目录遍历
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-linux-02
+  title: Linux 基础与文件系统：隐藏文件
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: linux
+  variant: 隐藏文件
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - linux
+  - 隐藏文件
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 linux 题型中的 隐藏文件 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: linux:隐藏文件
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-linux
+    complexity: 2
+    compatibleGroups:
+    - misc-shell
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: linux
+      variant: 隐藏文件
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-linux-03
+  title: Linux 基础与文件系统：软硬链接
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: linux
+  variant: 软硬链接
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - linux
+  - 软硬链接
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 linux 题型中的 软硬链接 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: linux:软硬链接
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-linux
+    complexity: 3
+    compatibleGroups:
+    - misc-shell
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: linux
+      variant: 软硬链接
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-linux-04
+  title: Linux 基础与文件系统：环境变量
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: linux
+  variant: 环境变量
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - linux
+  - 环境变量
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 linux 题型中的 环境变量 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: linux:环境变量
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-linux
+    complexity: 4
+    compatibleGroups:
+    - misc-shell
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: linux
+      variant: 环境变量
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-linux-05
+  title: Linux 基础与文件系统：进程与端口查看
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: linux
+  variant: 进程与端口查看
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - linux
+  - 进程与端口查看
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 linux 题型中的 进程与端口查看 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: linux:进程与端口查看
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-linux
+    complexity: 5
+    compatibleGroups:
+    - misc-shell
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: linux
+      variant: 进程与端口查看
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-shell-01
+  title: Shell 管道与文本处理：grep/sed/awk 管道
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: shell
+  variant: grep/sed/awk 管道
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - shell
+  - grep/sed/awk-管道
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 shell 题型中的 grep/sed/awk 管道 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shell:grep/sed/awk 管道
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-shell
+    complexity: 2
+    compatibleGroups:
+    - misc-linux
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: shell
+      variant: grep/sed/awk 管道
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-shell-02
+  title: Shell 管道与文本处理：find 条件搜索
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: shell
+  variant: find 条件搜索
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - shell
+  - find-条件搜索
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 shell 题型中的 find 条件搜索 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shell:find 条件搜索
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-shell
+    complexity: 3
+    compatibleGroups:
+    - misc-linux
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: shell
+      variant: find 条件搜索
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-shell-03
+  title: Shell 管道与文本处理：xargs 批处理
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: shell
+  variant: xargs 批处理
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - shell
+  - xargs-批处理
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 shell 题型中的 xargs 批处理 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shell:xargs 批处理
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-shell
+    complexity: 4
+    compatibleGroups:
+    - misc-linux
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: shell
+      variant: xargs 批处理
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-shell-04
+  title: Shell 管道与文本处理：重定向与 here-doc
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: shell
+  variant: 重定向与 here-doc
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - shell
+  - 重定向与-here-doc
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 shell 题型中的 重定向与 here-doc 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shell:重定向与 here-doc
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-shell
+    complexity: 5
+    compatibleGroups:
+    - misc-linux
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: shell
+      variant: 重定向与 here-doc
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-shell-05
+  title: Shell 管道与文本处理：排序去重统计
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: shell
+  variant: 排序去重统计
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - shell
+  - 排序去重统计
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 shell 题型中的 排序去重统计 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: shell:排序去重统计
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-shell
+    complexity: 1
+    compatibleGroups:
+    - misc-linux
+    - misc-regex
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: shell
+      variant: 排序去重统计
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-scripting-01
+  title: Python 自动化脚本：批量请求脚本
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: scripting
+  variant: 批量请求脚本
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - scripting
+  - 批量请求脚本
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 scripting 题型中的 批量请求脚本 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: scripting:批量请求脚本
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-scripting
+    complexity: 3
+    compatibleGroups:
+    - misc-data
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: scripting
+      variant: 批量请求脚本
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-scripting-02
+  title: Python 自动化脚本：文件批处理
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: scripting
+  variant: 文件批处理
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - scripting
+  - 文件批处理
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 scripting 题型中的 文件批处理 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: scripting:文件批处理
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-scripting
+    complexity: 4
+    compatibleGroups:
+    - misc-data
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: scripting
+      variant: 文件批处理
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-scripting-03
+  title: Python 自动化脚本：简单爆破脚本
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: scripting
+  variant: 简单爆破脚本
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - scripting
+  - 简单爆破脚本
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 scripting 题型中的 简单爆破脚本 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: scripting:简单爆破脚本
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-scripting
+    complexity: 5
+    compatibleGroups:
+    - misc-data
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: scripting
+      variant: 简单爆破脚本
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-scripting-04
+  title: Python 自动化脚本：字节转换脚本
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: scripting
+  variant: 字节转换脚本
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - scripting
+  - 字节转换脚本
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 scripting 题型中的 字节转换脚本 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: scripting:字节转换脚本
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-scripting
+    complexity: 1
+    compatibleGroups:
+    - misc-data
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: scripting
+      variant: 字节转换脚本
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-scripting-05
+  title: Python 自动化脚本：日志解析脚本
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: scripting
+  variant: 日志解析脚本
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - scripting
+  - 日志解析脚本
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 scripting 题型中的 日志解析脚本 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: scripting:日志解析脚本
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-scripting
+    complexity: 2
+    compatibleGroups:
+    - misc-data
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: scripting
+      variant: 日志解析脚本
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-git-01
+  title: Git 与历史记录：提交历史恢复
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: git
+  variant: 提交历史恢复
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - git
+  - 提交历史恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 git 题型中的 提交历史恢复 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: git:提交历史恢复
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-git
+    complexity: 4
+    compatibleGroups:
+    - misc-linux
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: git
+      variant: 提交历史恢复
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-git-02
+  title: Git 与历史记录：分支差异
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: git
+  variant: 分支差异
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - git
+  - 分支差异
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 git 题型中的 分支差异 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: git:分支差异
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-git
+    complexity: 5
+    compatibleGroups:
+    - misc-linux
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: git
+      variant: 分支差异
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-git-03
+  title: Git 与历史记录：误删文件恢复
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: git
+  variant: 误删文件恢复
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - git
+  - 误删文件恢复
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 git 题型中的 误删文件恢复 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: git:误删文件恢复
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-git
+    complexity: 1
+    compatibleGroups:
+    - misc-linux
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: git
+      variant: 误删文件恢复
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-git-04
+  title: Git 与历史记录：Stash 线索
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: git
+  variant: Stash 线索
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - git
+  - stash-线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 git 题型中的 Stash 线索 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: git:Stash 线索
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-git
+    complexity: 2
+    compatibleGroups:
+    - misc-linux
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: git
+      variant: Stash 线索
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-git-05
+  title: Git 与历史记录：对象库检查
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: git
+  variant: 对象库检查
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - git
+  - 对象库检查
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 git 题型中的 对象库检查 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: git:对象库检查
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-git
+    complexity: 3
+    compatibleGroups:
+    - misc-linux
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: git
+      variant: 对象库检查
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-regex-01
+  title: 正则与文本解析：模式提取
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: regex
+  variant: 模式提取
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - regex
+  - 模式提取
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 regex 题型中的 模式提取 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: regex:模式提取
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-regex
+    complexity: 5
+    compatibleGroups:
+    - misc-shell
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: regex
+      variant: 模式提取
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-regex-02
+  title: 正则与文本解析：日志字段拆分
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: regex
+  variant: 日志字段拆分
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - regex
+  - 日志字段拆分
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 regex 题型中的 日志字段拆分 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: regex:日志字段拆分
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-regex
+    complexity: 1
+    compatibleGroups:
+    - misc-shell
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: regex
+      variant: 日志字段拆分
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-regex-03
+  title: 正则与文本解析：贪婪匹配陷阱
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: regex
+  variant: 贪婪匹配陷阱
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - regex
+  - 贪婪匹配陷阱
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 regex 题型中的 贪婪匹配陷阱 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: regex:贪婪匹配陷阱
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-regex
+    complexity: 2
+    compatibleGroups:
+    - misc-shell
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: regex
+      variant: 贪婪匹配陷阱
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-regex-04
+  title: 正则与文本解析：多行匹配
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: regex
+  variant: 多行匹配
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - regex
+  - 多行匹配
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 regex 题型中的 多行匹配 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: regex:多行匹配
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-regex
+    complexity: 3
+    compatibleGroups:
+    - misc-shell
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: regex
+      variant: 多行匹配
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-regex-05
+  title: 正则与文本解析：输入校验边界
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: regex
+  variant: 输入校验边界
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - regex
+  - 输入校验边界
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 regex 题型中的 输入校验边界 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: regex:输入校验边界
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-regex
+    complexity: 4
+    compatibleGroups:
+    - misc-shell
+    - forensics-logs
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: regex
+      variant: 输入校验边界
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-container-01
+  title: 容器与运行环境基础：镜像层查看
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: container
+  variant: 镜像层查看
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - container
+  - 镜像层查看
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 container 题型中的 镜像层查看 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: container:镜像层查看
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-container
+    complexity: 1
+    compatibleGroups:
+    - misc-linux
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: container
+      variant: 镜像层查看
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-container-02
+  title: 容器与运行环境基础：环境变量检查
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: container
+  variant: 环境变量检查
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - container
+  - 环境变量检查
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 container 题型中的 环境变量检查 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: container:环境变量检查
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-container
+    complexity: 2
+    compatibleGroups:
+    - misc-linux
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: container
+      variant: 环境变量检查
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-container-03
+  title: 容器与运行环境基础：文件挂载线索
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: container
+  variant: 文件挂载线索
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - container
+  - 文件挂载线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 container 题型中的 文件挂载线索 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: container:文件挂载线索
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-container
+    complexity: 3
+    compatibleGroups:
+    - misc-linux
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: container
+      variant: 文件挂载线索
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-container-04
+  title: 容器与运行环境基础：入口命令分析
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: container
+  variant: 入口命令分析
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - container
+  - 入口命令分析
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 container 题型中的 入口命令分析 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: container:入口命令分析
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-container
+    complexity: 4
+    compatibleGroups:
+    - misc-linux
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: container
+      variant: 入口命令分析
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-container-05
+  title: 容器与运行环境基础：资源限制观察
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - root-me-challenges
+  archetype: container
+  variant: 资源限制观察
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - container
+  - 资源限制观察
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 container 题型中的 资源限制观察 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: container:资源限制观察
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-container
+    complexity: 5
+    compatibleGroups:
+    - misc-linux
+    - misc-permission
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: container
+      variant: 资源限制观察
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-permission-01
+  title: 权限与能力模型：setuid 线索
+  category: MISC
+  sourceRefs:
+  - overthewire-wargames
+  - root-me-challenges
+  archetype: permission
+  variant: setuid 线索
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - permission
+  - setuid-线索
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 permission 题型中的 setuid 线索 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: permission:setuid 线索
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-permission
+    complexity: 2
+    compatibleGroups:
+    - misc-linux
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: permission
+      variant: setuid 线索
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-permission-02
+  title: 权限与能力模型：sudo 规则阅读
+  category: MISC
+  sourceRefs:
+  - overthewire-wargames
+  - root-me-challenges
+  archetype: permission
+  variant: sudo 规则阅读
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - permission
+  - sudo-规则阅读
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 permission 题型中的 sudo 规则阅读 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: permission:sudo 规则阅读
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-permission
+    complexity: 3
+    compatibleGroups:
+    - misc-linux
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: permission
+      variant: sudo 规则阅读
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-permission-03
+  title: 权限与能力模型：文件 ACL
+  category: MISC
+  sourceRefs:
+  - overthewire-wargames
+  - root-me-challenges
+  archetype: permission
+  variant: 文件 ACL
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - permission
+  - 文件-acl
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 permission 题型中的 文件 ACL 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: permission:文件 ACL
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-permission
+    complexity: 4
+    compatibleGroups:
+    - misc-linux
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: permission
+      variant: 文件 ACL
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-permission-04
+  title: 权限与能力模型：capability 检查
+  category: MISC
+  sourceRefs:
+  - overthewire-wargames
+  - root-me-challenges
+  archetype: permission
+  variant: capability 检查
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - permission
+  - capability-检查
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 permission 题型中的 capability 检查 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: permission:capability 检查
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-permission
+    complexity: 5
+    compatibleGroups:
+    - misc-linux
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: permission
+      variant: capability 检查
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-permission-05
+  title: 权限与能力模型：umask 影响
+  category: MISC
+  sourceRefs:
+  - overthewire-wargames
+  - root-me-challenges
+  archetype: permission
+  variant: umask 影响
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - permission
+  - umask-影响
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 permission 题型中的 umask 影响 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: permission:umask 影响
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-permission
+    complexity: 1
+    compatibleGroups:
+    - misc-linux
+    - pwn-sandbox
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: permission
+      variant: umask 影响
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-data-01
+  title: 数据格式与结构化处理：JSON jq 查询
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: data
+  variant: JSON jq 查询
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - data
+  - json-jq-查询
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 data 题型中的 JSON jq 查询 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: data:JSON jq 查询
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-data
+    complexity: 3
+    compatibleGroups:
+    - misc-scripting
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: data
+      variant: JSON jq 查询
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-data-02
+  title: 数据格式与结构化处理：CSV 聚合
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: data
+  variant: CSV 聚合
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - data
+  - csv-聚合
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 data 题型中的 CSV 聚合 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: data:CSV 聚合
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-data
+    complexity: 4
+    compatibleGroups:
+    - misc-scripting
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: data
+      variant: CSV 聚合
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-data-03
+  title: 数据格式与结构化处理：YAML 配置阅读
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: data
+  variant: YAML 配置阅读
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - data
+  - yaml-配置阅读
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 data 题型中的 YAML 配置阅读 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: data:YAML 配置阅读
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-data
+    complexity: 5
+    compatibleGroups:
+    - misc-scripting
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: data
+      variant: YAML 配置阅读
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-data-04
+  title: 数据格式与结构化处理：SQLite 查询
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: data
+  variant: SQLite 查询
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - data
+  - sqlite-查询
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 data 题型中的 SQLite 查询 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: data:SQLite 查询
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-data
+    complexity: 1
+    compatibleGroups:
+    - misc-scripting
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: data
+      variant: SQLite 查询
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-data-05
+  title: 数据格式与结构化处理：二进制结构解析
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: data
+  variant: 二进制结构解析
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - data
+  - 二进制结构解析
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 data 题型中的 二进制结构解析 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: data:二进制结构解析
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-data
+    complexity: 2
+    compatibleGroups:
+    - misc-scripting
+    - crypto-encoding
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: data
+      variant: 二进制结构解析
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-network-01
+  title: 网络基础工具：nc 交互
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: network
+  variant: nc 交互
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - network
+  - nc-交互
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 network 题型中的 nc 交互 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: network:nc 交互
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-network
+    complexity: 4
+    compatibleGroups:
+    - forensics-pcap
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: network
+      variant: nc 交互
+      difficulty: 4
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-network-02
+  title: 网络基础工具：端口探测
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: network
+  variant: 端口探测
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - network
+  - 端口探测
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 network 题型中的 端口探测 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: network:端口探测
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-network
+    complexity: 5
+    compatibleGroups:
+    - forensics-pcap
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: network
+      variant: 端口探测
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-network-03
+  title: 网络基础工具：HTTP Header 观察
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: network
+  variant: HTTP Header 观察
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - network
+  - http-header-观察
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 network 题型中的 HTTP Header 观察 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: network:HTTP Header 观察
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-network
+    complexity: 1
+    compatibleGroups:
+    - forensics-pcap
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: network
+      variant: HTTP Header 观察
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-network-04
+  title: 网络基础工具：DNS 查询
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: network
+  variant: DNS 查询
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - network
+  - dns-查询
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 network 题型中的 DNS 查询 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: network:DNS 查询
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-network
+    complexity: 2
+    compatibleGroups:
+    - forensics-pcap
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: network
+      variant: DNS 查询
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-network-05
+  title: 网络基础工具：TLS 证书查看
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - overthewire-wargames
+  - ctf101
+  archetype: network
+  variant: TLS 证书查看
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - network
+  - tls-证书查看
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 network 题型中的 TLS 证书查看 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: network:TLS 证书查看
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-network
+    complexity: 3
+    compatibleGroups:
+    - forensics-pcap
+    - web-api
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: network
+      variant: TLS 证书查看
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-encoding-01
+  title: 通用编码解码：Base64 解码
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: Base64 解码
+  workspaceType: TERMINAL
+  difficulty: 5
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - encoding
+  - base64-解码
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 encoding 题型中的 Base64 解码 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: encoding:Base64 解码
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-encoding
+    complexity: 5
+    compatibleGroups:
+    - crypto-encoding
+    - misc-data
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: encoding
+      variant: Base64 解码
+      difficulty: 5
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-encoding-02
+  title: 通用编码解码：URL 编码
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: URL 编码
+  workspaceType: TERMINAL
+  difficulty: 1
+  expectedMinutes: 60
+  isolationTier: 1
+  tags:
+  - MISC
+  - encoding
+  - url-编码
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 encoding 题型中的 URL 编码 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: encoding:URL 编码
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-encoding
+    complexity: 1
+    compatibleGroups:
+    - crypto-encoding
+    - misc-data
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: encoding
+      variant: URL 编码
+      difficulty: 1
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-encoding-03
+  title: 通用编码解码：Hex 转换
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: Hex 转换
+  workspaceType: TERMINAL
+  difficulty: 2
+  expectedMinutes: 75
+  isolationTier: 1
+  tags:
+  - MISC
+  - encoding
+  - hex-转换
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 encoding 题型中的 Hex 转换 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: encoding:Hex 转换
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-encoding
+    complexity: 2
+    compatibleGroups:
+    - crypto-encoding
+    - misc-data
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: encoding
+      variant: Hex 转换
+      difficulty: 2
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-encoding-04
+  title: 通用编码解码：二进制转文本
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: 二进制转文本
+  workspaceType: TERMINAL
+  difficulty: 3
+  expectedMinutes: 90
+  isolationTier: 1
+  tags:
+  - MISC
+  - encoding
+  - 二进制转文本
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 encoding 题型中的 二进制转文本 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: encoding:二进制转文本
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-encoding
+    complexity: 3
+    compatibleGroups:
+    - crypto-encoding
+    - misc-data
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: encoding
+      variant: 二进制转文本
+      difficulty: 3
+  safety:
+    noExternalInternetRequired: true
+    noDynamicSecretInPrompt: true
+    requiresTeacherApproval: true
+- id: misc-encoding-05
+  title: 通用编码解码：多层编码识别
+  category: MISC
+  sourceRefs:
+  - picoctf-practice
+  - ctf101
+  archetype: encoding
+  variant: 多层编码识别
+  workspaceType: TERMINAL
+  difficulty: 4
+  expectedMinutes: 105
+  isolationTier: 1
+  tags:
+  - MISC
+  - encoding
+  - 多层编码识别
+  - authoritative-blueprint
+  learningObjectives:
+  - 熟练使用终端工具
+  - 构造可复现解题流程
+  - 解释命令和数据处理依据
+  - 掌握 encoding 题型中的 多层编码识别 变体
+  prerequisites:
+  - Linux 命令行
+  - 文本处理基础
+  - 可复现记录习惯
+  workspaceCapabilities:
+  - awk
+  - bash
+  - file
+  - find
+  - git
+  - grep
+  - jq
+  - nc
+  - python
+  - sed
+  components:
+    target: 受限网络服务或本地 setuid 风格模型
+    vulnerability: encoding:多层编码识别
+    oracle: 外部检查命令产物、数据转换或脚本输出
+    workspace: 通用终端工具容器
+  composition:
+    group: misc-encoding
+    complexity: 4
+    compatibleGroups:
+    - crypto-encoding
+    - misc-data
+    canBeSubChallenge: true
+    combinationNotes: 可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。
+  generator:
+    kind: parameterized-template
+    template: misc-cli-task
+    parameters:
+      archetype: encoding
+      variant: 多层编码识别
       difficulty: 4
   safety:
     noExternalInternetRequired: true

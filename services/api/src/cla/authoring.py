@@ -630,10 +630,117 @@ def _postprocess_course_intent(
     return result
 
 
+def _reverse_target_from_text(value: str, text: str) -> str | None:
+    lowered = text.lower()
+    if any(token in value for token in ["EMBEDDED", "FIRMWARE"]) or any(
+        token in lowered for token in ["msp430", "embedded", "firmware", "嵌入式", "固件", "微控制器"]
+    ):
+        return "REVERSE_EMBEDDED"
+    if any(token in value for token in ["MOBILE", "ANDROID", "DEX", "APK"]) or any(
+        token in lowered for token in ["mobile", "android", "dex", "apk", "移动端"]
+    ):
+        return "REVERSE_MOBILE"
+    if any(token in value for token in ["ANTIDEBUG", "ANTI_DEBUG", "PTRACE"]) or any(
+        token in lowered for token in ["antidebug", "anti-debug", "ptrace", "反调试", "反分析"]
+    ):
+        return "REVERSE_ANTIDEBUG"
+    if any(token in value for token in ["PACKING", "PACKER", "UPX"]) or any(
+        token in lowered for token in ["packing", "packer", "upx", "加壳", "脱壳", "自解密"]
+    ):
+        return "REVERSE_PACKING"
+    if any(token in value for token in ["KEYGEN", "LICENSE"]) or any(
+        token in lowered for token in ["keygen", "license", "注册码", "许可证", "线性校验"]
+    ):
+        return "REVERSE_KEYGEN"
+    if any(token in value for token in ["STRIPPED", "STATIC_LINK"]) or any(
+        token in lowered for token in ["stripped", "go rust", "静态链接", "无符号", "符号恢复"]
+    ):
+        return "REVERSE_STRIPPED"
+    if any(token in value for token in ["CFF", "CONTROL_FLOW"]) or any(
+        token in lowered for token in ["flattening", "opaque predicate", "控制流混淆", "跳表混淆"]
+    ):
+        return "REVERSE_CFF"
+    if any(token in value for token in ["VM", "BYTECODE"]) or any(
+        token in lowered for token in ["bytecode", "虚拟机", "字节码", "解释器还原", "栈式 vm", "寄存器式 vm"]
+    ):
+        return "REVERSE_VM"
+    if any(token in value for token in ["REVERSE_CRYPTO", "REV_CRYPTO"]) or (
+        any(token in lowered for token in ["reverse", "reversing", "逆向", "crackme"])
+        and any(token in lowered for token in ["crypto", "prng", "密码", "密钥", "ecb", "base"])
+    ):
+        return "REVERSE_CRYPTO"
+    if any(token in value for token in ["STRINGS", "STRING"]) or (
+        any(token in lowered for token in ["reverse", "reversing", "逆向", "crackme"])
+        and any(token in lowered for token in ["strings", "string", "字符串", "xor", "常量"])
+    ):
+        return "REVERSE_STRINGS"
+    return None
+
+
+def _pwn_target_from_text(value: str, text: str) -> str | None:
+    lowered = text.lower()
+    if any(token in value for token in ["KERNELISH", "IOCTL"]) or any(
+        token in lowered for token in ["ioctl", "copy_from_user", "kernelish", "内核风格"]
+    ):
+        return "PWN_KERNELISH"
+    if any(token in value for token in ["SANDBOX", "CHROOT"]) or any(
+        token in lowered for token in ["sandbox", "chroot", "capability", "toctou", "沙箱"]
+    ):
+        return "PWN_SANDBOX"
+    if any(token in value for token in ["SHELLCODE", "SECCOMP", "ORW"]) or any(
+        token in lowered for token in ["shellcode", "seccomp", "orw", "mprotect"]
+    ):
+        return "PWN_SHELLCODE"
+    if any(token in value for token in ["FORMAT", "PRINTF", "FSB"]) or any(
+        token in lowered for token in ["format string", "printf", "格式化字符串", "任意地址写"]
+    ):
+        return "PWN_FORMAT"
+    if any(token in value for token in ["HEAP", "TCACHE", "FASTBIN"]) or any(
+        token in lowered for token in ["heap", "tcache", "fastbin", "unsorted bin", "堆"]
+    ):
+        return "PWN_HEAP"
+    if any(token in value for token in ["UAF", "USE_AFTER_FREE", "DOUBLE_FREE"]) or any(
+        token in lowered for token in ["use after free", "use-after-free", "double free", "uaf", "对象复用"]
+    ):
+        return "PWN_UAF"
+    if any(token in value for token in ["PIE", "CANARY", "RELRO", "NX", "ASLR"]) or any(
+        token in lowered for token in ["pie", "canary", "relro", "nx", "aslr"]
+    ):
+        return "PWN_PIE"
+    if any(token in value for token in ["ROP", "RET2LIBC", "RET2PLT"]) or any(
+        token in lowered for token in ["rop", "ret2libc", "ret2plt", "csu gadget", "rop pivot"]
+    ):
+        return "PWN_ROP"
+    if any(token in value for token in ["STACK", "RET2WIN"]) or any(
+        token in lowered for token in ["stack", "ret2win", "栈溢出", "返回地址"]
+    ):
+        return "PWN_STACK"
+    return None
+
+
 def _normalize_target(raw: str, text: str) -> str:
     value = raw.upper().replace("-", "_").replace(" ", "_")
     if "XSS" in value or "xss" in text or "跨站脚本" in text or "脚本注入" in text:
         return "XSS"
+    if "SSRF" in value or "ssrf" in text:
+        return "SSRF"
+    if "XXE" in value or "xxe" in text or "xml 外部实体" in text:
+        return "XXE"
+    if "SSTI" in value or "ssti" in text or "模板注入" in text or "模板" in text:
+        return "TEMPLATE_INJECTION"
+    if "FILE" in value and ("UPLOAD" in value or "PATH" in value):
+        return "FILE_HANDLING"
+    if "文件上传" in text or "路径遍历" in text or "文件包含" in text:
+        return "FILE_HANDLING"
+    if "GRAPHQL" in value or "API" in value or "graphql" in text or "api" in text:
+        return "API_SECURITY"
+    if "RACE" in value or "CACHE" in value or "竞态" in text or "缓存" in text or "业务逻辑" in text:
+        return "BUSINESS_LOGIC"
+    if "AUTHORIZATION" in value or "ACCESS_CONTROL" in value or "IDOR" in value:
+        return "AUTHORIZATION"
+    pwn_target = _pwn_target_from_text(value, text)
+    if pwn_target:
+        return pwn_target
     if (
         "INTEGER_OVERFLOW" in value
         or "整数溢出" in text
@@ -642,6 +749,9 @@ def _normalize_target(raw: str, text: str) -> str:
         or ("integer" in text and "overflow" in text)
     ):
         return "INTEGER_OVERFLOW"
+    reverse_target = _reverse_target_from_text(value, text)
+    if reverse_target:
+        return reverse_target
     if (
         value in {"BINARY_ANALYSIS", "REVERSE", "REVERSING"}
         or value.startswith("REV")
@@ -651,6 +761,80 @@ def _normalize_target(raw: str, text: str) -> str:
         or "crackme" in text
     ):
         return "BINARY_ANALYSIS"
+    if "RSA" in value or "rsa" in text:
+        return "RSA"
+    if "ECC" in value or "ELLIPTIC" in value or "ecc" in text or "椭圆曲线" in text:
+        return "ECC"
+    if "DIFFIE" in value or "DH" == value or "diffie" in text or "密钥交换" in text:
+        return "DIFFIE_HELLMAN"
+    if "HASH" in value or "HMAC" in value or "hash" in text or "哈希" in text or "完整性" in text:
+        return "HASH"
+    if "PADDING" in value or "padding" in text or "填充" in text:
+        return "PADDING_ORACLE"
+    if (
+        "AES" in value
+        or "SYMMETRIC" in value
+        or "aes" in text
+        or "cbc" in text
+        or "ecb" in text
+        or "ctr" in text
+        or "gcm" in text
+        or "对称" in text
+    ):
+        return "SYMMETRIC_CRYPTO"
+    if "XOR" in value or "xor" in text or "异或" in text:
+        return "XOR"
+    if "PRNG" in value or "random" in text or "随机数" in text or "随机" in text:
+        return "PRNG"
+    if (
+        "CLASSICAL" in value
+        or "caesar" in text
+        or "vigenere" in text
+        or "凯撒" in text
+        or "维吉尼亚" in text
+        or "古典" in text
+    ):
+        return "CLASSICAL_CRYPTO"
+    if "ENCOD" in value or "base64" in text or "base85" in text or "编码" in text or "解码" in text:
+        return "ENCODING"
+    if "PCAP" in value or "pcap" in text or "wireshark" in text or "流量" in text:
+        return "PCAP_FORENSICS"
+    if "OSINT" in value or "osint" in text or "公开信息" in text:
+        return "OSINT"
+    if "IMAGE" in value or "STEG" in value or "隐写" in text or "图片" in text or "图像" in text:
+        return "IMAGE_STEGANOGRAPHY"
+    if "MEMORY" in value or "volatility" in text or "内存" in text:
+        return "MEMORY_FORENSICS"
+    if "DISK" in value or "磁盘" in text or "文件系统" in text:
+        return "DISK_FORENSICS"
+    if "LOG" in value or "日志" in text or "时间线" in text:
+        return "LOG_ANALYSIS"
+    if "MALWARE" in value or "恶意样本" in text or "ioc" in text:
+        return "MALWARE_TRIAGE"
+    if "AUDIO" in value or "音频" in text or "频谱" in text:
+        return "AUDIO_FORENSICS"
+    if "DOCUMENT" in value or "PDF" in value or "文档" in text or "元数据" in text:
+        return "DOCUMENT_FORENSICS"
+    if "FILE" in value or "magic" in text or "魔数" in text or "文件头" in text:
+        return "FILE_FORENSICS"
+    if "GIT" in value or "git" in text:
+        return "GIT_HISTORY"
+    if "REGEX" in value or "正则" in text:
+        return "REGEX_TEXT"
+    if "CONTAINER" in value or "docker" in text or "容器" in text:
+        return "CONTAINER_BASICS"
+    if "PERMISSION" in value or "权限" in text or "setuid" in text or "sudo" in text:
+        return "PERMISSION_MODEL"
+    if "SHELL" in value or "管道" in text or "grep" in text or "sed" in text or "awk" in text:
+        return "SHELL_PIPELINE"
+    if "LINUX" in value or "linux" in text or "隐藏文件" in text:
+        return "LINUX_BASICS"
+    if "JSON" in value or "jq" in text or "csv" in text or "sqlite" in text:
+        return "DATA_FORMATS"
+    if "NETWORK" in value or "nc " in text or "端口" in text or "dns" in text:
+        return "NETWORK_BASICS"
+    if "SCRIPT" in value or "python" in text or "脚本" in text:
+        return "SCRIPTING"
     if value in {"SQL_INJECTION", "SQLI", "SQL_INJECTION_AUTH", "SQLI_AUTH"}:
         if "auth" in text or "login" in text or "登录" in text or "认证" in text:
             return "SQLI_AUTHENTICATION"
@@ -690,6 +874,9 @@ def _normalize_allowed_tools(
         "WEB": {"checksec", "file", "gdb", "objdump", "pwntools", "readelf", "strings"},
         "REVERSE": {"checksec", "curl", "httpie", "pwntools"},
         "PWN": {"curl", "httpie", "objdump", "readelf", "strings"},
+        "CRYPTO": {"curl", "gdb", "objdump", "readelf", "strings", "tshark", "tcpdump", "pwntools"},
+        "FORENSICS": {"curl", "gdb", "objdump", "readelf", "pwntools", "sage"},
+        "MISC": {"gdb", "objdump", "readelf", "pwntools", "sage", "tshark", "volatility"},
     }
     normalized: list[str] = []
     for value in values:
@@ -711,6 +898,10 @@ def _normalize_allowed_tools(
         for tool in ["curl", "python"]:
             if tool not in normalized:
                 normalized.append(tool)
+    if category == "MISC":
+        for tool in ["bash", "python"]:
+            if tool not in normalized:
+                normalized.append(tool)
     return normalized
 
 
@@ -727,6 +918,14 @@ def _normalize_learning_objectives(values: list[str], category: str, text: str) 
         "CROSS_SITE_SCRIPTING": "validate-cross-site-scripting-impact",
         "OUTPUT_ENCODING": "explain-output-encoding",
         "INTEGER_OVERFLOW": "analyze-integer-overflow",
+        "RSA": "recover-cryptographic-assumption",
+        "ECC": "recover-cryptographic-assumption",
+        "ELLIPTIC_CURVE": "recover-cryptographic-assumption",
+        "DIFFIE_HELLMAN": "recover-cryptographic-assumption",
+        "HASH": "analyze-integrity-boundary",
+        "FORENSICS": "extract-verifiable-evidence",
+        "PCAP": "analyze-network-evidence",
+        "MISC": "use-terminal-toolchain",
     }
     for value in values:
         key = value.strip().upper().replace("-", "_").replace(" ", "_")
@@ -1137,7 +1336,25 @@ def _proposal_title(
         or "explain-output-encoding" in objectives
     ):
         return "定制 XSS 脚本注入靶场" if custom else "XSS 输出编码与脚本注入实践"
-    if category == "WEB" and ("AUTH" in target or "validate-authentication-impact" in objectives):
+    if category == "WEB" and "AUTHORIZATION" in target:
+        return "Web 访问控制边界实践"
+    if category == "WEB" and "SSRF" in target:
+        return "Web SSRF 与内网边界实践"
+    if category == "WEB" and "FILE_HANDLING" in target:
+        return "Web 文件处理安全实践"
+    if category == "WEB" and "TEMPLATE_INJECTION" in target:
+        return "Web 模板与反序列化实践"
+    if category == "WEB" and "XXE" in target:
+        return "XML 解析器安全实践"
+    if category == "WEB" and "BUSINESS_LOGIC" in target:
+        return "Web 业务逻辑与竞态实践"
+    if category == "WEB" and "API_SECURITY" in target:
+        return "Web API 安全实践"
+    if category == "WEB" and (
+        target in {"AUTHENTICATION", "AUTH_BYPASS", "SQLI_AUTHENTICATION"}
+        or target.startswith("AUTHENTICATION")
+        or "validate-authentication-impact" in objectives
+    ):
         return "Web 登录认证边界实践"
     if category == "WEB":
         return "Web 输入信任边界实践"
@@ -1147,6 +1364,12 @@ def _proposal_title(
         if "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives:
             return "Pwn 整数溢出利用实践"
         return "二进制内存破坏利用实践"
+    if category == "CRYPTO":
+        return "密码学分析与脚本验证实践"
+    if category == "FORENSICS":
+        return "数字取证证据提取实践"
+    if category == "MISC":
+        return "CTF 通用技能终端实践"
     if selected:
         return f"{_human_category(category)}综合实践"
     return "定制网络安全实践靶场"
@@ -1179,6 +1402,21 @@ def _proposal_summary(intent: dict[str, Any], *, mode: str) -> str:
         return (
             f"面向逆向工程的终端实践，学生需要使用命令行分析工具还原校验逻辑、"
             f"给出可复现实验证据并说明判断依据，预计 {minutes} 分钟。"
+        )
+    if category == "CRYPTO":
+        return (
+            f"面向密码学题型的终端实践，学生需要识别密码原语、"
+            f"编写脚本验证假设并说明安全参数影响，预计 {minutes} 分钟。"
+        )
+    if category == "FORENSICS":
+        return (
+            f"面向数字取证题型的终端实践，学生需要提取可信证据、"
+            f"还原线索链路并说明结论依据，预计 {minutes} 分钟。"
+        )
+    if category == "MISC":
+        return (
+            f"面向 CTF 通用技能的终端实践，学生需要使用命令行工具处理文件、"
+            f"文本、数据格式或基础网络交互，预计 {minutes} 分钟。"
         )
     return f"面向 {_human_category(category)} 的终端实践，学生需要完成验证、解释根因并提交修复建议，预计 {minutes} 分钟。"
 
@@ -1243,6 +1481,24 @@ def _proposal_description(
             "先观察程序如何处理长度、数量、索引或分配大小等整数输入，再构造边界值验证数值溢出后的行为差异。"
             "题目重点是解释整数类型、符号转换或乘加运算溢出如何影响内存访问或逻辑判断，并给出安全边界检查与类型选择建议。"
         )
+    if category == "CRYPTO":
+        return (
+            f"{candidate_text}学生进入题目后会获得独立终端工作区和密文、脚本或协议转录材料，"
+            "先识别编码、密码原语、参数和可验证假设，再用 Python、openssl 或 sage 编写最小复现实验。"
+            "题目重点是说明弱参数、模式误用、随机数问题或数学约束如何影响安全性，并提交可复核的脚本证据。"
+        )
+    if category == "FORENSICS":
+        return (
+            f"{candidate_text}学生进入题目后会获得独立终端工作区和取证材料，"
+            "先确认文件类型、元数据、网络会话或日志时间线，再使用 file、strings、tshark、exiftool 或脚本提取证据。"
+            "题目重点是保持证据链清晰，说明每一步观察如何支撑最终结论。"
+        )
+    if category == "MISC":
+        return (
+            f"{candidate_text}学生进入题目后会获得独立终端工作区和待处理材料，"
+            "需要使用 shell 管道、Python、Git、jq、文本处理或基础网络工具完成可复现操作。"
+            "题目重点是让学生清楚记录命令、输入输出和数据转换依据，为后续复杂题型打基础。"
+        )
     return (
         f"{candidate_text}学生进入题目后会获得独立终端工作区，根据题目资源完成观察、验证和记录。"
         "题目重点是复现可观测现象、说明根因链路，并给出可落地的修复或缓解建议。"
@@ -1289,6 +1545,33 @@ def _proposal_requirements(intent: dict[str, Any], *, mode: str) -> str:
             "4. 写清楚逆向结论、关键控制流或数据流证据。\n"
             "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
         )
+    if category == "CRYPTO":
+        return (
+            "学生需要完成以下内容：\n"
+            "1. 识别题目使用的编码、密码原语、参数和输入输出格式。\n"
+            "2. 编写最小脚本或命令验证自己的密码学假设。\n"
+            "3. 提交可复现的恢复过程、关键中间值和结论依据。\n"
+            "4. 说明问题来自弱参数、模式误用、随机性缺陷、数学约束或实现错误中的哪一类。\n"
+            "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+        )
+    if category == "FORENSICS":
+        return (
+            "学生需要完成以下内容：\n"
+            "1. 确认取证材料类型、来源和基本完整性线索。\n"
+            "2. 使用合适命令提取文件、流量、日志、元数据或时间线证据。\n"
+            "3. 写清楚每条证据如何支持最终结论，并保留可复现命令。\n"
+            "4. 区分直接观察、推断和不确定项。\n"
+            "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+        )
+    if category == "MISC":
+        return (
+            "学生需要完成以下内容：\n"
+            "1. 使用终端命令、脚本或数据处理工具完成题目要求的转换、搜索或交互。\n"
+            "2. 记录关键命令、输入输出和文件变化。\n"
+            "3. 说明每一步操作为什么必要，以及如何复现。\n"
+            "4. 给出后续在复杂 Web、取证、密码或二进制题中可复用的经验。\n"
+            "5. 不提交真实密码、Cookie、Authorization、token 或其他个人敏感信息。"
+        )
     return (
         "学生需要完成以下内容：\n"
         "1. 复现题目目标现象，并保留必要命令、输入输出或分析截图说明。\n"
@@ -1313,10 +1596,33 @@ def _proposal_tags(intent: dict[str, Any], selected: list[dict[str, Any]]) -> li
         raw.append("输入信任边界")
     if "AUTH" in target or "validate-authentication-impact" in objectives:
         raw.append("认证")
+    if "AUTHORIZATION" in target:
+        raw.append("访问控制")
+    if "SSRF" in target:
+        raw.append("SSRF")
+    if "FILE_HANDLING" in target:
+        raw.append("文件安全")
+    if "TEMPLATE_INJECTION" in target:
+        raw.append("模板注入")
+    if "XXE" in target:
+        raw.append("XXE")
+    if "BUSINESS_LOGIC" in target:
+        raw.append("竞态")
+    if "API_SECURITY" in target:
+        raw.append("API安全")
     if category == "PWN":
         raw.append("内存安全")
     if category == "REVERSE":
         raw.append("二进制分析")
+    if category == "CRYPTO":
+        raw.append("密码学")
+        raw.append("脚本验证")
+    if category == "FORENSICS":
+        raw.append("数字取证")
+        raw.append("证据分析")
+    if category == "MISC":
+        raw.append("通用技能")
+        raw.append("命令行")
     if "INTEGER_OVERFLOW" in target or "analyze-integer-overflow" in objectives:
         raw.append("整数溢出")
     if selected:
@@ -1358,6 +1664,8 @@ def _expected_custom_files(category: str) -> list[str]:
         return common + ["target/Dockerfile", "target/challenge.c"]
     if value == "PWN":
         return common + ["target/Dockerfile", "target/vuln.c"]
+    if value in {"CRYPTO", "FORENSICS", "MISC"}:
+        return common + ["target/Dockerfile", "target/task.py"]
     return common + ["target/Dockerfile", "target/server.py"]
 
 
@@ -1368,6 +1676,7 @@ def _human_category(category: str) -> str:
         "PWN": "Pwn",
         "CRYPTO": "密码学",
         "FORENSICS": "数字取证",
+        "MISC": "通用技能",
     }.get(category.upper(), "网络安全")
 
 
@@ -1428,18 +1737,50 @@ def _category_from_text(text: str) -> str:
     if any(
         token in text
         for token in [
+            "forensic",
+            "forensics",
+            "pcap",
+            "wireshark",
+            "steg",
+            "volatility",
+            "数字取证",
+            "取证",
+            "流量取证",
+            "流量分析",
+            "隐写",
+            "内存取证",
+            "磁盘取证",
+            "元数据取证",
+            "osint",
+        ]
+    ):
+        return "FORENSICS"
+    if re.search(r"\bsql\b", text) or re.search(r"\bsqli\b", text) or "sql 注入" in text or "sql注入" in text:
+        return "WEB"
+    if any(
+        token in text
+        for token in [
             "web",
             "http",
-            "sql",
-            "sqli",
             "xss",
             "csrf",
+            "ssrf",
+            "ssti",
+            "xxe",
+            "graphql",
+            "api",
+            "idor",
             "login",
             "auth",
             "登录",
             "认证",
             "注入",
             "越权",
+            "访问控制",
+            "文件上传",
+            "路径遍历",
+            "缓存",
+            "业务逻辑",
         ]
     ):
         return "WEB"
@@ -1450,10 +1791,132 @@ def _category_from_text(text: str) -> str:
         for token in ["pwn", "overflow", "rop", "heap", "stack", "shellcode", "binary exploitation", "二进制利用", "栈溢出", "堆"]
     ):
         return "PWN"
-    if any(token in text for token in ["crypto", "rsa", "aes", "ecc", "密码学", "加密", "解密"]):
+    if any(
+        token in text
+        for token in [
+            "crypto",
+            "rsa",
+            "aes",
+            "ecc",
+            "diffie",
+            "hmac",
+            "hash",
+            "xor",
+            "padding",
+            "密码学",
+            "加密",
+            "解密",
+            "哈希",
+            "凯撒",
+            "维吉尼亚",
+            "椭圆曲线",
+            "随机数",
+        ]
+    ):
         return "CRYPTO"
-    if any(token in text for token in ["forensic", "forensics", "pcap", "wireshark", "取证", "流量分析"]):
+    if any(
+        token in text
+        for token in [
+            "misc",
+            "general skills",
+            "linux",
+            "shell",
+            "bash",
+            "grep",
+            "sed",
+            "awk",
+            "git",
+            "regex",
+            "docker",
+            "container",
+            "base64",
+            "url 编码",
+            "hex",
+            "json",
+            "csv",
+            "sqlite",
+            "jq",
+            "nc ",
+            "dns",
+            "基础命令",
+            "通用技能",
+            "命令行",
+            "管道",
+            "正则",
+            "权限",
+            "容器",
+            "隐藏文件",
+            "数据处理",
+            "端口",
+            "网络基础",
+            "setuid",
+        ]
+    ) or ("python" in text and any(token in text for token in ["脚本", "自动化", "批量处理"])):
+        return "MISC"
+    if any(
+        token in text
+        for token in [
+            "forensic",
+            "forensics",
+            "pcap",
+            "wireshark",
+            "steg",
+            "volatility",
+            "取证",
+            "流量分析",
+            "隐写",
+            "内存取证",
+            "磁盘",
+            "日志",
+            "音频",
+            "元数据",
+            "osint",
+        ]
+    ):
         return "FORENSICS"
+    if any(
+        token in text
+        for token in [
+            "misc",
+            "general skills",
+            "linux",
+            "python",
+            "scripting",
+            "shell",
+            "bash",
+            "grep",
+            "sed",
+            "awk",
+            "git",
+            "regex",
+            "docker",
+            "container",
+            "base64",
+            "url 编码",
+            "hex",
+            "json",
+            "csv",
+            "sqlite",
+            "jq",
+            "nc ",
+            "dns",
+            "jq",
+            "基础命令",
+            "通用技能",
+            "命令行",
+            "脚本",
+            "自动化",
+            "管道",
+            "正则",
+            "权限",
+            "容器",
+            "隐藏文件",
+            "数据处理",
+            "端口",
+            "网络基础",
+        ]
+    ):
+        return "MISC"
     return "UNKNOWN"
 
 
@@ -1468,6 +1931,9 @@ def _workspace_from_text(text: str) -> str:
 def _target_from_text(text: str) -> str:
     if "xss" in text or "跨站脚本" in text or "脚本注入" in text:
         return "XSS"
+    pwn_target = _pwn_target_from_text("", text)
+    if pwn_target:
+        return pwn_target
     if (
         "整数溢出" in text
         or "整型溢出" in text
@@ -1475,6 +1941,67 @@ def _target_from_text(text: str) -> str:
         or ("integer" in text and "overflow" in text)
     ):
         return "INTEGER_OVERFLOW"
+    reverse_target = _reverse_target_from_text("", text)
+    if reverse_target:
+        return reverse_target
+    if "rsa" in text:
+        return "RSA"
+    if "ecc" in text or "椭圆曲线" in text:
+        return "ECC"
+    if "diffie" in text or "密钥交换" in text:
+        return "DIFFIE_HELLMAN"
+    if "hash" in text or "hmac" in text or "哈希" in text or "完整性" in text:
+        return "HASH"
+    if "padding" in text or "填充" in text:
+        return "PADDING_ORACLE"
+    if any(token in text for token in ["aes", "cbc", "ecb", "ctr", "gcm", "对称"]):
+        return "SYMMETRIC_CRYPTO"
+    if "xor" in text or "异或" in text:
+        return "XOR"
+    if "random" in text or "随机" in text:
+        return "PRNG"
+    if any(token in text for token in ["caesar", "vigenere", "凯撒", "维吉尼亚", "古典"]):
+        return "CLASSICAL_CRYPTO"
+    if any(token in text for token in ["base64", "base85", "编码", "解码"]):
+        return "ENCODING"
+    if "pcap" in text or "wireshark" in text or "流量" in text:
+        return "PCAP_FORENSICS"
+    if "osint" in text or "公开信息" in text:
+        return "OSINT"
+    if "隐写" in text or "图片" in text or "图像" in text or "steg" in text:
+        return "IMAGE_STEGANOGRAPHY"
+    if "内存" in text or "volatility" in text:
+        return "MEMORY_FORENSICS"
+    if "磁盘" in text or "文件系统" in text:
+        return "DISK_FORENSICS"
+    if "日志" in text or "时间线" in text:
+        return "LOG_ANALYSIS"
+    if "恶意样本" in text or "malware" in text or "ioc" in text:
+        return "MALWARE_TRIAGE"
+    if "音频" in text or "频谱" in text:
+        return "AUDIO_FORENSICS"
+    if "文档" in text or "pdf" in text or "元数据" in text:
+        return "DOCUMENT_FORENSICS"
+    if "魔数" in text or "文件头" in text or "文件格式" in text:
+        return "FILE_FORENSICS"
+    if "git" in text:
+        return "GIT_HISTORY"
+    if "正则" in text or "regex" in text:
+        return "REGEX_TEXT"
+    if "docker" in text or "容器" in text:
+        return "CONTAINER_BASICS"
+    if "权限" in text or "setuid" in text or "sudo" in text:
+        return "PERMISSION_MODEL"
+    if "shell" in text or "管道" in text or any(token in text for token in ["grep", "sed", "awk"]):
+        return "SHELL_PIPELINE"
+    if "linux" in text or "隐藏文件" in text:
+        return "LINUX_BASICS"
+    if any(token in text for token in ["json", "jq", "csv", "sqlite"]):
+        return "DATA_FORMATS"
+    if "nc " in text or "端口" in text or "dns" in text:
+        return "NETWORK_BASICS"
+    if "脚本" in text or "python" in text:
+        return "SCRIPTING"
     if ("sql" in text or "sqli" in text or "注入" in text) and (
         "auth" in text or "login" in text or "登录" in text or "认证" in text
     ):
@@ -1483,6 +2010,20 @@ def _target_from_text(text: str) -> str:
         return "SQLI"
     if "auth" in text or "login" in text or "登录" in text or "认证" in text:
         return "AUTHENTICATION"
+    if "访问控制" in text or "idor" in text or "越权" in text or "authorization" in text:
+        return "AUTHORIZATION"
+    if "ssrf" in text:
+        return "SSRF"
+    if "xxe" in text:
+        return "XXE"
+    if "ssti" in text or "模板" in text:
+        return "TEMPLATE_INJECTION"
+    if "文件上传" in text or "路径遍历" in text:
+        return "FILE_HANDLING"
+    if "graphql" in text or "api" in text:
+        return "API_SECURITY"
+    if "竞态" in text or "缓存" in text or "业务逻辑" in text:
+        return "BUSINESS_LOGIC"
     if "注入" in text:
         return "INPUT_TRUST_BOUNDARY"
     if "越权" in text or "access control" in text or "authorization" in text:
@@ -1519,9 +2060,18 @@ def _tools_from_text(text: str, category: str) -> list[str]:
     elif category == "PWN":
         defaults = ["gdb", "python", "pwntools"]
     elif category == "CRYPTO":
-        defaults = ["python", "sage"]
+        defaults = ["python", "openssl", "sage"]
     elif category == "FORENSICS":
-        defaults = ["tshark", "python", "file", "strings"]
+        target = _target_from_text(text)
+        defaults = ["file", "strings", "python", "xxd"]
+        if target == "PCAP_FORENSICS":
+            defaults.extend(["tshark", "tcpdump"])
+        if target in {"IMAGE_STEGANOGRAPHY", "DOCUMENT_FORENSICS"}:
+            defaults.extend(["exiftool", "binwalk"])
+        if target == "MEMORY_FORENSICS":
+            defaults.append("volatility")
+    elif category == "MISC":
+        defaults = ["bash", "python", "grep", "sed", "awk", "find", "file", "jq", "git", "nc"]
     else:
         defaults = ["curl", "python"]
     mentioned = [tool for tool in defaults if tool in text]
@@ -1537,8 +2087,21 @@ def _objectives_from_text(text: str, category: str) -> list[str]:
         objectives = ["识别密码实现假设", "构造可复现实验验证", "说明安全参数影响"]
     elif category == "FORENSICS":
         objectives = ["提取可验证证据", "还原事件链路", "说明取证结论依据"]
+    elif category == "MISC":
+        objectives = ["熟练使用终端工具", "构造可复现解题流程", "解释命令和数据处理依据"]
     else:
         objectives = ["识别输入输出信任边界", "构造可复现实验证据"]
+    if category == "CRYPTO":
+        if any(token in text for token in ["rsa", "ecc", "diffie", "哈希", "hash", "aes", "xor", "padding", "随机"]):
+            objectives.append("recover-cryptographic-assumption")
+        if "hash" in text or "哈希" in text or "hmac" in text:
+            objectives.append("analyze-integrity-boundary")
+    if category == "FORENSICS":
+        objectives.append("extract-verifiable-evidence")
+        if "pcap" in text or "wireshark" in text or "流量" in text:
+            objectives.append("analyze-network-evidence")
+    if category == "MISC":
+        objectives.append("use-terminal-toolchain")
     if "xss" in text or "跨站脚本" in text or "脚本注入" in text:
         objectives.extend(["validate-cross-site-scripting-impact", "explain-output-encoding"])
     if (
@@ -1646,6 +2209,69 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
             str(signals.get("generatorTemplate", "")),
         ]
     ).lower()
+    exact_fragments = {
+        "SQLI": ["web_sqli", "web-sqli"],
+        "SQLI_AUTHENTICATION": ["web_sqli", "web-sqli"],
+        "XSS": ["web_xss", "web-xss"],
+        "AUTHORIZATION": ["web_access", "web-access"],
+        "SSRF": ["web_ssrf", "web-ssrf"],
+        "FILE_HANDLING": ["web_file", "web-file"],
+        "TEMPLATE_INJECTION": ["web_ssti", "web-ssti"],
+        "XXE": ["web_xxe", "web-xxe"],
+        "BUSINESS_LOGIC": ["web_race", "web-race"],
+        "API_SECURITY": ["web_api", "web-api"],
+        "REVERSE_STRINGS": ["reverse_strings", "reverse-strings"],
+        "REVERSE_KEYGEN": ["reverse_keygen", "reverse-keygen"],
+        "REVERSE_ANTIDEBUG": ["reverse_antidebug", "reverse-antidebug"],
+        "REVERSE_PACKING": ["reverse_packing", "reverse-packing"],
+        "REVERSE_CFF": ["reverse_cff", "reverse-cff"],
+        "REVERSE_VM": ["reverse_vm", "reverse-vm"],
+        "REVERSE_CRYPTO": ["reverse_crypto", "reverse-crypto"],
+        "REVERSE_MOBILE": ["reverse_mobile", "reverse-mobile"],
+        "REVERSE_STRIPPED": ["reverse_stripped", "reverse-stripped"],
+        "REVERSE_EMBEDDED": ["reverse_embedded", "reverse-embedded"],
+        "PWN_STACK": ["pwn_stack", "pwn-stack"],
+        "PWN_ROP": ["pwn_rop", "pwn-rop"],
+        "PWN_FORMAT": ["pwn_format", "pwn-format"],
+        "PWN_HEAP": ["pwn_heap", "pwn-heap"],
+        "PWN_UAF": ["pwn_uaf", "pwn-uaf"],
+        "INTEGER_OVERFLOW": ["pwn_integer", "pwn-integer"],
+        "PWN_SHELLCODE": ["pwn_shellcode", "pwn-shellcode"],
+        "PWN_PIE": ["pwn_pie", "pwn-pie"],
+        "PWN_SANDBOX": ["pwn_sandbox", "pwn-sandbox"],
+        "PWN_KERNELISH": ["pwn_kernelish", "pwn-kernelish"],
+        "ENCODING": ["crypto_encoding", "crypto-encoding", "misc_encoding", "misc-encoding"],
+        "CLASSICAL_CRYPTO": ["crypto_classical", "crypto-classical"],
+        "XOR": ["crypto_xor", "crypto-xor"],
+        "HASH": ["crypto_hash", "crypto-hash"],
+        "SYMMETRIC_CRYPTO": ["crypto_symmetric", "crypto-symmetric"],
+        "PADDING_ORACLE": ["crypto_padding", "crypto-padding"],
+        "RSA": ["crypto_rsa", "crypto-rsa"],
+        "DIFFIE_HELLMAN": ["crypto_dh", "crypto-dh"],
+        "ECC": ["crypto_ecc", "crypto-ecc"],
+        "PRNG": ["crypto_prng", "crypto-prng"],
+        "FILE_FORENSICS": ["forensics_file", "forensics-file"],
+        "IMAGE_STEGANOGRAPHY": ["forensics_image", "forensics-image"],
+        "PCAP_FORENSICS": ["forensics_pcap", "forensics-pcap"],
+        "MEMORY_FORENSICS": ["forensics_memory", "forensics-memory"],
+        "DISK_FORENSICS": ["forensics_disk", "forensics-disk"],
+        "LOG_ANALYSIS": ["forensics_logs", "forensics-logs"],
+        "MALWARE_TRIAGE": ["forensics_malware", "forensics-malware"],
+        "AUDIO_FORENSICS": ["forensics_audio", "forensics-audio"],
+        "OSINT": ["forensics_osint", "forensics-osint"],
+        "DOCUMENT_FORENSICS": ["forensics_document", "forensics-document"],
+        "GIT_HISTORY": ["misc_git", "misc-git"],
+        "REGEX_TEXT": ["misc_regex", "misc-regex"],
+        "CONTAINER_BASICS": ["misc_container", "misc-container"],
+        "PERMISSION_MODEL": ["misc_permission", "misc-permission"],
+        "SHELL_PIPELINE": ["misc_shell", "misc-shell"],
+        "LINUX_BASICS": ["misc_linux", "misc-linux"],
+        "DATA_FORMATS": ["misc_data", "misc-data"],
+        "NETWORK_BASICS": ["misc_network", "misc-network"],
+        "SCRIPTING": ["misc_scripting", "misc-scripting"],
+    }
+    if target in exact_fragments and any(fragment in text for fragment in exact_fragments[target]):
+        return 1.2
     if ("XSS" in target or "validate-cross-site-scripting-impact" in objectives) and (
         "xss" in text or "跨站脚本" in text or "脚本" in text
     ):
@@ -1654,9 +2280,68 @@ def _candidate_target_relevance(intent: dict[str, Any], candidate: dict[str, Any
         "integer" in text or "整数" in text or "溢出" in text or "边界" in text
     ):
         return 1.0
-    if ("SQLI" in target or "identify-input-trust-boundary" in objectives) and (
+    if ("SQLI" in target or target == "INPUT_TRUST_BOUNDARY") and (
         "sqli" in text or "sql" in text or "注入" in text
     ):
+        return 1.0
+    relevance_terms = {
+        "AUTHORIZATION": ["access", "idor", "访问控制", "越权", "authorization"],
+        "SSRF": ["ssrf"],
+        "FILE_HANDLING": ["file", "文件", "上传", "路径"],
+        "TEMPLATE_INJECTION": ["ssti", "template", "模板", "反序列化", "deserialization"],
+        "XXE": ["xxe", "xml"],
+        "BUSINESS_LOGIC": ["race", "cache", "竞态", "缓存", "业务逻辑"],
+        "API_SECURITY": ["api", "graphql", "cors", "webhook"],
+        "REVERSE_STRINGS": ["reverse_strings", "reverse-strings", "strings", "字符串", "常量", "xor"],
+        "REVERSE_KEYGEN": ["reverse_keygen", "reverse-keygen", "keygen", "注册码", "许可证", "线性校验"],
+        "REVERSE_ANTIDEBUG": ["reverse_antidebug", "reverse-antidebug", "antidebug", "ptrace", "反调试"],
+        "REVERSE_PACKING": ["reverse_packing", "reverse-packing", "packing", "upx", "加壳", "自解密"],
+        "REVERSE_CFF": ["reverse_cff", "reverse-cff", "cff", "flattening", "opaque predicate", "控制流混淆"],
+        "REVERSE_VM": ["reverse_vm", "reverse-vm", "vm", "bytecode", "虚拟机", "字节码"],
+        "REVERSE_CRYPTO": ["reverse_crypto", "reverse-crypto", "crypto", "密码", "prng", "ecb"],
+        "REVERSE_MOBILE": ["reverse_mobile", "reverse-mobile", "mobile", "android", "dex", "apk", "移动端"],
+        "REVERSE_STRIPPED": ["reverse_stripped", "reverse-stripped", "stripped", "go", "rust", "静态链接", "无符号"],
+        "REVERSE_EMBEDDED": ["reverse_embedded", "reverse-embedded", "embedded", "msp430", "firmware", "固件", "嵌入式"],
+        "PWN_STACK": ["pwn_stack", "pwn-stack", "stack", "ret2win", "栈溢出"],
+        "PWN_ROP": ["pwn_rop", "pwn-rop", "rop", "ret2libc", "ret2plt", "csu"],
+        "PWN_FORMAT": ["pwn_format", "pwn-format", "format", "printf", "格式化字符串", "任意地址写"],
+        "PWN_HEAP": ["pwn_heap", "pwn-heap", "heap", "tcache", "fastbin", "堆"],
+        "PWN_UAF": ["pwn_uaf", "pwn-uaf", "uaf", "use-after-free", "use after free", "double free", "对象复用"],
+        "PWN_SHELLCODE": ["pwn_shellcode", "pwn-shellcode", "shellcode", "seccomp", "orw"],
+        "PWN_PIE": ["pwn_pie", "pwn-pie", "pie", "canary", "nx", "relro", "aslr"],
+        "PWN_SANDBOX": ["pwn_sandbox", "pwn-sandbox", "sandbox", "chroot", "capability", "沙箱"],
+        "PWN_KERNELISH": ["pwn_kernelish", "pwn-kernelish", "kernelish", "ioctl", "copy_from_user", "内核风格"],
+        "RSA": ["rsa"],
+        "ECC": ["ecc", "椭圆"],
+        "DIFFIE_HELLMAN": ["dh", "diffie", "密钥交换"],
+        "HASH": ["hash", "哈希", "hmac", "完整性"],
+        "PADDING_ORACLE": ["padding", "填充", "oracle"],
+        "SYMMETRIC_CRYPTO": ["symmetric", "aes", "cbc", "ecb", "ctr", "gcm", "对称"],
+        "XOR": ["xor", "异或"],
+        "PRNG": ["prng", "随机"],
+        "CLASSICAL_CRYPTO": ["classical", "古典", "caesar", "vigenere", "凯撒", "维吉尼亚"],
+        "ENCODING": ["encoding", "编码", "base64", "base85"],
+        "PCAP_FORENSICS": ["pcap", "流量", "network"],
+        "IMAGE_STEGANOGRAPHY": ["image", "steg", "隐写", "图片"],
+        "MEMORY_FORENSICS": ["memory", "内存", "volatility"],
+        "DISK_FORENSICS": ["disk", "磁盘", "文件系统"],
+        "LOG_ANALYSIS": ["log", "日志", "时间线"],
+        "MALWARE_TRIAGE": ["malware", "恶意", "ioc"],
+        "AUDIO_FORENSICS": ["audio", "音频", "频谱"],
+        "OSINT": ["osint", "公开信息"],
+        "DOCUMENT_FORENSICS": ["document", "pdf", "文档", "元数据"],
+        "FILE_FORENSICS": ["file", "magic", "文件", "魔数"],
+        "GIT_HISTORY": ["git"],
+        "REGEX_TEXT": ["regex", "正则"],
+        "CONTAINER_BASICS": ["container", "docker", "容器"],
+        "PERMISSION_MODEL": ["permission", "权限", "setuid", "sudo"],
+        "SHELL_PIPELINE": ["shell", "管道", "grep", "sed", "awk"],
+        "LINUX_BASICS": ["linux"],
+        "DATA_FORMATS": ["data", "json", "jq", "csv", "sqlite"],
+        "NETWORK_BASICS": ["network", "nc", "端口", "dns"],
+        "SCRIPTING": ["script", "scripting", "脚本", "python"],
+    }
+    if target in relevance_terms and any(term in text for term in relevance_terms[target]):
         return 1.0
     if target and target.lower() in text:
         return 0.8

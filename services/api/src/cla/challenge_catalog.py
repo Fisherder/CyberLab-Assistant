@@ -230,8 +230,8 @@ def generate_custom_challenge_package(
 ) -> tuple[models.ChallengeVersion, models.ValidationRun, dict[str, Any]]:
     intent = draft.intent_json
     category = str(intent.get("category") or "WEB").upper()
-    if category not in {"WEB", "REVERSE", "PWN"}:
-        category = "WEB"
+    if category not in {"WEB", "REVERSE", "PWN", "CRYPTO", "FORENSICS", "MISC"}:
+        category = "MISC"
     slug = f"custom-{category.lower()}-{draft.id.split('_')[-1][:8]}"
     semver = f"0.1.0+custom.{draft.id.split('_')[-1][:8]}"
     files = _custom_package_files(slug, semver, draft.brief_text, intent, category)
@@ -476,9 +476,12 @@ def _custom_package_files(slug: str, semver: str, brief: str, intent: dict[str, 
     elif category == "REVERSE":
         files["target/Dockerfile"] = "FROM debian:bookworm-slim\nWORKDIR /challenge\nCOPY challenge.c /challenge/challenge.c\nRUN apt-get update && apt-get install -y gcc && gcc -O1 -o challenge challenge.c && rm -rf /var/lib/apt/lists/*\nCMD [\"/bin/sleep\", \"infinity\"]\n"
         files["target/challenge.c"] = _custom_reverse_target()
-    else:
+    elif category == "PWN":
         files["target/Dockerfile"] = "FROM debian:bookworm-slim\nWORKDIR /challenge\nCOPY vuln.c /challenge/vuln.c\nRUN apt-get update && apt-get install -y gcc socat && gcc -fno-stack-protector -no-pie -o vuln vuln.c && rm -rf /var/lib/apt/lists/*\nCMD [\"socat\", \"TCP-LISTEN:31337,reuseaddr,fork\", \"EXEC:/challenge/vuln\"]\n"
         files["target/vuln.c"] = _custom_pwn_target(intent)
+    else:
+        files["target/Dockerfile"] = "FROM python:3.12-slim\nWORKDIR /challenge\nCOPY task.py /challenge/task.py\nCMD [\"python\", \"/challenge/task.py\"]\n"
+        files["target/task.py"] = _custom_terminal_task(category)
     return files
 
 
@@ -543,6 +546,35 @@ def _custom_student_access(category: str) -> dict[str, Any]:
             "description": "这是逆向工程实践题，不依赖目标网站。学生应下载目标文件并使用命令行工具分析。",
             "guidance": "下载后可使用 file、strings、objdump、readelf、gdb 等工具分析。",
             "commands": ["file ./challenge", "strings ./challenge | head", "objdump -d ./challenge | less"],
+        }
+    if category == "CRYPTO":
+        return {
+            "kind": "DOWNLOAD_FILE",
+            "label": "密码材料",
+            "downloadPath": "target/task.py",
+            "actionLabel": "下载密码材料",
+            "description": "这是密码学实践题。学生应在终端中分析编码、密文、参数或脚本逻辑。",
+            "guidance": "建议先查看题目材料，再用 Python、openssl 或 sage 编写最小验证脚本。",
+            "commands": ["python3 target/task.py", "python3 solve.py"],
+        }
+    if category == "FORENSICS":
+        return {
+            "kind": "DOWNLOAD_FILE",
+            "label": "取证材料",
+            "downloadPath": "target/task.py",
+            "actionLabel": "下载取证材料",
+            "description": "这是数字取证实践题。学生应提取文件、流量、日志或元数据证据。",
+            "guidance": "建议先确认文件类型，再用 file、strings、tshark、exiftool 或脚本提取证据。",
+            "commands": ["file target/task.py", "strings target/task.py | head"],
+        }
+    if category == "MISC":
+        return {
+            "kind": "TERMINAL_ONLY",
+            "label": "终端任务",
+            "actionLabel": "进入终端",
+            "description": "这是 CTF 通用技能实践题。学生应使用命令行工具完成可复现的数据处理或交互任务。",
+            "guidance": "建议记录关键命令、输入输出和文件变化。",
+            "commands": ["ls -la", "python3 target/task.py"],
         }
     return {
         "kind": "TERMINAL_ONLY",
@@ -734,6 +766,12 @@ def _custom_title(intent: dict[str, Any], category: str) -> str:
         return "定制 Pwn 整数溢出靶场"
     if category == "PWN":
         return "定制 Pwn 靶场草稿"
+    if category == "CRYPTO":
+        return "定制密码学分析靶场草稿"
+    if category == "FORENSICS":
+        return "定制数字取证靶场草稿"
+    if category == "MISC":
+        return "定制 CTF 通用技能靶场草稿"
     return f"定制 {category} 靶场草稿"
 
 
@@ -846,6 +884,32 @@ int main(int argc, char **argv) {
     puts("try again");
     return 1;
 }
+"""
+
+
+def _custom_terminal_task(category: str) -> str:
+    prompt = {
+        "CRYPTO": "分析给定编码或密码材料，编写脚本验证恢复过程。",
+        "FORENSICS": "检查给定取证材料，提取可复核证据并说明结论。",
+        "MISC": "使用终端工具完成文件、文本或数据处理任务。",
+    }.get(category, "完成终端安全实践任务。")
+    return f"""from pathlib import Path
+
+WORKDIR = Path("/challenge")
+
+
+def main():
+    (WORKDIR / "README.task.txt").write_text(
+        "{prompt}\\n提交时需要说明命令、输入输出和判断依据。\\n",
+        encoding="utf-8",
+    )
+    print("CLA generated terminal task scaffold")
+    print("category: {category}")
+    print("proof marker: cla-proof")
+
+
+if __name__ == "__main__":
+    main()
 """
 
 

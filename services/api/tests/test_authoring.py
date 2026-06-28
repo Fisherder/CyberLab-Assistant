@@ -276,10 +276,17 @@ def test_authoritative_blueprint_catalog_imports_large_database(
     assert imported.status_code == 202, imported.text
     body = imported.json()
     assert body["skipped"] == []
-    assert len(body["imported"]) == 150
+    assert len(body["imported"]) == 300
     assert body["summary"]["valid"] is True
-    assert body["summary"]["total"] == 150
-    assert body["summary"]["counts"] == {"WEB": 50, "REVERSE": 50, "PWN": 50}
+    assert body["summary"]["total"] == 300
+    assert body["summary"]["counts"] == {
+        "WEB": 50,
+        "REVERSE": 50,
+        "PWN": 50,
+        "CRYPTO": 50,
+        "FORENSICS": 50,
+        "MISC": 50,
+    }
 
     validation = client.get(
         f"/api/v1/challenge-versions/{body['imported'][0]['challengeVersionId']}/validation",
@@ -297,14 +304,21 @@ def test_authoritative_blueprint_catalog_imports_large_database(
                 .group_by(models.Challenge.category)
             ).all()
         )
-        assert counts == {"PWN": 50, "REVERSE": 50, "WEB": 50}
+        assert counts == {
+            "CRYPTO": 50,
+            "FORENSICS": 50,
+            "MISC": 50,
+            "PWN": 50,
+            "REVERSE": 50,
+            "WEB": 50,
+        }
         assert (
             db.scalar(
                 select(func.count(models.ChallengeArtifact.id)).where(
                     models.ChallengeArtifact.artifact_type == "blueprint-catalog-entry"
                 )
             )
-            == 150
+            == 300
         )
 
 
@@ -548,6 +562,105 @@ def test_model_parser_gui_tools_and_higher_isolation_still_retrieve_blueprints(
         assert expected_candidate in body["candidates"][0]["candidateId"]
         assert body["authoringProposal"]["mode"] in {"USE_EXISTING", "COMPOSE_EXISTING"}
         assert body["authoringProposal"]["requiresCustomGeneration"] is False
+
+
+def test_authoring_common_security_topic_matrix_retrieves_blueprints(
+    client: TestClient,
+    teacher_token: str,
+) -> None:
+    imported = client.post("/api/v1/challenge-registry/import-blueprints", headers=auth(teacher_token))
+    assert imported.status_code == 202, imported.text
+
+    cases = [
+        ("matrix-web-sqli", "创建一个 SQL 注入联合查询枚举题目", "WEB", "sqli", "SQL 注入"),
+        ("matrix-web-xss", "创建一个 XSS DOM Source Sink 题目", "WEB", "xss", "XSS"),
+        ("matrix-web-auth", "创建一个认证与会话逻辑弱重置令牌题目", "WEB", "auth", "认证"),
+        ("matrix-web-access", "创建一个访问控制 IDOR 横向越权题目", "WEB", "access", "访问控制"),
+        ("matrix-web-ssrf", "创建一个 SSRF 云元数据探测题目", "WEB", "ssrf", "SSRF"),
+        ("matrix-web-file", "创建一个文件上传路径遍历题目", "WEB", "file", "文件"),
+        ("matrix-web-ssti", "创建一个 SSTI 模板注入题目", "WEB", "ssti", "模板"),
+        ("matrix-web-xxe", "创建一个 XXE XML 外部实体题目", "WEB", "xxe", "XML"),
+        ("matrix-web-race", "创建一个 Web 缓存投毒和业务逻辑竞态题目", "WEB", "race", "竞态"),
+        ("matrix-web-api", "创建一个 GraphQL API 过度暴露题目", "WEB", "api", "API"),
+        ("matrix-reverse-strings", "创建一个逆向字符串 XOR 恢复题目", "REVERSE", "reverse_strings", "逆向"),
+        ("matrix-reverse-keygen", "创建一个 crackme keygen 线性校验题目", "REVERSE", "reverse_keygen", "逆向"),
+        ("matrix-reverse-antidebug", "创建一个反调试 ptrace 检测逆向题目", "REVERSE", "reverse_antidebug", "逆向"),
+        ("matrix-reverse-packing", "创建一个加壳自解密逆向题目", "REVERSE", "reverse_packing", "逆向"),
+        ("matrix-reverse-cff", "创建一个控制流混淆逆向题目", "REVERSE", "reverse_cff", "逆向"),
+        ("matrix-reverse-vm", "创建一个虚拟机字节码逆向题目", "REVERSE", "reverse_vm", "逆向"),
+        ("matrix-reverse-crypto", "创建一个逆向中的弱 PRNG 密码误用题目", "REVERSE", "reverse_crypto", "逆向"),
+        ("matrix-reverse-mobile", "创建一个移动端 DEX 控制流逆向题目", "REVERSE", "reverse_mobile", "逆向"),
+        ("matrix-reverse-stripped", "创建一个 Go Rust 静态链接无符号逆向题目", "REVERSE", "reverse_stripped", "逆向"),
+        ("matrix-reverse-embedded", "创建一个 MSP430 固件嵌入式逆向题目", "REVERSE", "reverse_embedded", "逆向"),
+        ("matrix-pwn-stack", "创建一个 Pwn 栈溢出 ret2win 题目", "PWN", "pwn_stack", "内存"),
+        ("matrix-pwn-rop", "创建一个 ROP ret2libc Pwn 题目", "PWN", "pwn_rop", "内存"),
+        ("matrix-pwn-format", "创建一个格式化字符串任意地址写 Pwn 题目", "PWN", "pwn_format", "内存"),
+        ("matrix-pwn-heap", "创建一个堆利用 tcache poisoning Pwn 题目", "PWN", "pwn_heap", "内存"),
+        ("matrix-pwn-uaf", "创建一个 Use After Free 对象复用 Pwn 题目", "PWN", "pwn_uaf", "内存"),
+        ("matrix-pwn-integer", "创建一个整数溢出乘法边界 Pwn 题目", "PWN", "pwn_integer", "整数"),
+        ("matrix-pwn-shellcode", "创建一个 shellcode seccomp ORW Pwn 题目", "PWN", "pwn_shellcode", "内存"),
+        ("matrix-pwn-pie", "创建一个 PIE Canary NX 绕过 Pwn 题目", "PWN", "pwn_pie", "内存"),
+        ("matrix-pwn-sandbox", "创建一个 chroot 沙箱逃逸 Pwn 题目", "PWN", "pwn_sandbox", "内存"),
+        ("matrix-pwn-kernelish", "创建一个 ioctl 模型内核风格用户态 Pwn 题目", "PWN", "pwn_kernelish", "内存"),
+        ("matrix-crypto-encoding", "创建一个密码学 Base64 多层编码题目", "CRYPTO", "crypto_encoding", "密码"),
+        ("matrix-crypto-classical", "创建一个凯撒移位古典密码题目", "CRYPTO", "crypto_classical", "密码"),
+        ("matrix-crypto-xor", "创建一个重复密钥 XOR 密码题目", "CRYPTO", "crypto_xor", "密码"),
+        ("matrix-crypto-hash", "创建一个哈希长度扩展攻击题目", "CRYPTO", "crypto_hash", "密码"),
+        ("matrix-crypto-symmetric", "创建一个 AES ECB 模式识别题目", "CRYPTO", "crypto_symmetric", "密码"),
+        ("matrix-crypto-padding", "创建一个 CBC Padding Oracle 题目", "CRYPTO", "crypto_padding", "密码"),
+        ("matrix-crypto-rsa", "创建一个 RSA 小指数广播题目", "CRYPTO", "crypto_rsa", "密码"),
+        ("matrix-crypto-dh", "创建一个 Diffie-Hellman 小子群攻击题目", "CRYPTO", "crypto_dh", "密码"),
+        ("matrix-crypto-ecc", "创建一个 ECC 椭圆曲线 ECDSA Nonce 重用题目", "CRYPTO", "crypto_ecc", "密码"),
+        ("matrix-crypto-prng", "创建一个随机数 PRNG LCG 参数恢复题目", "CRYPTO", "crypto_prng", "密码"),
+        ("matrix-forensics-file", "创建一个文件格式魔数修复取证题目", "FORENSICS", "forensics_file", "取证"),
+        ("matrix-forensics-image", "创建一个图片 LSB 隐写取证题目", "FORENSICS", "forensics_image", "取证"),
+        ("matrix-forensics-pcap", "创建一个 PCAP HTTP 会话重组流量取证题目", "FORENSICS", "forensics_pcap", "取证"),
+        ("matrix-forensics-memory", "创建一个 Volatility 内存取证进程列表题目", "FORENSICS", "forensics_memory", "取证"),
+        ("matrix-forensics-disk", "创建一个磁盘文件系统删除文件恢复取证题目", "FORENSICS", "forensics_disk", "取证"),
+        ("matrix-forensics-logs", "创建一个日志时间线分析题目", "FORENSICS", "forensics_logs", "取证"),
+        ("matrix-forensics-malware", "创建一个恶意样本字符串 IOC 静态取证题目", "FORENSICS", "forensics_malware", "取证"),
+        ("matrix-forensics-audio", "创建一个音频频谱图隐藏取证题目", "FORENSICS", "forensics_audio", "取证"),
+        ("matrix-forensics-osint", "创建一个 OSINT 图片地理线索取证题目", "FORENSICS", "forensics_osint", "取证"),
+        ("matrix-forensics-document", "创建一个 PDF 文档元数据取证题目", "FORENSICS", "forensics_document", "取证"),
+        ("matrix-misc-linux", "创建一个 Linux 隐藏文件通用技能题目", "MISC", "misc_linux", "通用"),
+        ("matrix-misc-shell", "创建一个 Shell grep sed awk 管道题目", "MISC", "misc_shell", "通用"),
+        ("matrix-misc-scripting", "创建一个 Python 自动化脚本批量处理题目", "MISC", "misc_scripting", "通用"),
+        ("matrix-misc-git", "创建一个 Git 提交历史恢复题目", "MISC", "misc_git", "通用"),
+        ("matrix-misc-regex", "创建一个正则表达式日志字段提取题目", "MISC", "misc_regex", "通用"),
+        ("matrix-misc-container", "创建一个 Docker 容器镜像层查看题目", "MISC", "misc_container", "通用"),
+        ("matrix-misc-permission", "创建一个 Linux 权限 setuid 线索题目", "MISC", "misc_permission", "通用"),
+        ("matrix-misc-data", "创建一个 JSON jq CSV SQLite 数据处理题目", "MISC", "misc_data", "通用"),
+        ("matrix-misc-network", "创建一个 nc 端口 DNS 网络基础题目", "MISC", "misc_network", "通用"),
+        ("matrix-misc-encoding", "创建一个通用 Base64 URL Hex 多层编码题目", "MISC", "misc_encoding", "通用"),
+    ]
+
+    for key, brief, expected_category, expected_candidate, expected_tag in cases:
+        draft_response = client.post(
+            "/api/v1/challenge-drafts",
+            headers={**auth(teacher_token), "Idempotency-Key": key},
+            json={
+                "courseId": DEV_IDS["course"],
+                "brief": brief,
+                "constraints": {"internet": False, "maxDifficulty": 5, "workspaceType": "TERMINAL"},
+            },
+        )
+        assert draft_response.status_code == 201, (key, draft_response.text)
+        draft = draft_response.json()
+        assert draft["courseIntent"]["category"] == expected_category, (key, draft["courseIntent"])
+
+        candidates = client.get(draft["candidatesUrl"], headers=auth(teacher_token))
+        assert candidates.status_code == 200, (key, candidates.text)
+        body = candidates.json()
+        assert body["candidates"], key
+        assert expected_candidate in body["candidates"][0]["candidateId"], (
+            key,
+            body["candidates"][0]["candidateId"],
+        )
+        proposal = body["authoringProposal"]
+        assert proposal["mode"] in {"USE_EXISTING", "COMPOSE_EXISTING"}, key
+        assert proposal["requiresCustomGeneration"] is False, key
+        assert "UNKNOWN" not in proposal["tags"], key
+        assert expected_tag in "".join(proposal["tags"]) + proposal["title"], key
 
 
 def test_custom_package_generation_when_no_candidate_matches(

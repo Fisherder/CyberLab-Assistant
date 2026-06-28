@@ -34,8 +34,29 @@ SOURCES = [
         "id": "picoctf-practice",
         "name": "picoCTF Practice / picoGym",
         "url": "https://picoctf.org/",
-        "domains": ["WEB", "REVERSE", "PWN"],
+        "domains": ["WEB", "REVERSE", "PWN", "CRYPTO", "FORENSICS", "MISC"],
         "usageNote": "只引用公开分类体系和题型覆盖方向，不复制题目材料。",
+    },
+    {
+        "id": "cryptohack",
+        "name": "CryptoHack Challenges",
+        "url": "https://cryptohack.org/challenges/",
+        "domains": ["CRYPTO"],
+        "usageNote": "只引用公开密码学训练分类，不复制具体题面、密文或解法。",
+    },
+    {
+        "id": "ctf101",
+        "name": "CTF101",
+        "url": "https://ctf101.org/",
+        "domains": ["WEB", "REVERSE", "PWN", "CRYPTO", "FORENSICS", "MISC"],
+        "usageNote": "只引用 CTF 入门知识分类，不复制练习材料或答案。",
+    },
+    {
+        "id": "root-me-challenges",
+        "name": "Root-Me Challenges",
+        "url": "https://www.root-me.org/en/Challenges/",
+        "domains": ["WEB", "REVERSE", "PWN", "CRYPTO", "FORENSICS", "MISC"],
+        "usageNote": "只引用公开挑战分类体系，不复制题面、附件、flag 或解法。",
     },
     {
         "id": "pwn-college",
@@ -69,7 +90,7 @@ SOURCES = [
         "id": "overthewire-wargames",
         "name": "OverTheWire Wargames",
         "url": "https://overthewire.org/wargames/",
-        "domains": ["PWN", "REVERSE", "WEB"],
+        "domains": ["PWN", "REVERSE", "WEB", "CRYPTO", "MISC"],
         "usageNote": "只引用 wargame 训练类别，不复制关卡口令、题面或服务器内容。",
     },
     {
@@ -161,17 +182,106 @@ PWN_VARIANTS = {
 }
 
 
+CRYPTO_ARCHETYPES = [
+    ("encoding", "编码与表示", ["cryptohack", "picoctf-practice", "ctf101"], ["python"]),
+    ("classical", "古典密码", ["cryptohack", "picoctf-practice", "ctf101"], ["python"]),
+    ("xor", "XOR 与流式异或", ["cryptohack", "picoctf-practice"], ["python"]),
+    ("hash", "哈希与完整性", ["cryptohack", "picoctf-practice"], ["python", "hashcat"]),
+    ("symmetric", "对称加密模式", ["cryptohack", "picoctf-practice"], ["python", "openssl"]),
+    ("padding", "填充与模式 Oracle", ["cryptohack", "ctf101"], ["python", "openssl"]),
+    ("rsa", "RSA 公钥密码", ["cryptohack", "picoctf-practice"], ["python", "sage"]),
+    ("dh", "Diffie-Hellman 密钥交换", ["cryptohack"], ["python", "sage"]),
+    ("ecc", "椭圆曲线密码", ["cryptohack"], ["python", "sage"]),
+    ("prng", "随机数与密钥生成", ["cryptohack", "picoctf-practice"], ["python"]),
+]
+
+CRYPTO_VARIANTS = {
+    "encoding": ["Base64/Base85 多层编码", "Hex 与字节序", "Morse 与培根编码", "二维码与二进制表示", "Unicode 混淆"],
+    "classical": ["凯撒移位", "维吉尼亚密钥恢复", "替换密码频率分析", "栅栏与置换密码", "仿射密码"],
+    "xor": ["单字节 XOR", "重复密钥 XOR", "已知明文 XOR", "多密文 Two-Time Pad", "流密钥复用"],
+    "hash": ["弱哈希碰撞", "长度扩展攻击", "盐值缺失爆破", "HMAC 用法错误", "Merkle 树校验"],
+    "symmetric": ["AES ECB 模式识别", "CBC IV 复用", "CTR Nonce 复用", "GCM Tag 校验错误", "密钥派生参数弱"],
+    "padding": ["PKCS#7 填充验证", "CBC Padding Oracle", "错误消息侧信道", "MAC-then-Encrypt", "块边界构造"],
+    "rsa": ["小指数广播", "共模攻击", "低熵素数", "Wiener 小私钥", "CRT 故障线索"],
+    "dh": ["小子群攻击", "离散对数入门", "参数注入", "复用私钥", "中间人协商"],
+    "ecc": ["曲线参数识别", "点乘基础", "无效曲线攻击", "ECDSA Nonce 重用", "EdDSA 签名线索"],
+    "prng": ["时间种子恢复", "LCG 参数恢复", "Mersenne Twister 状态恢复", "Token 可预测", "随机数偏差统计"],
+}
+
+FORENSICS_ARCHETYPES = [
+    ("file", "文件格式与魔数", ["picoctf-practice", "ctf101", "root-me-challenges"]),
+    ("image", "图片隐写与元数据", ["picoctf-practice", "ctf101", "root-me-challenges"]),
+    ("pcap", "网络流量取证", ["picoctf-practice", "ctf101", "root-me-challenges"], ["tshark", "tcpdump"]),
+    ("memory", "内存取证", ["ctf101", "root-me-challenges"], ["volatility", "strings"]),
+    ("disk", "磁盘与文件系统", ["picoctf-practice", "ctf101", "root-me-challenges"], ["file", "strings"]),
+    ("logs", "日志时间线分析", ["ctf101", "root-me-challenges"], ["grep", "awk", "python"]),
+    ("malware", "恶意样本静态取证", ["picoctf-practice", "root-me-challenges"], ["file", "strings"]),
+    ("audio", "音频与信号取证", ["picoctf-practice", "ctf101"], ["python"]),
+    ("osint", "OSINT 线索分析", ["picoctf-practice", "root-me-challenges"], ["python"]),
+    ("document", "文档与元数据取证", ["picoctf-practice", "ctf101", "root-me-challenges"], ["exiftool", "strings"]),
+]
+
+FORENSICS_VARIANTS = {
+    "file": ["文件头修复", "嵌套归档识别", "文件尾数据提取", "多格式伪装", "损坏压缩包修复"],
+    "image": ["EXIF 元数据", "LSB 隐写", "调色板异常", "Alpha 通道隐藏", "拼图与像素重排"],
+    "pcap": ["HTTP 会话重组", "DNS 隧道线索", "TLS SNI 与证书", "SMB/FTP 文件恢复", "异常扫描流量"],
+    "memory": ["进程列表恢复", "网络连接定位", "命令历史提取", "恶意进程线索", "凭据痕迹定位"],
+    "disk": ["删除文件恢复", "分区表分析", "文件系统时间线", "隐藏目录线索", "镜像挂载检查"],
+    "logs": ["认证失败时间线", "Web 访问日志", "容器日志关联", "系统审计事件", "多源时间偏移"],
+    "malware": ["字符串 IOC 提取", "导入表分析", "配置块定位", "简单解包线索", "沙箱行为摘要"],
+    "audio": ["频谱图隐藏", "DTMF 识别", "反转音频", "采样率异常", "无线调制线索"],
+    "osint": ["图片地理线索", "公开用户名关联", "域名历史线索", "时间地点推断", "社交公开信息核验"],
+    "document": ["PDF 元数据", "Office 宏线索", "隐藏文本层", "修订记录", "嵌入对象提取"],
+}
+
+MISC_ARCHETYPES = [
+    ("linux", "Linux 基础与文件系统", ["picoctf-practice", "overthewire-wargames", "ctf101"]),
+    ("shell", "Shell 管道与文本处理", ["picoctf-practice", "overthewire-wargames", "ctf101"]),
+    ("scripting", "Python 自动化脚本", ["picoctf-practice", "ctf101"]),
+    ("git", "Git 与历史记录", ["picoctf-practice", "ctf101"]),
+    ("regex", "正则与文本解析", ["picoctf-practice", "ctf101"]),
+    ("container", "容器与运行环境基础", ["picoctf-practice", "root-me-challenges"]),
+    ("permission", "权限与能力模型", ["overthewire-wargames", "root-me-challenges"]),
+    ("data", "数据格式与结构化处理", ["picoctf-practice", "ctf101"]),
+    ("network", "网络基础工具", ["picoctf-practice", "overthewire-wargames", "ctf101"]),
+    ("encoding", "通用编码解码", ["picoctf-practice", "ctf101"]),
+]
+
+MISC_VARIANTS = {
+    "linux": ["目录遍历", "隐藏文件", "软硬链接", "环境变量", "进程与端口查看"],
+    "shell": ["grep/sed/awk 管道", "find 条件搜索", "xargs 批处理", "重定向与 here-doc", "排序去重统计"],
+    "scripting": ["批量请求脚本", "文件批处理", "简单爆破脚本", "字节转换脚本", "日志解析脚本"],
+    "git": ["提交历史恢复", "分支差异", "误删文件恢复", "Stash 线索", "对象库检查"],
+    "regex": ["模式提取", "日志字段拆分", "贪婪匹配陷阱", "多行匹配", "输入校验边界"],
+    "container": ["镜像层查看", "环境变量检查", "文件挂载线索", "入口命令分析", "资源限制观察"],
+    "permission": ["setuid 线索", "sudo 规则阅读", "文件 ACL", "capability 检查", "umask 影响"],
+    "data": ["JSON jq 查询", "CSV 聚合", "YAML 配置阅读", "SQLite 查询", "二进制结构解析"],
+    "network": ["nc 交互", "端口探测", "HTTP Header 观察", "DNS 查询", "TLS 证书查看"],
+    "encoding": ["Base64 解码", "URL 编码", "Hex 转换", "二进制转文本", "多层编码识别"],
+}
+
+
 def main() -> None:
     entries = []
     entries.extend(_domain_entries("WEB", WEB_ARCHETYPES, WEB_VARIANTS, "web-python-service"))
     entries.extend(_domain_entries("REVERSE", REVERSE_ARCHETYPES, REVERSE_VARIANTS, "reverse-cli-binary"))
     entries.extend(_domain_entries("PWN", PWN_ARCHETYPES, PWN_VARIANTS, "pwn-cli-service"))
+    entries.extend(_domain_entries("CRYPTO", CRYPTO_ARCHETYPES, CRYPTO_VARIANTS, "crypto-cli-task"))
+    entries.extend(_domain_entries("FORENSICS", FORENSICS_ARCHETYPES, FORENSICS_VARIANTS, "forensics-cli-artifact"))
+    entries.extend(_domain_entries("MISC", MISC_ARCHETYPES, MISC_VARIANTS, "misc-cli-task"))
     catalog = {
         "catalogVersion": "2026.06-authoritative-blueprints",
         "description": "CLA 权威来源题型蓝图库。该文件记录题型、知识点、组合关系和生成模板，不复制外部平台题面、附件、flag 或题解。",
         "sources": SOURCES,
         "qualityGate": {
-            "minimumPerCategory": {"WEB": 50, "REVERSE": 50, "PWN": 50},
+            "minimumPerCategory": {
+                "WEB": 50,
+                "REVERSE": 50,
+                "PWN": 50,
+                "CRYPTO": 50,
+                "FORENSICS": 50,
+                "MISC": 50,
+            },
             "copyPolicy": "no-statement-no-flag-no-attachment-no-solution",
             "workspaceType": "TERMINAL",
         },
@@ -180,7 +290,7 @@ def main() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(
         "# 该文件由 tools/generate_authoritative_blueprint_catalog.py 生成。\n"
-        "# 请修改生成脚本后重新生成，不要手工维护 150 条条目。\n"
+        "# 请修改生成脚本后重新生成，不要手工维护 300 条条目。\n"
         + yaml.dump(
             catalog,
             Dumper=NoAliasDumper,
@@ -257,6 +367,9 @@ def _objectives(category: str, slug: str, variant: str) -> list[str]:
         "WEB": ["定位输入信任边界", "构造最小验证请求", "解释漏洞影响和修复建议"],
         "REVERSE": ["恢复关键控制流", "还原校验逻辑", "给出可复现实验证据"],
         "PWN": ["识别内存破坏原语", "构造稳定利用路径", "解释缓解机制影响"],
+        "CRYPTO": ["识别密码原语", "还原加解密或校验过程", "给出可复现脚本证据"],
+        "FORENSICS": ["提取可信证据", "还原事件线索", "说明取证结论依据"],
+        "MISC": ["熟练使用终端工具", "构造可复现解题流程", "解释命令和数据处理依据"],
     }[category]
     return base + [f"掌握 {slug} 题型中的 {variant} 变体"]
 
@@ -266,7 +379,13 @@ def _prerequisites(category: str, slug: str) -> list[str]:
         return ["HTTP 基础", "浏览器请求模型", "服务端输入处理"]
     if category == "REVERSE":
         return ["ELF/PE 基础", "汇编阅读", "调试器基础"]
-    return ["C 语言内存模型", "Linux 进程与 ABI", "基础调试"]
+    if category == "PWN":
+        return ["C 语言内存模型", "Linux 进程与 ABI", "基础调试"]
+    if category == "CRYPTO":
+        return ["Python 基础", "字节与编码", "基础数论或离散数学"]
+    if category == "FORENSICS":
+        return ["Linux 文件操作", "证据链意识", "常见文件和网络协议基础"]
+    return ["Linux 命令行", "文本处理基础", "可复现记录习惯"]
 
 
 def _tooling(category: str, slug: str) -> list[str]:
@@ -274,9 +393,22 @@ def _tooling(category: str, slug: str) -> list[str]:
         return ["curl", "python"]
     if category == "REVERSE":
         return ["strings", "objdump", "readelf", "gdb", "python"]
-    if slug in {"heap", "uaf"}:
+    if category == "PWN" and slug in {"heap", "uaf"}:
         return ["gdb", "python", "pwntools"]
-    return ["gdb", "python", "pwntools", "checksec"]
+    if category == "PWN":
+        return ["gdb", "python", "pwntools", "checksec"]
+    if category == "CRYPTO":
+        return ["python", "openssl", "sage"]
+    if category == "FORENSICS":
+        base = ["file", "strings", "python", "xxd"]
+        if slug == "pcap":
+            base.extend(["tshark", "tcpdump"])
+        if slug in {"image", "document"}:
+            base.extend(["exiftool", "binwalk"])
+        if slug == "memory":
+            base.append("volatility")
+        return base
+    return ["bash", "python", "grep", "sed", "awk", "find", "file", "jq", "git", "nc"]
 
 
 def _components(category: str, slug: str, variant: str) -> dict[str, str]:
@@ -294,11 +426,32 @@ def _components(category: str, slug: str, variant: str) -> dict[str, str]:
             "oracle": "提交解释 + 校验输出/提取值验证",
             "workspace": "逆向 CLI 工具容器",
         }
+    if category == "PWN":
+        return {
+            "target": "受限网络服务或本地 setuid 风格模型",
+            "vulnerability": f"{slug}:{variant}",
+            "oracle": "外部利用成功信号与进程边界检查",
+            "workspace": "pwn CLI 工具容器",
+        }
+    if category == "CRYPTO":
+        return {
+            "target": "密文、脚本或协议转录样本",
+            "vulnerability": f"{slug}:{variant}",
+            "oracle": "外部脚本验证恢复明文、密钥性质或校验关系",
+            "workspace": "密码学 CLI 工具容器",
+        }
+    if category == "FORENSICS":
+        return {
+            "target": "取证镜像、流量包、日志或媒体文件",
+            "vulnerability": f"{slug}:{variant}",
+            "oracle": "外部检查提取证据、时间线或 IOC 结构",
+            "workspace": "取证 CLI 工具容器",
+        }
     return {
         "target": "受限网络服务或本地 setuid 风格模型",
         "vulnerability": f"{slug}:{variant}",
-        "oracle": "外部利用成功信号与进程边界检查",
-        "workspace": "pwn CLI 工具容器",
+        "oracle": "外部检查命令产物、数据转换或脚本输出",
+        "workspace": "通用终端工具容器",
     }
 
 
@@ -339,7 +492,50 @@ def _compatible_groups(category: str, slug: str) -> list[str]:
         "sandbox": ["pwn-shellcode", "pwn-integer"],
         "kernelish": ["pwn-uaf", "pwn-sandbox"],
     }
-    return {"WEB": web, "REVERSE": reverse, "PWN": pwn}[category][slug]
+    crypto = {
+        "encoding": ["crypto-classical", "misc-encoding"],
+        "classical": ["crypto-encoding", "crypto-xor"],
+        "xor": ["crypto-classical", "crypto-symmetric"],
+        "hash": ["crypto-prng", "misc-scripting"],
+        "symmetric": ["crypto-padding", "crypto-prng"],
+        "padding": ["crypto-symmetric", "web-api"],
+        "rsa": ["crypto-dh", "crypto-prng"],
+        "dh": ["crypto-ecc", "crypto-rsa"],
+        "ecc": ["crypto-dh", "crypto-prng"],
+        "prng": ["crypto-symmetric", "crypto-rsa"],
+    }
+    forensics = {
+        "file": ["forensics-disk", "forensics-document"],
+        "image": ["forensics-file", "forensics-osint"],
+        "pcap": ["forensics-logs", "misc-network"],
+        "memory": ["forensics-malware", "forensics-logs"],
+        "disk": ["forensics-file", "forensics-logs"],
+        "logs": ["forensics-pcap", "misc-regex"],
+        "malware": ["forensics-memory", "reverse-strings"],
+        "audio": ["forensics-file", "crypto-encoding"],
+        "osint": ["forensics-image", "forensics-document"],
+        "document": ["forensics-file", "forensics-osint"],
+    }
+    misc = {
+        "linux": ["misc-shell", "misc-permission"],
+        "shell": ["misc-linux", "misc-regex"],
+        "scripting": ["misc-data", "crypto-encoding"],
+        "git": ["misc-linux", "forensics-logs"],
+        "regex": ["misc-shell", "forensics-logs"],
+        "container": ["misc-linux", "misc-permission"],
+        "permission": ["misc-linux", "pwn-sandbox"],
+        "data": ["misc-scripting", "crypto-encoding"],
+        "network": ["forensics-pcap", "web-api"],
+        "encoding": ["crypto-encoding", "misc-data"],
+    }
+    return {
+        "WEB": web,
+        "REVERSE": reverse,
+        "PWN": pwn,
+        "CRYPTO": crypto,
+        "FORENSICS": forensics,
+        "MISC": misc,
+    }[category][slug]
 
 
 def _combination_notes(category: str, slug: str) -> str:
@@ -347,7 +543,13 @@ def _combination_notes(category: str, slug: str) -> str:
         return "可与认证、访问控制、API 或业务逻辑蓝图组合成多阶段 Web 靶场。"
     if category == "REVERSE":
         return "可作为前置逆向阶段，产出密钥、协议或二进制约束供后续利用阶段使用。"
-    return "可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。"
+    if category == "PWN":
+        return "可与逆向或 Web 初始入口组合，形成从信息恢复到利用执行的复合题。"
+    if category == "CRYPTO":
+        return "可与 Web、逆向或通用编码任务组合，形成密钥恢复或协议分析阶段。"
+    if category == "FORENSICS":
+        return "可作为线索提取前置阶段，与日志、流量、恶意样本或 OSINT 题组合。"
+    return "可作为基础技能前置阶段，为 Web、取证、密码或二进制题提供工具链训练。"
 
 
 if __name__ == "__main__":
