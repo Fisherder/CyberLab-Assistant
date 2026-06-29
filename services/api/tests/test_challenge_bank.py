@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+import json
+from urllib.request import Request, urlopen
 
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
@@ -8,9 +11,12 @@ from sqlalchemy import func, select
 from cla import models
 from cla.challenge_assets import store_generated_challenge_package
 from cla.ids import new_id
+from cla.main import create_app
+from cla.security import create_dev_token
 from cla.seed import DEV_IDS
+from cla.settings import Settings
 
-from test_terminal_vertical_slice import auth
+from test_terminal_vertical_slice import auth, local_sqli_target
 
 
 def _bank_payload(**overrides: object) -> dict:
@@ -326,7 +332,7 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
                     "clientDraftId": "bank-draft-1",
                 }
             ],
-            "requestOracleCheck": True,
+            "requestOracleCheck": False,
         },
     )
     assert submitted.status_code == 202, submitted.text
@@ -453,6 +459,138 @@ def test_student_starts_one_environment_per_bank_item_and_can_run_multiple_items
         assert db.scalar(
             select(func.count(models.Event.id)).where(models.Event.type == "lab.destroyed")
         ) == 1
+
+
+def test_teacher_bank_student_real_sqli_solution_gets_oracle_score(settings: Settings) -> None:
+    session_key = "bank-oracle-pass-key"
+    with local_sqli_target(session_key) as target_base_url:
+        app_settings = replace(
+            settings,
+            local_target_base_url=target_base_url,
+            local_target_session_key=session_key,
+        )
+        with TestClient(create_app(app_settings)) as client:
+            teacher_token = create_dev_token(app_settings, subject="teacher@example.edu", roles=["teacher"])
+            student_token = create_dev_token(app_settings, subject="student@example.edu", roles=["student"])
+            open_at = datetime.now(timezone.utc) - timedelta(minutes=5)
+            due_at = datetime.now(timezone.utc) + timedelta(hours=2)
+            item = _create_bank_item(
+                client,
+                teacher_token,
+                key="bank-real-sqli-solved",
+                title="真实 SQL 注入评分闭环",
+                publish=True,
+                publishWindow={"openAt": open_at.isoformat(), "dueAt": due_at.isoformat()},
+            )
+
+            started = client.post(
+                f"/api/v1/student/challenge-bank/{item['itemId']}/start",
+                headers=auth(student_token),
+            )
+            assert started.status_code == 202, started.text
+            assert started.json()["targetUrl"] == f"{target_base_url}/"
+
+            exploit = Request(
+                f"{target_base_url}/login",
+                data=b"username=alice&password=' OR '1'='1",
+                headers={"content-type": "application/x-www-form-urlencoded"},
+                method="POST",
+            )
+            with urlopen(exploit, timeout=5) as response:
+                assert response.status == 200
+                assert json.loads(response.read().decode())["role"] == "admin"
+
+            submitted = client.post(
+                f"/api/v1/attempts/{started.json()['attemptId']}/submit",
+                headers={**auth(student_token), "If-Match": '"attempt-version-1"'},
+                json={
+                    "answers": [
+                        {
+                            "questionId": "root-cause",
+                            "format": "MARKDOWN",
+                            "content": "根因是登录接口直接拼接 SQL，成功绕过认证；修复应使用参数化查询。",
+                        }
+                    ],
+                    "requestOracleCheck": True,
+                },
+            )
+            assert submitted.status_code == 202, submitted.text
+
+            bank = client.get("/api/v1/student/challenge-bank", headers=auth(student_token))
+            assert bank.status_code == 200, bank.text
+            solved = next(row for row in bank.json()["items"] if row["itemId"] == item["itemId"])
+            assert solved["completed"] is True
+            assert solved["latestScore"] == 100.0
+
+            grade = client.get(
+                f"/api/v1/attempts/{started.json()['attemptId']}/grade",
+                headers=auth(student_token),
+            )
+            assert grade.status_code == 200, grade.text
+            oracle = next(
+                criterion for criterion in grade.json()["criteria"] if criterion["criterionId"] == "oracle-auth-bypass"
+            )
+            assert oracle["score"] == 60.0
+            assert oracle["evidenceRefs"]
+
+
+def test_teacher_bank_student_report_without_solution_does_not_get_oracle_score(
+    settings: Settings,
+) -> None:
+    session_key = "bank-oracle-fail-key"
+    with local_sqli_target(session_key) as target_base_url:
+        app_settings = replace(
+            settings,
+            local_target_base_url=target_base_url,
+            local_target_session_key=session_key,
+        )
+        with TestClient(create_app(app_settings)) as client:
+            teacher_token = create_dev_token(app_settings, subject="teacher@example.edu", roles=["teacher"])
+            student_token = create_dev_token(app_settings, subject="student@example.edu", roles=["student"])
+            open_at = datetime.now(timezone.utc) - timedelta(minutes=5)
+            due_at = datetime.now(timezone.utc) + timedelta(hours=2)
+            item = _create_bank_item(
+                client,
+                teacher_token,
+                key="bank-real-sqli-unsolved",
+                title="真实 SQL 注入未完成评分闭环",
+                publish=True,
+                publishWindow={"openAt": open_at.isoformat(), "dueAt": due_at.isoformat()},
+            )
+            started = client.post(
+                f"/api/v1/student/challenge-bank/{item['itemId']}/start",
+                headers=auth(student_token),
+            )
+            assert started.status_code == 202, started.text
+
+            submitted = client.post(
+                f"/api/v1/attempts/{started.json()['attemptId']}/submit",
+                headers={**auth(student_token), "If-Match": '"attempt-version-1"'},
+                json={
+                    "answers": [
+                        {
+                            "questionId": "root-cause",
+                            "format": "MARKDOWN",
+                            "content": "根因是输入信任边界错误，应使用参数化查询。",
+                        }
+                    ],
+                    "requestOracleCheck": True,
+                },
+            )
+            assert submitted.status_code == 202, submitted.text
+
+            grade = client.get(
+                f"/api/v1/attempts/{started.json()['attemptId']}/grade",
+                headers=auth(student_token),
+            )
+            assert grade.status_code == 200, grade.text
+            body = grade.json()
+            assert body["totalScore"] == 40.0
+            oracle = next(
+                criterion for criterion in body["criteria"] if criterion["criterionId"] == "oracle-auth-bypass"
+            )
+            assert oracle["score"] == 0.0
+            assert oracle["evidenceRefs"]
 
 
 def test_student_access_distinguishes_reverse_download_target(

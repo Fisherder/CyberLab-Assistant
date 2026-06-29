@@ -62,6 +62,8 @@ export CLA_DATABASE_URL=sqlite:///./cla-dev.db
 export CLA_DEV_MODE=true
 export CLA_GATEWAY_URL=ws://localhost:8081/ws/terminal
 export CLA_SESSIOND_ENDPOINT=127.0.0.1:7777
+export CLA_LOCAL_TARGET_BASE_URL=http://127.0.0.1:18080
+export CLA_LOCAL_TARGET_SESSION_KEY=dev-session-key
 export CLA_INTERNAL_SERVICE_TOKEN=change-me-internal
 export CLA_TERMINAL_TICKET_SECRET=change-me-terminal-ticket
 export CLA_ORACLE_SHARED_SECRET=change-me-oracle
@@ -303,8 +305,8 @@ PYTHONPATH=services/api/src .venv/bin/python -m cla.content_validation --output 
 3. 进入学生工作台。
 5. 点击开始，创建 Attempt 和 LabSession。
 6. API 返回一次性终端票据，Web 建立 WebSocket。
-7. 在终端中执行命令。
-8. 提交解释。
+7. 在终端中执行健康检查和 SQL 注入验证命令，例如 `curl -i "$TARGET_BASE_URL/healthz"`，再对 `/login` 构造认证绕过请求。
+8. 提交解释。默认 `requestOracleCheck=true` 时，API 会在提交前调用声明式外部 Oracle，若目标服务已经观察到认证绕过，会写入 `oracle.observed` 证据并给出客观分。
 9. 查看成绩证据页。
 10. 提交申诉。
 11. 教师打开 `/teacher/challenges/cv_web_sqli_auth_1_3_0/validation` 查看验证报告。

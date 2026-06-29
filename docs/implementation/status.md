@@ -66,6 +66,7 @@
 - 已让前端在通过 IPv6 页面访问时，把 API 返回的本地回环 Gateway WebSocket 地址改写为当前页面主机，避免 IPv6 页面连接到访问者本机的 `127.0.0.1`。
 - 已分析并修复本地 Web 样式退回浏览器默认样式的问题：根因是在旧版配置下 `next dev` 运行时执行 `next build` 覆盖了 `apps/web/.next`，dev server 继续引用开发态 CSS/JS/RSC chunk，而磁盘已变为生产构建输出，导致 `/_next/static/...` 返回 404。
 - 已将修复路线落实到 `apps/web/next.config.js` 和 `scripts/restart-local-dev.sh`：开发输出隔离到 `apps/web/.next-dev`，生产构建隔离到 `apps/web/.next-build`，本地整套服务重启前会清理旧 `.next` 和 `.next-dev`。
+- 已修复提交时 `requestOracleCheck` 没有实际触发 Oracle 检查的问题：提交接口现在会调用声明式外部 Oracle，自动写入 `oracle.observed` 证据；学生真实完成 SQL 注入认证绕过后，`oracle-auth-bypass` 标准会获得客观分，未观察到绕过时不会误给分。
 
 ## 当前已验证能力
 
@@ -242,7 +243,7 @@ find . -path './.git' -prune -o -path './node_modules' -prune -o -path './apps/w
 3. 学生可幂等创建 Attempt，创建本地 LabSession，并获取 60 秒一次性终端票据。
 4. Gateway 通过内部 consume API 获得 nested `sessionRoute`，前端不会获得 route/endpoint/sessiond 地址。
 5. Shell hook/Gateway 可以写入语义事件和加密终端分片索引。
-6. Oracle 签名观测可以发布客观证据，提交后生成 GradeRevision 和 CriterionResult。
+6. Oracle 签名观测可以发布客观证据；提交时请求 Oracle 检查也会生成可追溯的 `oracle.observed` 证据，再生成 GradeRevision 和 CriterionResult。
 7. 学生可查看证据化成绩并提交 criterion 级申诉。
 8. 教师可查看验证报告和 live monitor，并可通过复核 API 处理申诉，生成新的不可变 GradeRevision。
 9. 本机浏览器已验证 xterm.js 到 Gateway/sessiond 的真实 PTY 链路，命令 `echo CLA_DEFAULT_TOKEN_OK` 正常回显，内部票据消费返回 200，终端分片上传返回 202。

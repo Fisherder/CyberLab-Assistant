@@ -36,7 +36,7 @@ from cla.challenge_catalog import (
 )
 from cla.database import init_db, make_engine, make_session_factory, session_scope
 from cla.events import append_event, latest_session_epoch
-from cla.grading import publish_grade_revision
+from cla.grading import publish_grade_revision, request_oracle_check_for_attempt
 from cla.ids import new_id
 from cla.oracle import verify_oracle_signature
 from cla.schemas import (
@@ -2515,6 +2515,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             event_type="attempt.submitted",
             payload={"answer_refs": ["submission.answer.root-cause"]},
         )
+        oracle_event = request_oracle_check_for_attempt(db, settings, attempt) if body.requestOracleCheck else None
+        if oracle_event is not None:
+            _outbox(db, "attempt", attempt.id, "oracle.observed", {"eventId": oracle_event.id})
         grade = publish_grade_revision(db, attempt, answer_text)
         _outbox(db, "grade_revision", grade.id, "grade.revision.published", {"attemptId": attempt.id})
         _audit(db, principal, "attempt.submit", "attempt", attempt.id, "ALLOW")

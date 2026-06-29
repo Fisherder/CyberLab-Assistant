@@ -39,7 +39,7 @@ def test_no_gui_runtime_dependencies_enter_phase_one_code() -> None:
         for path in (ROOT / root_name).rglob("*"):
             if any(
                 excluded in path.parts
-                for excluded in {"tests", "__pycache__", "node_modules", ".next", "dist", "build"}
+                    for excluded in {"tests", "__pycache__", "node_modules", ".next", ".next-dev", "dist", "build"}
             ):
                 continue
             if path.is_file() and path.suffix not in {".png", ".jpg", ".jpeg", ".gif", ".ico"}:

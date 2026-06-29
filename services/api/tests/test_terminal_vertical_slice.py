@@ -1,12 +1,21 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from dataclasses import replace
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import json
 import jwt
+import threading
+from urllib.parse import parse_qs, urlparse
+from urllib.request import Request, urlopen
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from cla import models
+from cla.main import create_app
 from cla.oracle import sign_oracle_payload
+from cla.security import create_dev_token
 from cla.seed import DEV_IDS
 from cla.settings import Settings
 
@@ -39,6 +48,59 @@ def issue_ticket(client: TestClient, token: str, attempt_id: str) -> dict:
     response = client.post(f"/api/v1/attempts/{attempt_id}/terminal-ticket", headers=auth(token))
     assert response.status_code == 200, response.text
     return response.json()
+
+
+@contextmanager
+def local_sqli_target(session_key: str):
+    observed = {"value": False}
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            parsed = urlparse(self.path)
+            if parsed.path == "/healthz":
+                self._json({"ok": True})
+                return
+            if parsed.path == "/oracle/state":
+                key = parse_qs(parsed.query).get("key", [""])[0]
+                self._json({"auth_bypass_observed": key == session_key and observed["value"]})
+                return
+            self._json({"error": "not_found"}, status=404)
+
+        def do_POST(self) -> None:
+            if self.path != "/login":
+                self._json({"error": "not_found"}, status=404)
+                return
+            length = int(self.headers.get("content-length", "0"))
+            fields = parse_qs(self.rfile.read(length).decode())
+            username = fields.get("username", [""])[0]
+            password = fields.get("password", [""])[0]
+            query = f"SELECT id FROM users WHERE username = '{username}' AND password = '{password}'"
+            if "' OR '1'='1" in query:
+                observed["value"] = True
+                self._json({"ok": True, "role": "admin"})
+                return
+            self._json({"ok": False}, status=401)
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+        def _json(self, value: dict, status: int = 200) -> None:
+            encoded = json.dumps(value).encode()
+            self.send_response(status)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
 
 
 def test_attempt_creation_is_idempotent(
@@ -442,6 +504,117 @@ def assert_internal_route_not_leaked(value: object) -> None:
         assert forbidden not in encoded
 
 
+def test_submit_requests_oracle_check_after_real_target_bypass(settings: Settings) -> None:
+    session_key = "submit-oracle-pass-key"
+    with local_sqli_target(session_key) as target_base_url:
+        app_settings = replace(
+            settings,
+            local_target_base_url=target_base_url,
+            local_target_session_key=session_key,
+        )
+        with TestClient(create_app(app_settings)) as client:
+            student_token = create_dev_token(app_settings, subject="student@example.edu", roles=["student"])
+            attempt = create_attempt(client, student_token, "submit-oracle-pass")
+            ensure_session(client, student_token, attempt["attemptId"])
+
+            exploit = Request(
+                f"{target_base_url}/login",
+                data=b"username=alice&password=' OR '1'='1",
+                headers={"content-type": "application/x-www-form-urlencoded"},
+                method="POST",
+            )
+            with urlopen(exploit, timeout=5) as response:
+                assert response.status == 200
+                assert json.loads(response.read().decode()) == {"ok": True, "role": "admin"}
+
+            submitted = client.post(
+                f"/api/v1/attempts/{attempt['attemptId']}/submit",
+                headers={**auth(student_token), "If-Match": '"attempt-version-1"'},
+                json={
+                    "answers": [
+                        {
+                            "questionId": "root-cause",
+                            "format": "MARKDOWN",
+                            "content": "根因是登录接口把输入拼接进 SQL，认证边界错误；应使用参数化查询。",
+                        }
+                    ],
+                    "requestOracleCheck": True,
+                },
+            )
+            assert submitted.status_code == 202, submitted.text
+
+            grade = client.get(
+                f"/api/v1/attempts/{attempt['attemptId']}/grade",
+                headers=auth(student_token),
+            )
+            assert grade.status_code == 200, grade.text
+            body = grade.json()
+            assert body["totalScore"] == 100.0
+            assert body["graderVersion"] == "cla-deterministic-grader/0.2.0"
+            oracle = next(
+                criterion for criterion in body["criteria"] if criterion["criterionId"] == "oracle-auth-bypass"
+            )
+            assert oracle["score"] == 60.0
+            assert oracle["evidenceRefs"]
+
+            with client.app.state.SessionLocal() as db:
+                event = db.get(models.Event, oracle["evidenceRefs"][0])
+                assert event is not None
+                assert event.type == "oracle.observed"
+                assert event.source == "cla-oracle"
+                assert event.payload_json["passed"] is True
+                assert event.payload_json["requested_by"] == "attempt.submit"
+
+
+def test_submit_oracle_check_does_not_award_unobserved_bypass(settings: Settings) -> None:
+    session_key = "submit-oracle-fail-key"
+    with local_sqli_target(session_key) as target_base_url:
+        app_settings = replace(
+            settings,
+            local_target_base_url=target_base_url,
+            local_target_session_key=session_key,
+        )
+        with TestClient(create_app(app_settings)) as client:
+            student_token = create_dev_token(app_settings, subject="student@example.edu", roles=["student"])
+            attempt = create_attempt(client, student_token, "submit-oracle-fail")
+            ensure_session(client, student_token, attempt["attemptId"])
+
+            submitted = client.post(
+                f"/api/v1/attempts/{attempt['attemptId']}/submit",
+                headers={**auth(student_token), "If-Match": '"attempt-version-1"'},
+                json={
+                    "answers": [
+                        {
+                            "questionId": "root-cause",
+                            "format": "MARKDOWN",
+                            "content": "根因是输入信任边界错误，应使用参数化查询。",
+                        }
+                    ],
+                    "requestOracleCheck": True,
+                },
+            )
+            assert submitted.status_code == 202, submitted.text
+
+            grade = client.get(
+                f"/api/v1/attempts/{attempt['attemptId']}/grade",
+                headers=auth(student_token),
+            )
+            assert grade.status_code == 200, grade.text
+            body = grade.json()
+            assert body["totalScore"] == 40.0
+            oracle = next(
+                criterion for criterion in body["criteria"] if criterion["criterionId"] == "oracle-auth-bypass"
+            )
+            assert oracle["score"] == 0.0
+            assert oracle["evidenceRefs"]
+
+            with client.app.state.SessionLocal() as db:
+                event = db.get(models.Event, oracle["evidenceRefs"][0])
+                assert event is not None
+                assert event.payload_json["passed"] is False
+                assert event.payload_json["evidence"]["observed"] is False
+
+
 def test_oracle_submission_grade_and_appeal_survive_agent_disabled(
     client: TestClient,
     settings: Settings,
@@ -496,7 +669,7 @@ def test_oracle_submission_grade_and_appeal_survive_agent_disabled(
     assert body["totalScore"] == 100.0
     assert body["independenceIndex"] == 1.0
     assert body["rubricVersion"] == "web-sqli-auth-001@1.3.0-rubric.1"
-    assert body["graderVersion"] == "cla-deterministic-grader/0.1.0"
+    assert body["graderVersion"] == "cla-deterministic-grader/0.2.0"
     assert len(body["criteria"]) == 2
     assert {criterion["graderType"] for criterion in body["criteria"]} == {
         "DETERMINISTIC_ORACLE",

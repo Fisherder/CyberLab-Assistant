@@ -21,6 +21,11 @@ DEV_IDS = {
 }
 
 DEV_VALIDATION_REPORT_REF = "content/validation/web-sqli-auth-001-1.3.0.validation.json"
+DEV_SUCCESS_ORACLE = {
+    "type": "EXTERNAL_HTTP_PREDICATE",
+    "validatorRef": "oracle/validator.py",
+    "timeoutSeconds": 10,
+}
 
 
 def seed_dev_data(db: Session) -> None:
@@ -88,6 +93,7 @@ def seed_dev_data(db: Session) -> None:
                     'curl -i -X POST "$TARGET_BASE_URL/login" -d "username=alice&password=wrong"',
                 ],
             },
+            "successOracle": DEV_SUCCESS_ORACLE,
             "futureCapabilities": {"remoteDesktop": False, "simulatedWorkspace": False},
         },
         artifact_digest="sha256:dev-fixture-web-sqli-auth",
@@ -130,6 +136,7 @@ def seed_dev_data(db: Session) -> None:
 
 
 def _ensure_dev_validation_run(db: Session) -> None:
+    _ensure_dev_challenge_version_metadata(db)
     if db.get(models.ValidationRun, DEV_IDS["validation_run"]) is not None:
         return
     if db.get(models.ChallengeVersion, DEV_IDS["challenge_version"]) is None:
@@ -146,3 +153,17 @@ def _ensure_dev_validation_run(db: Session) -> None:
         )
     )
     db.commit()
+
+
+def _ensure_dev_challenge_version_metadata(db: Session) -> None:
+    version = db.get(models.ChallengeVersion, DEV_IDS["challenge_version"])
+    if version is None:
+        return
+    manifest = dict(version.manifest_json or {})
+    changed = False
+    if not isinstance(manifest.get("successOracle"), dict):
+        manifest["successOracle"] = DEV_SUCCESS_ORACLE
+        changed = True
+    if changed:
+        version.manifest_json = manifest
+        db.commit()
