@@ -13,7 +13,7 @@ SESSION="${CLA_TMUX_SESSION:-cla}"
 WORKSPACE_ROOT="${CLA_LOCAL_WORKSPACE_DIR:-/private/tmp/cla-local-workspace/web-sqli-auth}"
 TEMPLATE_DIR="$ROOT/runtime/sessiond/workspace-template/web-sqli-auth"
 PYTHON_BIN="${CLA_PYTHON_BIN:-$ROOT/.venv/bin/python}"
-GO_BIN="${CLA_GO_BIN:-/tmp/cla-go/go/bin/go}"
+GO_BIN="${CLA_GO_BIN:-}"
 PNPM_BIN="${CLA_PNPM_BIN:-/Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm}"
 
 if [[ ! -x "$PYTHON_BIN" ]]; then
@@ -21,13 +21,26 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
   exit 1
 fi
 
-if [[ ! -x "$GO_BIN" ]]; then
-  if command -v go >/dev/null 2>&1; then
-    GO_BIN="$(command -v go)"
-  else
-    echo "找不到 Go：$GO_BIN，也没有可用的 go 命令" >&2
+go_usable() {
+  local candidate="$1"
+  local goroot
+  [[ -x "$candidate" ]] || return 1
+  goroot="$("$candidate" env GOROOT 2>/dev/null)" || return 1
+  [[ -f "$goroot/src/fmt/print.go" && -f "$goroot/src/runtime/proc.go" ]]
+}
+
+if [[ -n "$GO_BIN" ]]; then
+  if ! go_usable "$GO_BIN"; then
+    echo "指定的 Go 不可用或标准库不完整：$GO_BIN" >&2
     exit 1
   fi
+elif command -v go >/dev/null 2>&1 && go_usable "$(command -v go)"; then
+  GO_BIN="$(command -v go)"
+elif go_usable "/tmp/cla-go/go/bin/go"; then
+  GO_BIN="/tmp/cla-go/go/bin/go"
+else
+  echo "找不到可用的 Go。请安装 Go 1.22+，或设置 CLA_GO_BIN 指向完整 Go 安装。" >&2
+  exit 1
 fi
 
 if [[ ! -x "$PNPM_BIN" ]]; then
@@ -52,7 +65,7 @@ rm -rf "$WORKSPACE_ROOT"
 mkdir -p "$WORKSPACE_ROOT"
 cp -R "$TEMPLATE_DIR/." "$WORKSPACE_ROOT/"
 
-rm -rf "$ROOT/apps/web/.next"
+rm -rf "$ROOT/apps/web/.next" "$ROOT/apps/web/.next-dev"
 
 tmux_cmd kill-session -t "$SESSION" 2>/dev/null || true
 

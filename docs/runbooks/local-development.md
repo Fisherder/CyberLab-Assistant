@@ -34,7 +34,7 @@ scripts/restart-local-dev.sh
 | gateway | 终端网关 | `http://127.0.0.1:8081` |
 | web | Next.js 前端 | `http://127.0.0.1:3000` |
 
-脚本会在启动 Web 前清理 `apps/web/.next`。这是必要步骤：如果刚运行过 `next build`，原来的 `next dev` 会继续引用开发态静态资源路径，但 `.next` 已被生产构建覆盖，浏览器会请求不到 CSS/JS，页面就会退回默认浏览器样式。
+脚本会在启动 Web 前清理旧的 `apps/web/.next` 和当前开发输出 `apps/web/.next-dev`。开发服务固定使用 `.next-dev`，生产构建固定使用 `.next-build`，这样即使刚运行过构建，也不会覆盖正在运行的开发态 CSS/JS/RSC chunk。
 
 进入 tmux：
 
@@ -208,7 +208,7 @@ scripts/restart-local-dev.sh
 或至少先清理 Web 构建目录，再启动开发服务：
 
 ```bash
-rm -rf apps/web/.next
+rm -rf apps/web/.next apps/web/.next-dev
 /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web dev
 ```
 
@@ -217,13 +217,13 @@ rm -rf apps/web/.next
 ```bash
 env CI=true NEXT_PUBLIC_CLA_API_BASE= CLA_API_INTERNAL_BASE=http://127.0.0.1:8000 \
   /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm --dir apps/web build
-cp -R apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
-cd apps/web/.next/standalone/apps/web
+cp -R apps/web/.next-build/static apps/web/.next-build/standalone/apps/web/.next-build/static
+cd apps/web/.next-build/standalone/apps/web
 HOSTNAME=:: PORT=3000 NEXT_PUBLIC_CLA_API_BASE= CLA_API_INTERNAL_BASE=http://127.0.0.1:8000 \
   node server.js
 ```
 
-注意：standalone 服务必须从 `apps/web/.next/standalone/apps/web` 作为工作目录启动，并且要把 `apps/web/.next/static` 复制到该目录的 `.next/static`。否则浏览器会出现 chunk 404 或 `ChunkLoadError`。
+注意：standalone 服务必须从 `apps/web/.next-build/standalone/apps/web` 作为工作目录启动，并且要把 `apps/web/.next-build/static` 复制到该目录的 `.next-build/static`。否则浏览器会出现 chunk 404 或 `ChunkLoadError`。
 
 默认访问：
 
@@ -347,7 +347,7 @@ env CI=true /Users/fisherder/.cache/codex-runtimes/codex-primary-runtime/depende
 - `/login` 页面只显示浏览器默认按钮和输入框。
 - tmux 的 web 窗口里出现 `/_next/static/css/app/layout.css`、`main-app.js` 或 `app-pages-internals.js` 返回 404。
 
-根因通常是：`next dev` 正在运行时又执行了 `next build`，生产构建覆盖了 `apps/web/.next`，导致 dev server 发出的静态资源路径和磁盘内容不一致。
+根因通常是：旧版配置下 `next dev` 正在运行时又执行了 `next build`，生产构建覆盖了 `apps/web/.next`，导致 dev server 发出的静态资源路径和磁盘内容不一致。当前配置已经把开发输出隔离到 `apps/web/.next-dev`，生产构建隔离到 `apps/web/.next-build`；如果看到这个现象，说明正在运行的是旧进程或旧构建目录。
 
 处理方式：
 

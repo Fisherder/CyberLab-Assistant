@@ -46,7 +46,11 @@ export function TeacherChallengeBankPage() {
       );
       return;
     }
-    void loadItems("active");
+    const createdId = new URLSearchParams(window.location.search).get("created") ?? "";
+    if (createdId) {
+      setMessage("题目已创建，已为你定位到新题目。");
+    }
+    void loadItems("active", createdId);
   }, []);
 
   const detailItem = useMemo(
@@ -54,7 +58,7 @@ export function TeacherChallengeBankPage() {
     [items, detailId]
   );
 
-  async function loadItems(nextView = view) {
+  async function loadItems(nextView = view, preferredDetailId = "") {
     setError("");
     setLoading("list");
     try {
@@ -64,7 +68,10 @@ export function TeacherChallengeBankPage() {
           : await fetchTeacherChallengeBank(courseId);
       setItems(result.items);
       setView(nextView);
-      setDetailId((current) => (result.items.some((item) => item.itemId === current) ? current : ""));
+      setDetailId((current) => {
+        const targetId = preferredDetailId || current;
+        return result.items.some((item) => item.itemId === targetId) ? targetId : "";
+      });
     } catch (err) {
       setError(readError(err));
     } finally {

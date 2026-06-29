@@ -64,8 +64,8 @@
 - 已修复旧版 SQLite 开发库 `appeals` 表缺少 `criterion_id` 导致申诉 500 的问题，启动时仅对 SQLite 本地库做缺列兼容，并增加回归测试。
 - 已为本地 Web 验证增加 `#claDevToken=` URL hash 写入方式，便于浏览器自动化和人工验证；页面读取后会清理地址栏中的 token。
 - 已让前端在通过 IPv6 页面访问时，把 API 返回的本地回环 Gateway WebSocket 地址改写为当前页面主机，避免 IPv6 页面连接到访问者本机的 `127.0.0.1`。
-- 已分析并修复本地 Web 样式退回浏览器默认样式的问题：根因是在 `next dev` 运行时执行 `next build` 覆盖了 `apps/web/.next`，dev server 继续引用无 hash 的开发态 CSS/JS，而磁盘已变为生产构建输出，导致 `/_next/static/...` 返回 404。
-- 已将修复路线落实到 `scripts/restart-local-dev.sh`：本地整套服务重启前会清理 `apps/web/.next`，再启动 Web dev server，确保 CSS、JS、RSC chunk 与当前 dev server 输出一致。
+- 已分析并修复本地 Web 样式退回浏览器默认样式的问题：根因是在旧版配置下 `next dev` 运行时执行 `next build` 覆盖了 `apps/web/.next`，dev server 继续引用开发态 CSS/JS/RSC chunk，而磁盘已变为生产构建输出，导致 `/_next/static/...` 返回 404。
+- 已将修复路线落实到 `apps/web/next.config.js` 和 `scripts/restart-local-dev.sh`：开发输出隔离到 `apps/web/.next-dev`，生产构建隔离到 `apps/web/.next-build`，本地整套服务重启前会清理旧 `.next` 和 `.next-dev`。
 
 ## 当前已验证能力
 
@@ -233,7 +233,7 @@ find . -path './.git' -prune -o -path './node_modules' -prune -o -path './apps/w
 # 结果：抽样 PNG 渲染成功，目视检查截图、正文、表格、清单和页脚可读
 ```
 
-说明：`next build` 会重写 `apps/web/next-env.d.ts` 的生成注释，本轮构建和类型检查通过后已再次把该文件注释修正为中文，并单独重跑 typecheck 通过。`next build` 还会覆盖 dev server 使用的 `apps/web/.next`，因此本地整套服务重启脚本会先清理该目录，再启动 Web dev server。Go 根目录 `./...` 不适用于当前 go.work 布局，因此状态文档和开发文档均使用明确模块路径集合。
+说明：`next build` 会重写 `apps/web/next-env.d.ts` 的生成注释，本轮构建和类型检查通过后已再次把该文件注释修正为中文，并单独重跑 typecheck 通过。Web 开发输出现在使用 `apps/web/.next-dev`，生产构建使用 `apps/web/.next-build`，本地整套服务重启脚本会先清理旧 `.next` 和 `.next-dev` 再启动 Web dev server。Go 根目录 `./...` 不适用于当前 go.work 布局，因此状态文档和开发文档均使用明确模块路径集合。
 
 ## 当前可演示路径
 

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "CLA_NEXT_DIST_DIR=.next-build next build",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "test:authoring-agent": "node scripts/verify-authoring-agent-scenarios.mjs"
   },
   "dependencies": {
