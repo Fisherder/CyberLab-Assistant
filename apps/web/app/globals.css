@@ -1870,6 +1870,78 @@ input {
   font-size: 12px;
 }
 
+.error-shell {
+  align-items: center;
+  background: var(--bg);
+  display: flex;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.error-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+  color: var(--text);
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 28px;
+  width: 100%;
+}
+
+.error-panel h1 {
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.error-panel p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.error-panel code {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: #475569;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  padding: 10px;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.error-actions a,
+.error-actions button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+.error-actions button {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
 .spin {
   animation: spin 0.9s linear infinite;
 }

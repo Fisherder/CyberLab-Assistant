@@ -16,6 +16,7 @@ import {
   type ChallengeCandidateSearchResponse,
   type ChallengeBankItemResponse
 } from "../lib/api";
+import { teacherChallengeBankHref } from "../lib/navigation";
 import {
   applyPreviewFieldUpdate,
   inferAuthoringFieldUpdate,
@@ -225,9 +226,9 @@ export function TeacherChallengeCreatePage() {
           <div className="status-note">
             {message}
             {createdItem ? (
-              <Link href={`/teacher/challenge-bank?created=${encodeURIComponent(createdItem.itemId)}`}>
+              <a href={teacherChallengeBankHref(createdItem.itemId)}>
                 查看题库条目
-              </Link>
+              </a>
             ) : null}
           </div>
         ) : null}
